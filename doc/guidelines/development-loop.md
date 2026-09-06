@@ -6,7 +6,7 @@
 
 ## 基本方針
 
-- 作業は必ず GitHub Issue から始める。例外は `progress.md` の索引登録そのものだけで、これには起点 Issue を作らない（`register-progress-issue`）。「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。例外はこの 1 件に限り、他へ広げない。
+- 作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` の索引登録そのものだけで、これには起点 Issue を作らない（`register-progress-issue`）。「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 1 件に限り、他へ広げない。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
 - 複数 Issue をまとめて 1 ブランチで進めない。実行時は `doc/guidelines/issue-driven-task-execution.md` に従い、1 Issue = 1 ブランチ = 1 PR とする。
 - タスクは直列に消化する。複数 Issue の並行作業はしない。
 - 横断的に見渡したい Issue 群は `progress.md` の進行中タスク索引に登録する。

@@ -12,7 +12,7 @@ skill は編集手順までしか定めておらず、`main` が保護されて�
 
 ## 現在の状況
 
-PR #6 を作成し、note を採番済み。review comment 7 件すべてへ対応した。開発ループ正本側への例外反映は、ユーザー判断により本 PR で実施した。
+PR #6 を作成し、note を採番済み。review comment 7 件すべてへ対応し、verify で 6 件が resolve 可となった。残る 1 件（例外記述の衝突）も修正済みで、再 verify 待ち。
 
 ## 決定事項
 
@@ -34,6 +34,14 @@ Codex と Claude Code の 2 cycle から inline comment 7 件。対応は次の�
 | `[imo]` 「やらないこと」の対象が広すぎる | 採用。「索引登録による `progress.md` の変更を〜」へ限定した |
 | `[fyi]` note の stale 表現 | 採用。note を編集する機会に合わせて修正した |
 | `[must]` / `[ask]` 索引登録の例外が開発ループ正本から辿れない | 採用。ユーザー判断により本 PR で `development-loop.md` の基本方針・資材表・標準フロー・参照順の 4 箇所へ反映した |
+
+## verify 対応（2026-09-06）
+
+verify-comments で 6 件が resolve 可となり、`[ask]` thread のみ新たな指摘付きで unresolved のまま残った。
+
+- 指摘: `development-loop.md` L9 の「例外はこの 1 件に限り、他へ広げない。」が、`0012-development-loop.md` L65 および `progress.md` L26 の「開発ループ整備に限っては Issue を作らない」と衝突する。
+- 対応: 提示された 2 案のうち 1（L9 の対象を明示する）を採った。恒常的な例外は索引登録のみとし、整備フェーズを Issue 無しで進めたのは経緯による一度きりの扱いである旨を `0012` への参照付きで併記した。
+- 2 案目（`progress.md` L26 を過去形へ整理）は採らない。`progress.md` の内容変更は Issue #5 の「スコープ外」に明示されており、整備フェーズを完了扱いにするかは別途の判断が要るため。
 
 ## 次にやること
 
@@ -63,3 +71,4 @@ Issue #5 の検証項目 4 件をすべて実施した。
 - 2026-09-06: PR #6 を作成し、note を採番した。
 - 2026-09-06: review comment 7 件へ対応。skill 記述に閉じる 5 件を反映し、note の stale 表現を修正した。
 - 2026-09-06: 開発ループ正本への例外反映についてユーザー判断を得て、`doc/guidelines/development-loop.md` の 4 箇所を修正した。
+- 2026-09-06: verify-comments の指摘を受け、`development-loop.md` L9 の例外記述が既存の整備フェーズ例外と衝突していた点を修正した。
