@@ -1,0 +1,12 @@
+.DS_Store
+
+# AI agent の local 設定
+.claude/settings.local.json
+.claude/worktrees/
+
+# secret reference を含む local config（template は *.conf.example を commit する）
+.config/*.conf
+.op/
+
+# Rust build artifacts
+/target/
