@@ -12,6 +12,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - 開発ループ入口（GitHub Issue / progress.md / PR / working branch note の流れ）: `doc/guidelines/development-loop.md`
 - Issue 駆動タスク実行ルール（Issue 指定タスクの消化手順 / 1 Issue = 1 PR / merge はユーザー）: `doc/guidelines/issue-driven-task-execution.md`
 - Git 操作ルール（commit 署名 / 1Password SSH agent / remote と保護ブランチ）: `doc/guidelines/git-operation-guidelines.md`
+- 開発コマンド実行ルール（Compose 経由での `cargo` 実行 / 実行環境の正）: `doc/guidelines/development-command-guidelines.md`
 - GitHub MCP 利用ルール（MCP 優先 / `gh` fallback / tool allowlist）: `doc/guidelines/github-mcp-guidelines.md`
 - GitHub CLI 実行ルール（`gh` の実行範囲 / 承認が必要な操作 / write 失敗時の扱い）: `doc/guidelines/github-cli-guidelines.md`
 - Pull Request 作成ガイドライン: `doc/guidelines/pull-request-guidelines.md`
@@ -52,6 +53,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - AI agent 用の設定ファイル、rule、skill、agent 固有入口を作成・削除・rename するときは `doc/guidelines/agent-configuration-management.md` に従う。
 - 新しい作業の始め方、Issue 登録、Issue 実行、進捗整理の流れを確認するときは `doc/guidelines/development-loop.md` を読む。
 - GitHub Issue を指定されてタスクを消化するときは `doc/guidelines/issue-driven-task-execution.md` に従う。
+- `cargo` などの開発コマンドを実行するときは `doc/guidelines/development-command-guidelines.md` に従い、Compose 経由で実行する。
 - commit、tag、push、merge など git 操作を行う前に `doc/guidelines/git-operation-guidelines.md` に従う。`main` へ直接 push しない。
 - GitHub の PR / issue / レビューコメントを操作するときは `doc/guidelines/github-mcp-guidelines.md` に従い、MCP を優先する。
 - `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。

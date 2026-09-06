@@ -21,6 +21,7 @@
 - 祝日は `fetch-holidays` が取得してローカル保存し、判定はローカルのみを読む。欠落 / 1年 expire / 年カバー外はエラー。`--source` 既定は `https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv`。ローカルは UTF-8 CSV で先頭にメタ行を埋め込む。経緯は [0006](decision-log/0006-holiday-data-source.md)、[0009](decision-log/0009-holiday-csv-local-format.md)
 - CLI・入出力・exit code の詳細は `cli-interface.md`。経緯は [0007](decision-log/0007-cli-shape.md)
 - 実装言語は Rust（pure Rust / rustls、Docker でビルド再現、CI で fmt・clippy・test）。Homebrew は後続視野。経緯は [0008](decision-log/0008-language-and-distribution.md)
+- 公開ライセンスは MIT とする。`LICENSE` は設置済み。経緯は [0013](decision-log/0013-license-selection.md)
 
 ## 関連仕様
 
@@ -37,12 +38,10 @@
 - 翌 / 前営業日、第 N 営業日、営業日数
 - 日本以外の祝日への本格対応（`--source` 差し替え想定は記録済み）
 - GitHub Releases / Homebrew による配布（動作確認後）
-- 公開ライセンス（公開直前。候補は MIT）
 
 ## まだ決めていないこと
 
 実装前のプロダクト方針は上記まで決まった。残る未決は次のとおりである。
 
-- 公開時のライセンス
 - 配布手段（Releases / Homebrew）の詳細
 - 日本以外の祝日 CSV のスキーマ

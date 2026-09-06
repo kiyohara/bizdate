@@ -1,0 +1,22 @@
+[package]
+name = "bizdate"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+description = "その日が月の最初 / 最後の業務日かどうかを判定する CLI"
+license = "MIT"
+repository = "https://github.com/kiyohara/bizdate"
+# 公開ライブラリクレートとしては提供しない (doc/design/decision-log/0008-language-and-distribution.md)。
+publish = false
+
+[[bin]]
+name = "bizdate"
+path = "src/main.rs"
+
+# 選定理由は doc/design/decision-log/0014-dependency-crates-and-toolchain.md を参照する。
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+jiff = "0.2"
+csv = "1.4"
+ureq = { version = "3.4", default-features = false, features = ["rustls"] }
+encoding_rs = "0.8"

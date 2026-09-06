@@ -1,0 +1,26 @@
+# 開発コマンドの実行環境。詳細は doc/guidelines/development-command-guidelines.md を参照する。
+services:
+  dev:
+    # rust 公式 image を base に、rustfmt と clippy を足した image を使う。
+    build:
+      context: .
+    image: bizdate-dev:1.98
+    working_dir: /work
+    environment:
+      # host の TZ を引き継ぐ。判定結果が「今日」の解釈に依存するため
+      # (doc/design/business-day.md)。host 側が未設定なら container は UTC になる。
+      - TZ
+      - BIZDATE_TZ
+    volumes:
+      - .:/work
+      # registry と target を named volume に保持し、再ビルドの時間を短縮する。
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - target:/work/target
+    # 単発の cargo 実行を `docker compose run --rm dev ...` で行うための待機用。
+    command: ["sleep", "infinity"]
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  target:

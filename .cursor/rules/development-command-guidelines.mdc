@@ -1,0 +1,17 @@
+---
+description: cargo などの開発コマンドをビルド・テスト・lint のために実行する前に読む Compose 経由の実行ルール
+globs:
+  - Cargo.toml
+  - compose.yaml
+  - Dockerfile
+  - src/**
+  - tests/**
+alwaysApply: false
+---
+
+# 開発コマンド実行
+
+- 詳細は `doc/guidelines/development-command-guidelines.md`
+- `cargo` などの開発コマンドを実行する前に共通正本を読む。
+- host で直接実行せず、`docker compose run --rm dev cargo ...` を基本形とする。
+- host の toolchain で得た結果を、検証結果として報告しない。
