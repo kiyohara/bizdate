@@ -30,7 +30,7 @@ CI が緑になること、意図的な fmt 違反で赤になることの両方
 
 ### toolchain は MSRV に固定する
 
-`toolchain: "1.98"` とし、`Cargo.toml` の `rust-version` と `Dockerfile` の `FROM` に揃える（0014）。MSRV は 3 箇所に現れるという `development-command-guidelines.md` の記述に対し、CI が 4 箇所目になる。
+`toolchain: "1.98"` とし、`Cargo.toml` の `rust-version` と `Dockerfile` の `FROM` に揃える（0014）。CI が MSRV の 4 箇所目になるため、review 対応で `development-command-guidelines.md` の表と「やらないこと」を 4 箇所へ更新した。
 
 ### cargo の option
 
@@ -41,6 +41,7 @@ CI では `--locked` を付ける（`development-command-guidelines.md`）。`ca
 - `permissions: contents: read`。検査のみの workflow であり書き込み権限を必要としない。
 - `concurrency` による PR 上の古い run の打ち切り。`main` への push は履歴として残すため `cancel-in-progress` を PR に限定した。
 - `env: CARGO_TERM_COLOR: always`。log を読みやすくする。
+- `timeout-minutes: 15`（review 対応で追加）。未指定だと GitHub-hosted runner の上限 6 時間まで走る。#13 の HTTP 取得が入った後に応答の返らない処理が紛れ込むと、赤になるまで runner を占有する。
 
 ## 次にやること
 
@@ -94,7 +95,7 @@ toolchain の導入が約 9 秒で、warm cache 時は実行時間の過半を�
 ## リスク・ブロッカー
 
 - action を SHA 固定したため、上流の修正は自動で入らない。更新手段（Dependabot など）は別途決める必要がある。
-- `development-command-guidelines.md` の「MSRV の値は 3 箇所に現れる」表に CI の toolchain が含まれていない。本 PR で 4 箇所目になったが、ガイドライン更新は含めていない。
+- decision log 0014 の「影響」は MSRV を 3 箇所と書いているが、当時の記録として残す（`decision-log-guidelines.md` は本文を書き換えない方針）。運用上の正本は `development-command-guidelines.md` 側であり、そちらは 4 箇所へ更新済み。
 - 実装が最小のため、`-D warnings` の実際の負荷はまだ測れていない。以降の実装 PR で判断材料が出る。
 
 ## セッションログ
@@ -103,3 +104,4 @@ toolchain の導入が約 9 秒で、warm cache 時は実行時間の過半を�
 - 2026-09-06: workflow を作成。action の SHA は GitHub API で tag から解決した。ローカル検証と actionlint を通した。
 - 2026-09-06: `.github/workflows/` への push が token の scope 不足で拒否された。`workflow` scope の付与はユーザーが実施。
 - 2026-09-06: PR #20 を作成。run #1 が緑。fmt 違反を入れた run #2 が赤になることを確認し、revert して run #3 が緑に戻ることを確認した。
+- 2026-09-06: review comment 5 件へ対応。`[must]` の MSRV 表を 4 箇所へ更新し、`[imo]` の `timeout-minutes` 追加と `# v1` の日付追記を採用した。Dependabot は別 Issue、`-D warnings` は現状維持とした。
