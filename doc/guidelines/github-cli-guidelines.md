@@ -2,7 +2,17 @@
 
 この文書は、bizdate リポジトリで AI agent が GitHub CLI(`gh`)を実行するときの共通ルールである。
 
-PR / Issue / レビューコメント / workflow など、GitHub 上のリソースを操作する場合はこのルールに従う。`git commit` や `git push` など local git の操作は `doc/guidelines/git-operation-guidelines.md` に従う。
+`git commit` や `git push` など local git の操作は `doc/guidelines/git-operation-guidelines.md` に従う。
+
+## GitHub MCP との関係
+
+PR / issue / レビューコメントの操作は、原則 `doc/guidelines/github-mcp-guidelines.md` に従って GitHub MCP Server を優先する。本ルールは次の場合に適用する。
+
+- MCP server が未設定、または現在の環境で利用できない。
+- 対象の操作が MCP の allowlist に含まれていない（merge、file push、release、workflow dispatch、repository settings 変更などが該当する）。
+- MCP 経由の実行が失敗し、`gh` で再試行する必要がある。
+
+つまり本ルールは、GitHub MCP の fallback と、MCP 化対象外の操作に対する一次ルールである。
 
 ## 1Password op plugin 連携
 

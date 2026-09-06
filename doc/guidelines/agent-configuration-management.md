@@ -37,12 +37,14 @@
 | --- | --- | --- | --- | --- |
 | Agent skill | `.agents/skills/<skill-name>/` | `.agents/skills/` を直接読む（symlink 不要） | `.claude/skills/<skill-name>` symlink | `.agents/skills/` を直接読む |
 | AI 向け rule | `doc/guidelines/<rule-name>.md` | `.cursor/rules/<rule-name>.mdc` 入口 | `.claude/rules/<rule-name>.md` 入口 | `AGENTS.md` から共通正本へ誘導 |
+| MCP server 共通資材 | `.agents/mcp/<server-name>/` | `.cursor/mcp.json`（project 設定） | repo root の `.mcp.json`（project scope） | `.codex/config.toml`（trusted project） |
 | Copilot review 指示 | `.github/copilot-instructions.md` | 対象外 | 対象外 | 対象外 |
 
 迷ったら、まずこの表で対象を決めてから該当セクションだけ読む。
 
 - skill の場合: `<skill-name>` は **正本ディレクトリ名と `.claude/skills/` symlink 名で揃える**。
 - rule の場合: `<rule-name>` は **3 箇所（共通正本・Cursor 入口・Claude Code 入口）で basename を揃える**。
+- MCP server の場合: `<server-name>` は **正本ディレクトリ名、起動 script 名、各 tool の MCP 設定ファイル内の server 名で揃える**。
 
 ## 共通原則
 
@@ -190,3 +192,83 @@ git ls-files | xargs rg -l "<rule-name>" 2>/dev/null
 2. `AGENTS.md` の参照を更新する。
 3. 古い共通正本と古い入口、古い `AGENTS.md` 参照を削除する。
 4. 旧名への残存参照を `git ls-files | xargs rg "<old-rule-name>"` で確認する。
+
+## MCP server 共通資材管理
+
+### 配置
+
+```text
+.agents/mcp/<server-name>/
+├── README.md             # commit: yes / 導入手順と各 tool 別の設定例
+├── <startup-script>      # commit: yes / wrapper script（例: mcp-<server-name>.sh）
+└── config-examples.md    # commit: yes / コピペできる各 tool の MCP 設定例
+```
+
+- `.agents/mcp/<server-name>/` は MCP server の共通 wrapper / README / 設定例の正本置き場とする。
+- `<server-name>` は操作対象と特徴が判別できる名前にする。一般名（例: `github`）は他の MCP server と衝突しやすいため避ける。
+- `.agents/mcp/` は skill のような自動 discover 対象ではない。MCP 実行基盤を skill ディレクトリと分離するため、`.agents/skills/` と混ぜない。
+- tool 固有の MCP 設定ファイル（`.mcp.json` / `.cursor/mcp.json` / `.codex/config.toml`）は project 設定として扱い、secret と個人環境に依存する絶対 path を含めずに commit する。
+- secret はリポジトリに書かない。config template は project root の `.config/<server-name>.conf.example` に置き、1Password secret reference（`op://...`）の placeholder と allowlist だけを含める。実際の secret reference は ignored な `.config/<server-name>.conf` に置き、wrapper 経由で 1Password CLI（`op run --env-file`）が解決する。
+- wrapper script は起動方式（Docker / npx / バイナリ）の差異を吸収する役割に留め、tool 別の MCP 設定の責務を持たない。
+
+### 入口の扱い
+
+- `.mcp.json`、`.cursor/mcp.json`、`.codex/config.toml` は project MCP 設定である。
+- これらは secret-free な起動定義だけを持つ。個人環境に依存する path、実 vault 名、実 item 名、実 token は書かない。
+- 入口側に恒久ルールや wrapper の詳細を書かない。詳細は `.agents/mcp/<server-name>/README.md` と関連する `doc/guidelines/` の rule に集約する。
+
+### 作成 checklist
+
+1. `.agents/mcp/<server-name>/` に正本ディレクトリを作る。
+2. wrapper script、`README.md`、`config-examples.md` を作る。
+3. wrapper script に実行権限を付ける。
+4. server の利用ルール（優先方針、fallback、tool allowlist、write 操作の扱い）を `doc/guidelines/<rule-name>.md` に書く。
+5. 上記 rule の Cursor / Claude Code 入口と `AGENTS.md` リンクを「AI 向け rule 管理」の checklist に従って整える。
+6. `.mcp.json` / `.cursor/mcp.json` / `.codex/config.toml` に secret-free な project MCP 設定を追加する。
+7. project root の `.config/<server-name>.conf.example` に必要な環境変数 placeholder と allowlist を追加する。
+8. 対応する `.config/<server-name>.conf` が `.gitignore` に無い場合だけ追加する。
+
+### 削除 checklist
+
+server を廃止する場合は、同じ変更で次をすべて削除する。
+
+- `.agents/mcp/<server-name>/` 一式。
+- 対応する `doc/guidelines/<rule-name>.md` と Cursor / Claude Code 入口、`AGENTS.md` のリンク。
+- `.mcp.json` / `.cursor/mcp.json` / `.codex/config.toml` 内の該当 server entry。
+- project root の `.config/<server-name>.conf.example` と `.worktreeinclude` の該当行。
+
+削除後に確認する:
+
+```sh
+git ls-files | xargs rg -l "<server-name>" 2>/dev/null
+```
+
+### 禁止事項
+
+- `.agents/skills/` 配下に MCP server 資材を置く（自動 discover 対象と混ぜない）。
+- MCP 設定ファイルに恒久ルール、実 vault 名、実 item 名、実 token、個人環境の絶対 path を入れる。
+- `.config/<server-name>.conf.example` に実 vault 名、実 item 名、実 token を入れる（`op://<VAULT>/<ITEM>/<FIELD>` のような完全 placeholder に留める）。
+- wrapper script から secret を直接 echo / log する。
+
+## worktree での ignored local config
+
+tracked な MCP 起動定義（`.mcp.json` / `.cursor/mcp.json` / `.codex/config.toml`）は worktree に入るが、gitignored な local config（例: `.config/github-op-integrated.conf`）は worktree へ自動配置されない。fresh worktree ではこの local config が無く、MCP wrapper が config file を見つけられず停止する。
+
+これを allowlist と setup script で補う。
+
+- `.worktreeinclude`（repo root, commit）: worktree へコピーしてよい gitignored local config を 1 行 1 path で allowlist する。**raw secret を含むファイルは載せない**（1Password secret reference を書いた config だけを対象にする）。`.gitignore` 全体はコピーしない。
+- `.agents/scripts/worktree-setup.sh`（commit / 実行権限）: `.worktreeinclude` を読み、列挙ファイルが main worktree に存在する場合だけ現在の worktree へコピーする。既定は上書きしない（`--force` で上書き）。ファイル内容は出力・log しない。repo root 外を指し得る entry（絶対 path、`..` segment）は拒否する。
+
+### worktree を使うときの手順
+
+1. worktree を作る。
+2. 作成した worktree の中で setup script を実行する。
+
+   ```sh
+   .agents/scripts/worktree-setup.sh
+   ```
+
+   main worktree に対象 local config があればコピーされる。無い場合は作成手順が表示されるので、main worktree で用意してから再実行する。
+3. MCP host を起動 / 再起動し、対象 server の tool が使えることを確認する。
+
+新しい allowlist 対象を足すときは `.worktreeinclude` に path を 1 行追加する。raw secret を含むファイルは足さない。
