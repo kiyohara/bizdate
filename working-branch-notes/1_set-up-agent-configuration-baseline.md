@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `set-up-agent-configuration-baseline`
-- PR: （採番前）
+- PR: #1
 - 最終更新: 2026-09-06
 
 ## 目的
@@ -46,4 +46,5 @@
 ## セッションログ
 
 - 2026-09-06: ブランチ作成。`working-branch-notes/` の README と template を配置し、本 note を作成した。
+- 2026-09-06: PR #1 を作成し、note を採番した。
 - 2026-09-06: 4 つの正本、Cursor / Claude Code 入口 各 4 本、`.github/copilot-instructions.md` を追加。`AGENTS.md` の共通正本一覧と `doc/guidelines/README.md` の一覧を更新した。既存 2 rule（decision-log / document-style）にも `doc/guidelines/README.md` の一覧行を追加した。
