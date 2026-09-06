@@ -12,7 +12,9 @@ Issue #8 に従い、`.github/workflows/ci.yml` を追加する。以降のす�
 
 ## 現在の状況
 
-workflow を書き、ローカル（Compose 経由）で 4 コマンドが通ることと、actionlint が無指摘であることを確認した。CI 上での実際の緑・赤の確認はこれから行う。
+Issue #8 の検証項目をすべて実施し、PR #20 を作成した。レビュー待ち。
+
+CI が緑になること、意図的な fmt 違反で赤になることの両方を実際の run で確認した。
 
 ## 決定事項
 
@@ -42,13 +44,43 @@ CI では `--locked` を付ける（`development-command-guidelines.md`）。`ca
 
 ## 次にやること
 
-- PR を作り、CI が緑になることを確認する。
-- fmt 違反を入れた commit で CI が赤になることを確認し、戻す。
-- 実行時間を記録する。
+- レビュー対応。merge はユーザーが行う。
+- merge 後、branch protection の required status check を有効にするかはユーザーが判断する（Issue のスコープ外）。
 
 ## 検証
 
-未実施の項目を含む。実施済みは次のとおり。
+Issue #8 の検証項目をすべて実施した。
+
+| 項目 | 結果 |
+|---|---|
+| PR 自体で CI が緑になる | 成功。run #1（cold cache）と run #3（warm cache）の 2 回 |
+| fmt 違反を入れた commit で CI が赤になる | 成功。run #2 が `cargo fmt` で失敗し、後続の clippy / test / build は skip された |
+| 違反 commit を戻す | revert commit で戻し、run #3 が緑になることを確認 |
+| workflow の実行時間 | cold cache 約 33 秒、warm cache 約 17 秒 |
+| run が記録されている | `list_workflow_runs` で run #1〜#3 を確認 |
+
+run ごとの内訳。
+
+| run | commit | 結果 | job 時間 |
+|---|---|---|---|
+| #1 | workflow 追加 | success | 33 秒（cache 復元なし） |
+| #2 | fmt 違反（意図的） | failure | 18 秒（`cargo fmt` で停止） |
+| #3 | #2 の revert | success | 17 秒 |
+
+step 別の所要時間（run #1 → run #3）。
+
+| step | run #1 | run #3 |
+|---|---|---|
+| Install Rust toolchain | 8 秒 | 9 秒 |
+| Cache restore | 0 秒 | 3 秒 |
+| cargo fmt | 1 秒 | 0 秒 |
+| cargo clippy | 8 秒 | 1 秒 |
+| cargo test | 8 秒 | 0 秒 |
+| cargo build | 0 秒 | 0 秒 |
+
+toolchain の導入が約 9 秒で、warm cache 時は実行時間の過半を占める。現状の実行時間は待てる範囲にある。
+
+事前のローカル確認（Compose 経由）。
 
 | 項目 | 結果 |
 |---|---|
@@ -59,19 +91,15 @@ CI では `--locked` を付ける（`development-command-guidelines.md`）。`ca
 | actionlint（`rhysd/actionlint` image） | 無指摘 |
 | YAML として parse できる | 確認 |
 
-未実施。
-
-- CI 上で緑になること。
-- fmt 違反で赤になること。
-- 実行時間の記録。
-- `list_workflow_runs` で run が記録されていること。
-
 ## リスク・ブロッカー
 
-- 初回 run は cache が空のため、以降より遅くなる。実行時間の判断材料としては 2 回目以降の値も見る。
-- action を SHA 固定したため、上流の修正は自動で入らない。更新手段は別途決める必要がある。
+- action を SHA 固定したため、上流の修正は自動で入らない。更新手段（Dependabot など）は別途決める必要がある。
+- `development-command-guidelines.md` の「MSRV の値は 3 箇所に現れる」表に CI の toolchain が含まれていない。本 PR で 4 箇所目になったが、ガイドライン更新は含めていない。
+- 実装が最小のため、`-D warnings` の実際の負荷はまだ測れていない。以降の実装 PR で判断材料が出る。
 
 ## セッションログ
 
 - 2026-09-06: ブランチ作成。Issue #8 の依存 #7 は PR #19 が merge 済みであることを確認した。
 - 2026-09-06: workflow を作成。action の SHA は GitHub API で tag から解決した。ローカル検証と actionlint を通した。
+- 2026-09-06: `.github/workflows/` への push が token の scope 不足で拒否された。`workflow` scope の付与はユーザーが実施。
+- 2026-09-06: PR #20 を作成。run #1 が緑。fmt 違反を入れた run #2 が赤になることを確認し、revert して run #3 が緑に戻ることを確認した。

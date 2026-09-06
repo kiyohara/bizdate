@@ -39,7 +39,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | V1-01 | [#7](https://github.com/kiyohara/bizdate/issues/7) Cargo と開発環境の骨組み | done | - | - | [#19](https://github.com/kiyohara/bizdate/pull/19) |
-| V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | done | #7 | - | - |
+| V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | done | #7 | - | [#20](https://github.com/kiyohara/bizdate/pull/20) |
 | V1-03 | [#9](https://github.com/kiyohara/bizdate/issues/9) 日付とタイムゾーンの解決 | todo | #7 | TZ 解決順と日付パースを実装する | - |
 | V1-04 | [#10](https://github.com/kiyohara/bizdate/issues/10) 祝日データのローカル読み取り | todo | #7 | メタ行・expire・年カバーを実装する | - |
 | V1-05 | [#11](https://github.com/kiyohara/bizdate/issues/11) 業務日判定と月の最初 / 最後 | todo | #9, #10 | `--day-off` パースと判定を実装する | - |
