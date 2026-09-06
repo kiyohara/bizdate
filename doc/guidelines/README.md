@@ -14,6 +14,7 @@
 | `agent-configuration-management.md` | skill / rule / agent 固有入口の作成・削除・rename・配置 |
 | `development-loop.md` | 開発ループの入口。Issue / progress.md / PR / note の役割と流れ |
 | `issue-driven-task-execution.md` | Issue 指定タスクの消化手順 |
+| `development-command-guidelines.md` | `cargo` などの開発コマンドを Compose 経由で実行するルール |
 | `git-operation-guidelines.md` | commit 署名、remote、保護ブランチの取り扱い |
 | `github-mcp-guidelines.md` | GitHub 操作の MCP 優先と `gh` fallback の判断 |
 | `github-cli-guidelines.md` | `gh` の実行範囲と承認が必要な操作 |

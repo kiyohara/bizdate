@@ -1,0 +1,6 @@
+# Dockerfile は toolchain を用意するだけでソースを COPY しない (ソースは compose の bind mount)。
+# build context を最小にする。
+.git
+target
+doc
+working-branch-notes
