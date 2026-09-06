@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `set-up-cargo-project-and-dev-environment`
-- PR: 未採番
+- PR: #19
 - 最終更新: 2026-09-06
 
 ## 目的
