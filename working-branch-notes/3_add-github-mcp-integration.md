@@ -37,7 +37,24 @@
 
 ### tool allowlist
 
-`GITHUB_TOOLS` で明示 allowlist を使う。`GITHUB_TOOLSETS` による広い有効化はしない。thread resolve は allowlist に含めるが、運用としては自動実行しない（`Contents: Read and Write` を付与しない方針のため）。
+`GITHUB_TOOLS` で明示 allowlist を使う。`GITHUB_TOOLSETS` による広い有効化はしない。thread resolve は運用として自動実行しない（`Contents: Read and Write` を付与しない方針のため）。
+
+### CI 情報を扱えるようにする（レビュー中の追加要望）
+
+CI の状態と log を agent から読めるようにするため、allowlist を 13 → 16 tool へ広げた。
+
+`GITHUB_TOOLSETS=all` で server の全 tool を列挙して実在する tool 名を確認したところ、GitHub MCP Server v1.0.4 では Actions 系が 4 tool に集約されていた（全 79 tool 中）。
+
+| tool | 種別 | allowlist |
+|---|---|---|
+| `actions_list` | read（workflow / run / job / artifact の一覧） | **追加** |
+| `actions_get` | read（個別 workflow / run / job / artifact の詳細） | **追加** |
+| `get_job_logs` | read（job log。`failed_only` で失敗 job のみ） | **追加** |
+| `actions_run_trigger` | write（run / rerun / cancel / log 削除） | **含めない** |
+
+`actions_run_trigger` を外したのは、workflow の実行と cancel が副作用を伴い、run log の削除が取り消せないためである。これらは `github-cli-guidelines.md` の「ユーザーの確認を得てから実行する操作」に該当する。allowlist から外すことで、承認を経ずに実行される経路を仕組みとして塞ぐ。
+
+PR の check 状態は既存の `pull_request_read` が `get_check_runs` / `get_status` を method として持っており、追加不要だった。
 
 ## 次にやること
 
@@ -56,6 +73,21 @@
 - **secret 混入の確認**: commit 対象の `.config/` 配下は `github-op-integrated.conf.example` のみ。staged diff に `<VAULT>` placeholder 以外の `op://` 参照が無いことを確認した。`.config/github-op-integrated.conf` は gitignored。
 - 実行可能なアプリケーションコードを含まないため、アプリのテストは実行していない。
 
+### CI tool 追加後の再検証
+
+- **allowlist の反映**: 再度 `tools/list` を取得し、**16 件**が有効で `actions_get` / `actions_list` / `get_job_logs` が含まれ、`actions_run_trigger` が**含まれない**ことを確認した。
+- **PAT 権限の実測**: 実際に tool を呼び出して確認した。**追加の権限付与は不要だった。**
+
+  | 呼び出し | 結果 |
+  |---|---|
+  | `actions_list(list_workflows)` @ bizdate | `total_count: 0`（workflow 未作成。403 でないので Actions: read あり） |
+  | `actions_list(list_workflow_runs)` @ slapex | `total_count: 440`、30 件取得 |
+  | `actions_list(list_workflow_jobs)` @ slapex | `total_count: 5` |
+  | `get_job_logs(failed_only=true)` @ slapex | `total_jobs: 5, failed_jobs: 0`（失敗 job 無しを正しく応答） |
+  | `pull_request_read(get_check_runs)` @ bizdate#3 | `total_count: 0`（check 未設定。403 でないので Checks: read あり） |
+
+- 途中で 1Password のセッションが切れ、`op run` が `authorization timeout` で 2 回失敗した。unlock 後は正常に動作した。この症状と対処は `.agents/mcp/github-op-integrated/README.md` のトラブルシュートに該当する。
+
 ## リスク・ブロッカー
 
 - wrapper は Docker を必要とする。Docker が停止していると MCP server が起動しない。README のトラブルシュート表に記載した。
@@ -69,3 +101,4 @@
 - 2026-09-06: 共通資材（wrapper / README / config-examples）、`github-mcp-guidelines.md` と入口、各 tool の MCP 設定、`.worktreeinclude` と `worktree-setup.sh` を配置。
 - 2026-09-06: フェーズ 1 で送った MCP 管理・worktree セクションを `agent-configuration-management.md` へ追加。フェーズ 2 で予告した `issue-driven-task-execution.md` の MCP 優先化と `github-cli-guidelines.md` の位置づけ更新も実施した。
 - 2026-09-06: MCP server の起動を実地確認。allowlist 13 tool が一致した。
+- 2026-09-06: CI 情報を扱えるようにする要望を受け、allowlist を 16 tool へ拡張。`GITHUB_TOOLSETS=all` で実在 tool を列挙して名前を確定し、read 3 tool を追加、trigger 系は意図的に除外した。guideline / README / conf.example を更新し、実呼び出しで PAT 権限が足りていることを確認した。

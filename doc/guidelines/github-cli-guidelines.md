@@ -9,7 +9,7 @@
 PR / issue / レビューコメントの操作は、原則 `doc/guidelines/github-mcp-guidelines.md` に従って GitHub MCP Server を優先する。本ルールは次の場合に適用する。
 
 - MCP server が未設定、または現在の環境で利用できない。
-- 対象の操作が MCP の allowlist に含まれていない（merge、file push、release、workflow dispatch、repository settings 変更などが該当する）。
+- 対象の操作が MCP の allowlist に含まれていない（merge、file push、release、workflow の実行・再実行・cancel・log 削除、repository settings 変更などが該当する）。CI の **read**（workflow / run / job / artifact / job log / check run）は MCP 側にあるので `gh` を使わない。
 - MCP 経由の実行が失敗し、`gh` で再試行する必要がある。
 
 つまり本ルールは、GitHub MCP の fallback と、MCP 化対象外の操作に対する一次ルールである。
@@ -50,7 +50,7 @@ token の値そのものを出力・log しない。認証が切れている場�
 
 - リポジトリ設定の変更（`gh api --method PATCH /repos/...`、visibility、branch protection / ruleset、merge 設定など）
 - GitHub Release の作成・更新・削除
-- workflow の手動実行（`gh workflow run`）
+- workflow の実行・再実行・cancel・run log の削除（`gh workflow run` / `gh run rerun` / `gh run cancel` / `gh api --method DELETE .../logs`）
 - Issue / PR / comment の削除
 - label / milestone の一括変更
 

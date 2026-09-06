@@ -10,11 +10,12 @@
 
 - collaboration write 操作: PR の作成・編集、issue の作成・編集・コメント追加、レビューコメントへの返信、PR レビューの作成。
 - read 操作全般: PR / issue / レビューコメントの取得、検索。
+- CI の read 操作: workflow / workflow run / job / artifact の一覧と詳細、job log の取得、PR の check run と commit status の取得。
 
 対象としない操作は、それぞれ別ルールに従う。
 
 - `git commit`、GitHub remote への `git push` / `git fetch` / `git pull`: `doc/guidelines/git-operation-guidelines.md`。
-- merge、file push（API 経由でファイル内容を commit する操作）、release 作成、workflow dispatch、repository settings 変更など、MCP 化対象に含めない操作: `doc/guidelines/github-cli-guidelines.md` に従い `gh` で実行する。
+- merge、file push（API 経由でファイル内容を commit する操作）、release 作成、repository settings 変更、**workflow の実行・再実行・cancel・log 削除**など、MCP 化対象に含めない操作: `doc/guidelines/github-cli-guidelines.md` に従い `gh` で実行する。
 
 ## MCP 優先・`gh` fallback
 
@@ -47,11 +48,24 @@
 | Inline review comment への返信 | `add_reply_to_pull_request_comment` | write 後に thread を再取得して反映を確認する。 |
 | PR conversation comment | `add_issue_comment` | PR 番号を `issue_number` として渡す。 |
 | PR の作成・更新 | `create_pull_request` / `update_pull_request` | failure 後は read-back し、二重実行を防ぐ。 |
+| PR の check 状態 | `pull_request_read(get_check_runs / get_status)` | CI の成否を PR 単位で見るときの第一選択。 |
+| workflow / run / job / artifact の一覧 | `actions_list` | `method` は `list_workflows` / `list_workflow_runs` / `list_workflow_jobs` / `list_workflow_run_artifacts`。 |
+| 個別 workflow / run / job の詳細 | `actions_get` | `method` は `get_workflow` / `get_workflow_run` / `get_workflow_job` / `get_workflow_run_usage` など。 |
+| job log の取得 | `get_job_logs` | 単一 job は `job_id`、run 内の失敗 job 全部は `run_id` + `failed_only=true`。`tail_lines` で末尾のみ取得できる。 |
+| workflow の実行 / 再実行 / cancel / log 削除 | `gh`（ユーザー承認） | 下記「CI 操作の境界」を参照。 |
 | Review thread の resolve | 自動実行しない | 下記「Review event と resolve の制約」を参照。 |
 | merge / release / workflow dispatch / settings | `gh` fallback | MCP allowlist の対象外。 |
 | commit / push / fetch | local git | MCP 対象外。 |
 
 MCP tool 自体が allowlist に無い場合と、tool は使えるが response に後続操作で必要な ID が無い場合を区別する。後者では別の MCP read method で取得できないかを確認し、情報不足だけを理由に黙って `gh` を先行させない。tool 名や method は GitHub MCP Server の version により変わり得るため、`.config/github-op-integrated.conf.example` の allowlist と実行環境の tool 一覧を突き合わせる。
+
+## CI 操作の境界
+
+CI は **read のみ MCP に載せる**。GitHub MCP Server は `actions_run_trigger` で workflow の実行・再実行・cancel・run log 削除を提供するが、**この tool は allowlist に含めない**。
+
+- 理由: workflow の実行と cancel は副作用を伴い、run log の削除は取り消せない。これらは `doc/guidelines/github-cli-guidelines.md` の「ユーザーの確認を得てから実行する操作」に該当する。allowlist から外すことで、承認を経ずに実行される経路を仕組みとして塞ぐ。
+- 必要になった場合は `gh workflow run` / `gh run rerun` / `gh run cancel` を、ユーザーの承認を得てから実行する。
+- `actions_get` の `download_workflow_run_artifact` は read だが artifact の取得を伴う。ダウンロードしたファイルを実行しない。
 
 ## Review event と resolve の制約
 
@@ -70,6 +84,11 @@ write 系 MCP tool が失敗した場合は、次の順で扱う。
 
 ## permission
 
-- fine-grained PAT の repository access にこのリポジトリを含め、Pull requests と Issues の read / write を許可する。
-- `Contents: write`、merge、release、workflow dispatch、repository settings などの追加 permission は付与しない。
+- fine-grained PAT の repository access にこのリポジトリを含め、次を許可する。
+  - Pull requests: read / write
+  - Issues: read / write
+  - Actions: read（workflow / run / job / artifact / job log の取得に必要）
+  - Checks: read（`pull_request_read(get_check_runs)` に必要）
+  - Commit statuses: read（`pull_request_read(get_status)` に必要）
+- `Contents: write`、`Actions: write`、merge、release、repository settings などの追加 permission は付与しない。CI は read だけで足りる。
 - PAT の実値をリポジトリに置かない。`.config/github-op-integrated.conf` に 1Password secret reference だけを書く。

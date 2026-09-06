@@ -25,8 +25,11 @@ MCP host 用の project 設定ファイル（`.mcp.json`、`.cursor/mcp.json`、
 - [Docker](https://www.docker.com/) がインストールされ、daemon が起動していること。
 - [1Password CLI(`op`)](https://developer.1password.com/docs/cli/) がインストール・認証済みで、biometric unlock または session が有効であること。
 - 1Password に、このリポジトリへアクセスできる GitHub fine-grained Personal Access Token(PAT)が保存されていること。
-  - Pull requests と Issues の read & write を許可する。
-  - `Contents: write` は付与しない（review thread の resolve を自動実行しない方針のため。`doc/guidelines/github-mcp-guidelines.md` を参照）。
+  - Pull requests: read & write
+  - Issues: read & write
+  - Actions: read（workflow / run / job / artifact / job log の取得に必要）
+  - Checks: read、Commit statuses: read（PR の check 状態の取得に必要）
+  - `Contents: write` と `Actions: write` は付与しない。前者は review thread の resolve を自動実行しない方針、後者は workflow の実行・cancel を `gh` + ユーザー承認に限定する方針のため（`doc/guidelines/github-mcp-guidelines.md` の「CI 操作の境界」）。
 
 ## セットアップ
 
