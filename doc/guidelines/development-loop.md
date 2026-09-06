@@ -6,7 +6,7 @@
 
 ## 基本方針
 
-- 作業は必ず GitHub Issue から始める。
+- 作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` の索引登録そのものだけで、これには起点 Issue を作らない（`register-progress-issue`）。「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 1 件に限り、他へ広げない。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
 - 複数 Issue をまとめて 1 ブランチで進めない。実行時は `doc/guidelines/issue-driven-task-execution.md` に従い、1 Issue = 1 ブランチ = 1 PR とする。
 - タスクは直列に消化する。複数 Issue の並行作業はしない。
 - 横断的に見渡したい Issue 群は `progress.md` の進行中タスク索引に登録する。
@@ -19,7 +19,9 @@ flowchart TD
     A["GitHub Issue を用意する"] --> B{"横断的に追跡したい Issue 群か"}
     B -- "はい" --> C["progress.md の索引に登録する"]
     B -- "いいえ" --> D["作業ブランチと working branch note を作る"]
-    C --> D
+    C --> C2["索引登録だけの独立 PR を出す<br/>起点 Issue なし / Closes なし"]
+    C2 --> C3["ユーザーが review / merge"]
+    C3 --> D
     D --> E["Issue の作業内容を実施し、検証する"]
     E --> F["1 Issue = 1 PR を作成する"]
     F --> G["ユーザーが review / merge"]
@@ -35,7 +37,7 @@ flowchart TD
 |---|---|
 | GitHub Issue | 作業の入力。背景、依存、作業内容、スコープ外、検証を置く。 |
 | `progress.md` | リリース台帳と進行中タスクの索引。詳細経緯やブランチ作業ログは置かない。 |
-| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。 |
+| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。索引登録だけは起点 Issue を持たない独立 PR となるため、`Closes` を付けず、登録した Issue の一覧と順序・依存の根拠を description に書く。 |
 | `working-branch-notes/` | ブランチ単位の作業目的、状況、判断、引き継ぎメモ。PR に含めるが最終仕様書ではない。 |
 | decision log | 後から辿る必要がある設計判断や方針変更の記録。進捗管理や作業ログは置かない。 |
 | guideline | 人間と AI agent が共通で従う恒久的な作業ルール。 |
@@ -56,7 +58,7 @@ skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills
 ## 参照順
 
 1. 作業したい内容に対応する GitHub Issue を読む。
-2. 横断的に追跡する必要があれば、`progress.md` の索引に登録する。
+2. 横断的に追跡する必要があれば、`progress.md` の索引に登録する。索引登録は `register-progress-issue` に従い、起点 Issue を作らず独立 PR として出す。
 3. 個別作業は `doc/guidelines/issue-driven-task-execution.md` に従って進める。
 4. git 操作は `doc/guidelines/git-operation-guidelines.md`、GitHub 操作は `doc/guidelines/github-mcp-guidelines.md`（fallback は `doc/guidelines/github-cli-guidelines.md`）に従う。
 5. 実装中に方針決定が必要になった場合は `doc/guidelines/decision-log-guidelines.md` に従う。
