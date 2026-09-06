@@ -26,6 +26,7 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - `doc/guidelines/git-operation-guidelines.md` — commit 署名、保護ブランチ。
 - `doc/guidelines/pull-request-guidelines.md` — PR title / description の書式。
 - `doc/guidelines/working-branch-notes-handling.md` — 作業 note の作成と採番。
+- `doc/guidelines/working-branch-notes-security.md` — 作業 note の情報統制。
 - `progress.md` — 既存の進行中タスク索引。
 
 ## 手順
@@ -47,11 +48,13 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
    - ブロッカー: 外部待ち、設計判断待ち、未 merge PR など。
    - 並行可否: 同じファイルや方針に触れるため直列がよいか。本リポジトリは直列消化を基本とする。
 5. `progress.md` を最小限に編集する。
+   - 編集を始める前に、step 6 の専用ブランチと working branch note を作る。`doc/guidelines/issue-driven-task-execution.md` はブランチ作成 → note 作成 → 作業の順であり、note は作業中の判断を残す前提の資材である。
    - 行には ID、Issue、状態、依存、次にやること、PR 参照など、既存表の列に合わせた情報だけを書く。
    - Issue 本文の詳細、検討経緯、長い背景説明、作業ログを複製しない。
    - 状態は `todo` / `doing` / `blocked` / `done` など既存表に合わせる。
    - PR が無い場合は `-`、ある場合は `#<番号>` とする。
 6. 変更を PR として出す。
+   - `progress.md` に変更が生じなかった場合は、commit と PR を作らず、その旨を伝えて終了する。step 2 / step 3 の確認により 1 件も登録しない結末があり得るためである。
    - `main` は保護されている。**専用ブランチを切り、独立した PR** として出す。他の作業 PR へ同梱しない。
    - **索引登録そのものには起点 Issue を作らない。PR に `Closes` を付けない。** 「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。
    - `doc/guidelines/working-branch-notes-handling.md` に従い working branch note を作る。PR 採番後は `number-working-branch-note` skill で採番する。
@@ -73,7 +76,7 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - `progress.md` を詳細な作業メモや仕様書にしない。
 - issue-driven task の実行そのものは行わない。実行は `run-issue-task` に委ねる。
 - closed Issue を過去履歴として大量に登録しない。
-- `progress.md` の変更を他の作業 PR へ同梱しない。
+- 索引登録による `progress.md` の変更を他の作業 PR へ同梱しない。
 - PR を merge しない。
 
 ## 終了報告
@@ -81,5 +84,5 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - 登録または更新した Issue 番号と `progress.md` 上の位置。
 - 依存・順序・ブロッカー・並行可否の判断。
 - 変更した `progress.md` のセクション。
-- 作成した PR の URL。
+- 作成した PR の URL。変更が無く PR を作らなかった場合はその旨。
 - 登録しなかった Issue があれば、その理由。
