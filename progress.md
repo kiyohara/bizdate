@@ -10,7 +10,9 @@
 
 - このファイルは、プロダクト全体の進捗を見渡すための一覧として使う。仕様設計や decision log ではなく、横断的な作業状況の管理表として扱う。
 - ブランチ単位の作業目的・状況・判断は `working-branch-notes/` に置く。このファイルの 1 アイテムが必ずしも 1 ブランチに対応するとは限らない。
-- 開発ループの運用は `doc/design/decision-log/0012-development-loop.md` に従う。Issue 駆動の実行手順と skill は、開発環境整備で導入する。
+- 開発ループの入口は `doc/guidelines/development-loop.md`、Issue 駆動タスクの実行手順は `doc/guidelines/issue-driven-task-execution.md` を正本とする。方針の経緯は `doc/design/decision-log/0012-development-loop.md`。
+- Issue 駆動タスクは、この表で依存確認と状態更新を行う。Issue 本文や guideline の手順をこのファイルに複製しない。
+- リリースを開始したら、この表とは別に「リリース履歴」の節を設けてリリース台帳を兼ねる。
 - この運用は暫定であり、実際の作業に合わせて軽く更新していく。
 
 ## 現況
@@ -25,14 +27,14 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 
 | # | 内容 | 状態 | PR |
 |---|---|---|---|
-| 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | done（PR merge 後） | [#1](https://github.com/kiyohara/bizdate/pull/1) |
-| 2 | 開発ループの正本（development-loop、Issue 駆動タスク実行、git / GitHub CLI 操作ルール、`progress.md` 再構成） | todo | - |
+| 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | done | [#1](https://github.com/kiyohara/bizdate/pull/1) |
+| 2 | 開発ループの正本（development-loop、Issue 駆動タスク実行、git / GitHub CLI 操作ルール、`progress.md` 再構成） | done（PR merge 後） | [#2](https://github.com/kiyohara/bizdate/pull/2) |
 | 3 | GitHub MCP 連携（共通資材、利用ルール、各 tool の MCP 設定、worktree 補助） | todo | - |
 | 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | todo | - |
 
 ## 次にやること
 
-- 開発環境整備の 4 フェーズを順に進める。
+- 開発環境整備の残りフェーズ（3: GitHub MCP 連携、4: 開発ループ skill）を順に進める。
 - 整備完了後、実装タスクを GitHub Issue として登録し、Issue 駆動ループへ移行する。
 - 実装がある程度形になった段階で、CI とリリース体制（`compose.yaml`、Cargo プロジェクト、開発コマンド実行ルール、GitHub Actions、`dist` による配布）を導入する。
 

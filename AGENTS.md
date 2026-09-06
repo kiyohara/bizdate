@@ -9,6 +9,10 @@ index として利用し、これ自体を唯一の正本として扱わない�
 各 rule の本文はこの一覧の正本に置く。Codex は `AGENTS.md` 経由で正本に到達するため、新規 rule を作るときは必ずここに追加する。
 
 - Agent 設定管理ルール（skill / rule / agent 固有入口の作成・削除・rename・配置）: `doc/guidelines/agent-configuration-management.md`
+- 開発ループ入口（GitHub Issue / progress.md / PR / working branch note の流れ）: `doc/guidelines/development-loop.md`
+- Issue 駆動タスク実行ルール（Issue 指定タスクの消化手順 / 1 Issue = 1 PR / merge はユーザー）: `doc/guidelines/issue-driven-task-execution.md`
+- Git 操作ルール（commit 署名 / 1Password SSH agent / remote と保護ブランチ）: `doc/guidelines/git-operation-guidelines.md`
+- GitHub CLI 実行ルール（`gh` の実行範囲 / 承認が必要な操作 / write 失敗時の扱い）: `doc/guidelines/github-cli-guidelines.md`
 - Pull Request 作成ガイドライン: `doc/guidelines/pull-request-guidelines.md`
 - Working branch notes 取り扱いルール（性質・整合性スコープ・ライフサイクル・ファイル名規約）: `doc/guidelines/working-branch-notes-handling.md`
 - Working branch notes 情報統制ルール（`working-branch-notes/**/*.md` のセキュリティ禁則）: `doc/guidelines/working-branch-notes-security.md`
@@ -37,13 +41,17 @@ index として利用し、これ自体を唯一の正本として扱わない�
 
 - AI 向け共通入口は **`AGENTS.md`**（本ファイル）。
 - **Claude Code**: `CLAUDE.md`（`@AGENTS.md` で本ファイルを取り込む）と `.claude/rules/*.md` を読む。
-- **Cursor**: `.cursor/rules/*.{md,mdc}` を frontmatter に従ってロードする。
+- **Cursor**: `.cursor/rules/*.mdc` を frontmatter に従ってロードする。
 - **Codex**: `AGENTS.md` から `doc/guidelines/` の正本へ移動して読む。
-- **GitHub Copilot code review**: `.github/copilot-instructions.md` をレビュー時に読む。Copilot は `AGENTS.md` やリンク先正本を辿らないため、効かせたい要点は Copilot 用ファイル内に直接書く。
+- **GitHub Copilot code review**: `.github/copilot-instructions.md` をレビュー時に読む。GitHub.com では `AGENTS.md` も読むが、リンク先の正本まで辿る保証はないため、効かせたい要点は Copilot 用ファイル内に直接書く。
 
 ## AI Agent 向けルール
 
 - AI agent 用の設定ファイル、rule、skill、agent 固有入口を作成・削除・rename するときは `doc/guidelines/agent-configuration-management.md` に従う。
+- 新しい作業の始め方、Issue 登録、Issue 実行、進捗整理の流れを確認するときは `doc/guidelines/development-loop.md` を読む。
+- GitHub Issue を指定されてタスクを消化するときは `doc/guidelines/issue-driven-task-execution.md` に従う。
+- commit、tag、push、merge など git 操作を行う前に `doc/guidelines/git-operation-guidelines.md` に従う。`main` へ直接 push しない。
+- `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。
 - PR を作成または更新するときは `doc/guidelines/pull-request-guidelines.md` に従う。PR の merge は agent が行わない。
 - `working-branch-notes/**/*.md` を作成・編集・レビューするときは `doc/guidelines/working-branch-notes-handling.md` と `doc/guidelines/working-branch-notes-security.md` の両方に従う。
 - ドキュメントを作成・移動・分類変更するときは、まず `doc/README.md` と該当ディレクトリの `README.md` を確認する。
