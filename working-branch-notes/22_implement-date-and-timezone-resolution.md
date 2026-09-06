@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `implement-date-and-timezone-resolution`
-- PR: 未作成
+- PR: #22
 - 最終更新: 2026-09-07
 
 ## 目的
