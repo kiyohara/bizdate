@@ -5,7 +5,7 @@
 - 状態: decided
 - 作成日: 2026-09-06
 - 最終更新日: 2026-09-06
-- 関連: `doc/design/business-day.md`, `doc/design/cli-interface.md`, `doc/design/decision-log/0008-language-and-distribution.md`, `doc/design/decision-log/0009-holiday-csv-local-format.md`, `doc/design/decision-log/0013-license-selection.md`
+- 関連: `doc/design/business-day.md`, `doc/design/cli-interface.md`, `doc/design/decision-log/0008-language-and-distribution.md`, `doc/design/decision-log/0009-holiday-csv-local-format.md`, `doc/design/decision-log/0010-hosting-and-ci-platform.md`, `doc/design/decision-log/0013-license-selection.md`
 
 ## 背景
 
@@ -38,13 +38,15 @@ Cargo プロジェクトを置くにあたり、次を確定する必要があ�
 
 ### toolchain
 
-配布は GitHub Releases のビルド済みバイナリを起点とする（0008、[0010](0010-hosting-and-ci-platform.md)）。利用者が自分の toolchain でソースからビルドする経路を主要動線に置かないため、古い toolchain を支える必要が薄い。一方で MSRV を後ろに置くと、CI に MSRV 用ジョブが増え、`compose.yaml` の image tag と CI toolchain の 2 系統を保守することになる。
+配布は GitHub Releases のビルド済みバイナリを起点とする（0008、[0010](0010-hosting-and-ci-platform.md)）。利用者が自分の toolchain でソースからビルドする経路を主要動線に置かないため、古い toolchain を支える必要が薄い。一方で MSRV を後ろに置くと、CI に MSRV 用ジョブが増え、開発 image の toolchain と CI toolchain の 2 系統を保守することになる。
 
 edition は 2024 を使う。edition 2024 は Rust 1.85 以降で利用でき、選定する MSRV はこれを十分に上回る。
 
 ### CLI パーサ
 
-`cli-interface.md` の要件は、サブコマンド 3 つ、long option のみ、日本語 help、`--version` である。`clap` は derive でこれらをすべて満たし、ライセンスは MIT OR Apache-2.0、pure Rust である。バイナリサイズは `argh` / `pico-args` より大きいが、v1 では配布サイズを制約に置いていない。
+`cli-interface.md` の要件は、サブコマンド 3 つ、long option のみ、日本語 help、`--version` である。`clap` は derive でこれらを満たせ、ライセンスは MIT OR Apache-2.0、pure Rust である。バイナリサイズは `argh` / `pico-args` より大きいが、v1 では配布サイズを制約に置いていない。
+
+ただし「日本語 help」は derive の記述だけでは完全には満たさない。about と各 option の説明は日本語になるが、`Usage:` / `Options:` の section heading は clap 側の文字列であり、`help_template` と `next_help_heading` で明示的に上書きしない限り英語のまま残る。help 文面をどこまで日本語にするか（heading まで揃えるか、説明文が日本語なら足りるとするか）は、CLI の option を配線する Issue #12 で決める。
 
 「短 option は v1 では提供しない」という仕様は clap 既定の `-h` / `-V` にも及ぶと読める。`disable_help_flag` / `disable_version_flag` を立て、`ArgAction::Help` / `ArgAction::Version` を long option として明示的に定義すれば満たせることを実機で確認した。`-V` は exit code 2 で拒否される。
 
@@ -103,6 +105,8 @@ MSRV を開発 image と同じ最新 stable に固定したのは、配布がビ
 
 - `Cargo.toml` に上記クレートと `rust-version` を記載する
 - `Dockerfile` と `compose.yaml` を置き、開発コマンドは Compose 経由を原則とする（`doc/guidelines/development-command-guidelines.md`）
+- MSRV の値は `Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag の 3 箇所に現れる。上げるときは 3 つを同時に更新する（`doc/guidelines/development-command-guidelines.md`）
+- 日本語 help を section heading まで揃えるかどうかは Issue #12 で決める。derive の記述だけでは `Usage:` / `Options:` は英語のまま残る
 - CI（Issue #8）は本ログの MSRV と同じ toolchain で `fmt` / `clippy` / `test` を回す
 - `fetch-holidays`（Issue #13）は `ureq` + `encoding_rs` で取得と UTF-8 変換を行う
 - 祝日データの保存先解決（Issue #10）は `XDG_DATA_HOME` と `HOME` を自前で読む

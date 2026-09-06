@@ -85,9 +85,20 @@ Issue #7 の検証項目をすべて Compose 経由で実施した。
 - `encoding_rs` のライセンスに BSD-3-Clause 部分が含まれる。配布物へ third-party ライセンス表記を含める必要がある。配布手段を決める段で扱う（0014 の「影響」に記載）。
 - 選定した 5 クレートのうち 4 つは未使用のままである。後続 Issue で実際に使うまで、API 上の相性は未検証。
 
+### review 対応（PR #19）
+
+inline comment 5 件はいずれも `[imo]` / `[nits]` で、すべて採用した。
+
+- MSRV の値が `Cargo.toml` / `Dockerfile` / `compose.yaml` の 3 箇所に現れる点を guideline に「MSRV を上げるとき」節として明示した。container の toolchain を実際に決めるのは `Dockerfile` の `FROM` であり、`compose.yaml` の tag はビルド結果に影響しない。
+- `--locked` を「検証結果として記録・報告する実行と CI」の基本形として分けた。lock がずれた状態で `--locked` 有無の挙動差を実機確認している（有: エラー、無: 黙って再解決）。`cargo fmt` は `--locked` を受け付けない。
+- container が root で動き、bind mount への書き戻しが Linux host で root 所有になる点を guideline に残した。`user:` 単独では named volume 側が root 所有のままで別の失敗を招くため、対処として採らなかった。
+- clap 既定の `Usage:` / `Options:` が英語のまま残る点を 0014 に明記し、日本語 help の範囲は Issue #12 で決めることにした。
+- 0014 の `関連` に 0010 を追加した。
+
 ## セッションログ
 
 - 2026-09-06: ブランチ作成、正本確認、note 作成。
 - 2026-09-06: `Cargo.toml` / `src/main.rs` / `compose.yaml` / `Dockerfile` / `.dockerignore` を作成。公式 rust image に rustfmt / clippy が無いことが判明し、`Dockerfile` を追加した。
 - 2026-09-06: 依存ツリーを確認して 0014 を作成。`development-command-guidelines.md` と入口 2 件、`AGENTS.md` / `doc/guidelines/README.md` / decision log index を更新。
 - 2026-09-06: `progress.md` の繰り越し節を削除し V1-01 を done に、`concept.md` のライセンス記述 2 箇所を修正。検証を実施。
+- 2026-09-06: PR #19 の review comment 5 件へ対応。guideline に MSRV 3 箇所・`--locked`・Linux host の所有権を追記し、0014 の help 記述と `関連` を修正した。
