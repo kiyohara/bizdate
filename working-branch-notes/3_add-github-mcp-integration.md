@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `add-github-mcp-integration`
-- PR: （採番前）
+- PR: #3
 - 最終更新: 2026-09-06
 
 ## 目的
@@ -65,6 +65,7 @@
 ## セッションログ
 
 - 2026-09-06: PR #2 merge 後に main から分岐。本 note を作成した。
+- 2026-09-06: PR #3 を作成し、note を採番した。
 - 2026-09-06: 共通資材（wrapper / README / config-examples）、`github-mcp-guidelines.md` と入口、各 tool の MCP 設定、`.worktreeinclude` と `worktree-setup.sh` を配置。
 - 2026-09-06: フェーズ 1 で送った MCP 管理・worktree セクションを `agent-configuration-management.md` へ追加。フェーズ 2 で予告した `issue-driven-task-execution.md` の MCP 優先化と `github-cli-guidelines.md` の位置づけ更新も実施した。
 - 2026-09-06: MCP server の起動を実地確認。allowlist 13 tool が一致した。
