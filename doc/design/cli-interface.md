@@ -30,6 +30,8 @@ bizdate fetch-holidays [--source URL]
 
 タイムゾーンの解決順は `--timezone` > `BIZDATE_TZ` > local timezone とする（`business-day.md`）。
 
+`BIZDATE_TZ` が未設定の場合だけ local timezone へ進む。採用する `--timezone` または `BIZDATE_TZ` が空文字の場合もエラーとし、exit code `2` で終了する。上位の指定を採用した場合、下位の値は検査しない。
+
 - 短 option は v1 では提供しない
 - JSON 出力は v1 では提供しない
 - help 文面は日本語とする
@@ -93,6 +95,7 @@ bizdate last && monthly-job
 ## 実装方針との関係
 
 - 実装言語は Rust とする。公開ライブラリクレートとしては提供しない
+- CLI と統合テストから共有する内部用 library target は置く。`publish = false` を維持し、Rust の `pub` な入口も外部利用向けの互換性保証対象にはしない。path / git 依存による参照を技術的に禁止する設定ではない
 - 依存は pure Rust に寄せ、HTTP の TLS は rustls を使う
 - ビルドとテストの再現は Docker（または Compose）を正とする
 - 詳細は [0008](decision-log/0008-language-and-distribution.md)
