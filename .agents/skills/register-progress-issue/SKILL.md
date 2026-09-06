@@ -23,6 +23,9 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - `doc/guidelines/github-mcp-guidelines.md` — GitHub 操作は MCP 優先。
 - `doc/guidelines/issue-driven-task-execution.md` — 登録後に実行する場合の依存確認と状態更新。
 - `doc/guidelines/development-loop.md` — 索引に載せる単位の判断。
+- `doc/guidelines/git-operation-guidelines.md` — commit 署名、保護ブランチ。
+- `doc/guidelines/pull-request-guidelines.md` — PR title / description の書式。
+- `doc/guidelines/working-branch-notes-handling.md` — 作業 note の作成と採番。
 - `progress.md` — 既存の進行中タスク索引。
 
 ## 手順
@@ -48,10 +51,17 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
    - Issue 本文の詳細、検討経緯、長い背景説明、作業ログを複製しない。
    - 状態は `todo` / `doing` / `blocked` / `done` など既存表に合わせる。
    - PR が無い場合は `-`、ある場合は `#<番号>` とする。
-6. 必要なら Issue へ確認コメントを残す。
+6. 変更を PR として出す。
+   - `main` は保護されている。**専用ブランチを切り、独立した PR** として出す。他の作業 PR へ同梱しない。
+   - **索引登録そのものには起点 Issue を作らない。PR に `Closes` を付けない。** 「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。
+   - `doc/guidelines/working-branch-notes-handling.md` に従い working branch note を作る。PR 採番後は `number-working-branch-note` skill で採番する。
+   - **PR 本文に、登録した Issue の一覧と、順序・依存・ブロッカーの根拠を書く。** 索引の行は最小情報に絞る方針のため、判断の根拠は PR 側に残す。
+   - commit / push は `doc/guidelines/git-operation-guidelines.md`、PR title / description は `doc/guidelines/pull-request-guidelines.md` に従う。
+   - **PR の merge は行わない。** レビューと merge 判断はユーザーが行う。
+7. 必要なら Issue へ確認コメントを残す。
    - 依存やスコープが曖昧で登録判断ができない場合は、勝手に解釈せずユーザーに報告する。
    - コメントを残す場合も MCP 優先で、write fallback の二重投稿防止ルールに従う。
-7. 終了時に確認する。
+8. 終了時に確認する。
    - `progress.md` を冒頭から読んで、各セクションの役割が壊れていない。
    - 登録行から Issue / PR へ辿れる。
    - 依存欄が既存登録 Issue との順序・ブロッカーを表している。
@@ -63,10 +73,13 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - `progress.md` を詳細な作業メモや仕様書にしない。
 - issue-driven task の実行そのものは行わない。実行は `run-issue-task` に委ねる。
 - closed Issue を過去履歴として大量に登録しない。
+- `progress.md` の変更を他の作業 PR へ同梱しない。
+- PR を merge しない。
 
 ## 終了報告
 
 - 登録または更新した Issue 番号と `progress.md` 上の位置。
 - 依存・順序・ブロッカー・並行可否の判断。
 - 変更した `progress.md` のセクション。
+- 作成した PR の URL。
 - 登録しなかった Issue があれば、その理由。
