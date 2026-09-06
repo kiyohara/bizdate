@@ -10,7 +10,7 @@
 
 ## 進め方
 
-1. 対象 Issue を読む。GitHub 操作は `doc/guidelines/github-cli-guidelines.md` に従う。
+1. 対象 Issue を読む。GitHub 操作は `doc/guidelines/github-mcp-guidelines.md` に従い MCP を優先する。MCP が使えない場合の fallback は `doc/guidelines/github-cli-guidelines.md` に従う。
 2. Issue の「依存」に挙がるタスクがすべて done であることを確認する。該当タスクが `progress.md` の索引表にあればそれで確認し、無ければ各依存タスクの Issue / PR が merge 済みかで確認する。未完了の依存があれば作業を始めず、その旨をユーザーに報告して終了する。
 3. `main` を最新化し、Issue 記載のブランチ名で作業ブランチを作る（`doc/guidelines/git-operation-guidelines.md`）。
 4. `working-branch-notes/draft_<escaped-branch-name>.md` を作る（`doc/guidelines/working-branch-notes-handling.md` と `doc/guidelines/working-branch-notes-security.md` に従う）。

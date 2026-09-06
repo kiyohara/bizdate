@@ -15,6 +15,7 @@
 | `development-loop.md` | 開発ループの入口。Issue / progress.md / PR / note の役割と流れ |
 | `issue-driven-task-execution.md` | Issue 指定タスクの消化手順 |
 | `git-operation-guidelines.md` | commit 署名、remote、保護ブランチの取り扱い |
+| `github-mcp-guidelines.md` | GitHub 操作の MCP 優先と `gh` fallback の判断 |
 | `github-cli-guidelines.md` | `gh` の実行範囲と承認が必要な操作 |
 | `pull-request-guidelines.md` | PR title / description / 検証記載 |
 | `working-branch-notes-handling.md` | 作業メモの性質・整合性スコープ・ライフサイクル・ファイル名規約 |

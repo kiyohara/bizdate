@@ -45,7 +45,7 @@ flowchart TD
 1. 作業したい内容に対応する GitHub Issue を読む。
 2. 横断的に追跡する必要があれば、`progress.md` の索引に登録する。
 3. 個別作業は `doc/guidelines/issue-driven-task-execution.md` に従って進める。
-4. git 操作は `doc/guidelines/git-operation-guidelines.md`、GitHub 操作は `doc/guidelines/github-cli-guidelines.md` に従う。
+4. git 操作は `doc/guidelines/git-operation-guidelines.md`、GitHub 操作は `doc/guidelines/github-mcp-guidelines.md`（fallback は `doc/guidelines/github-cli-guidelines.md`）に従う。
 5. 実装中に方針決定が必要になった場合は `doc/guidelines/decision-log-guidelines.md` に従う。
 6. PR 作成時は `doc/guidelines/pull-request-guidelines.md` に従う。
 7. 区切りで `progress.md` を整理し、完了タスクを要約する。
