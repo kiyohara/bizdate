@@ -29,12 +29,11 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 |---|---|---|---|
 | 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | done | [#1](https://github.com/kiyohara/bizdate/pull/1) |
 | 2 | 開発ループの正本（development-loop、Issue 駆動タスク実行、git / GitHub CLI 操作ルール、`progress.md` 再構成） | done | [#2](https://github.com/kiyohara/bizdate/pull/2) |
-| 3 | GitHub MCP 連携（共通資材、利用ルール、各 tool の MCP 設定、worktree 補助） | done（PR merge 後） | [#3](https://github.com/kiyohara/bizdate/pull/3) |
-| 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | todo | - |
+| 3 | GitHub MCP 連携（共通資材、利用ルール、各 tool の MCP 設定、worktree 補助） | done | [#3](https://github.com/kiyohara/bizdate/pull/3) |
+| 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | done（PR merge 後） | [#4](https://github.com/kiyohara/bizdate/pull/4) |
 
 ## 次にやること
 
-- 開発環境整備の残りフェーズ（4: 開発ループ skill）を進める。
 - 整備完了後、実装タスクを GitHub Issue として登録し、Issue 駆動ループへ移行する。
 - 実装がある程度形になった段階で、CI とリリース体制（`compose.yaml`、Cargo プロジェクト、開発コマンド実行ルール、GitHub Actions、`dist` による配布）を導入する。
 

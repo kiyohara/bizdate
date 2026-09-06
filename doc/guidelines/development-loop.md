@@ -39,6 +39,19 @@ flowchart TD
 | `working-branch-notes/` | ブランチ単位の作業目的、状況、判断、引き継ぎメモ。PR に含めるが最終仕様書ではない。 |
 | decision log | 後から辿る必要がある設計判断や方針変更の記録。進捗管理や作業ログは置かない。 |
 | guideline | 人間と AI agent が共通で従う恒久的な作業ルール。 |
+| skill | 特定の作業を始めるための実行手順。詳細手順は各 skill の `SKILL.md` を正本とする。 |
+
+## 使う skill
+
+| タイミング | skill | 使いどころ |
+|---|---|---|
+| 既存 Issue 群を索引化したいとき | `register-progress-issue` | GitHub Issue を読み、依存・順序・ブロッカーを整理して `progress.md` に最小限の行を追加または更新する。 |
+| 個別 Issue に着手するとき | `run-issue-task` | Issue 番号を入力に、依存確認、ブランチ作成、note 作成、実装、検証、PR 作成までを進める。 |
+| PR 採番直後 | `number-working-branch-note` | `draft_<branch>.md` を `<PR番号>_<branch>.md` へ rename し、note 本文と PR description の参照を揃える。 |
+| PR をレビューする / review comment へ対応するとき | `review-pull-request` | `review` / `address-comments` / `verify-comments` の 3 モード。MCP-first で投稿し、resolve は人間が行う。 |
+| Issue 群を消化し終えた区切り | `maintain-progress` | `progress.md` を薄く保ち、完了済みタスクを要約し、進行中タスク索引を最新化する。 |
+
+skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills/` の symlink 経由で見える（`doc/guidelines/agent-configuration-management.md`）。リリース手順を担う skill は、CI とリリース体制を導入するときに追加する。
 
 ## 参照順
 
@@ -48,7 +61,7 @@ flowchart TD
 4. git 操作は `doc/guidelines/git-operation-guidelines.md`、GitHub 操作は `doc/guidelines/github-mcp-guidelines.md`（fallback は `doc/guidelines/github-cli-guidelines.md`）に従う。
 5. 実装中に方針決定が必要になった場合は `doc/guidelines/decision-log-guidelines.md` に従う。
 6. PR 作成時は `doc/guidelines/pull-request-guidelines.md` に従う。
-7. 区切りで `progress.md` を整理し、完了タスクを要約する。
+7. 区切りで `maintain-progress` skill を使い、`progress.md` を整理する。
 
 ## 重複させない情報
 
