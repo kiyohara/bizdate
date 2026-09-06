@@ -19,7 +19,7 @@
 
 設計フェーズと開発環境整備を完了した。プロダクト仕様（0002–0009）と開発体制の方針（0001、0010–0013）を decision log に記録し、`business-day.md` / `cli-interface.md` を仕様の正本とした。開発ループ、AI agent 設定、GitHub MCP 連携、レビュー体制、skill は PR #1〜#4 で整備済み。
 
-v1 実装に着手した。Issue #7〜#15 を進行中タスクとして追跡する。#7 で Cargo プロジェクト、Compose の実行環境、依存クレートの選定（0014）を置いた。
+v1 実装に着手した。Issue #7〜#15 を進行中タスクとして追跡する。#7 で Cargo プロジェクト、Compose の実行環境、依存クレートの選定（0014）を置き、#8 で GitHub Actions の CI を入れた。以降の実装 PR は `fmt` / `clippy` / `test` / `build` の検査を受ける。
 
 ## 進行中タスク: 開発環境整備
 
@@ -39,7 +39,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | V1-01 | [#7](https://github.com/kiyohara/bizdate/issues/7) Cargo と開発環境の骨組み | done | - | - | [#19](https://github.com/kiyohara/bizdate/pull/19) |
-| V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | todo | #7 | fmt / clippy / test を回す | - |
+| V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | done | #7 | - | - |
 | V1-03 | [#9](https://github.com/kiyohara/bizdate/issues/9) 日付とタイムゾーンの解決 | todo | #7 | TZ 解決順と日付パースを実装する | - |
 | V1-04 | [#10](https://github.com/kiyohara/bizdate/issues/10) 祝日データのローカル読み取り | todo | #7 | メタ行・expire・年カバーを実装する | - |
 | V1-05 | [#11](https://github.com/kiyohara/bizdate/issues/11) 業務日判定と月の最初 / 最後 | todo | #9, #10 | `--day-off` パースと判定を実装する | - |
@@ -50,7 +50,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 
 ## 次にやること
 
-- v1 実装の索引を V1-02 から直列に消化する。
+- v1 実装の索引を V1-03 から直列に消化する。
 - 完了済みの開発環境整備の表は、`maintain-progress` skill でフェーズ要約へ圧縮する。
 - #14 で「ローカルと CI で正しく動く CLI」に到達した時点で、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
 
