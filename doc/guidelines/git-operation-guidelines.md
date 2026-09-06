@@ -6,12 +6,12 @@
 
 - GitHub remote は `origin`（**HTTPS**: `https://github.com/kiyohara/bizdate.git`）。push / fetch / pull は `gh` の credential helper で認証するため、SSH agent 連携の対象外である。
 - `cursor-origin` remote は参照用に残してある。通常の作業では使わない。
-- commit 署名が有効（`commit.gpgsign = true`、`gpg.format = ssh`）。署名鍵は 1Password の SSH agent が保持する。
+- commit 署名が有効（`commit.gpgsign = true`、`gpg.format = ssh`）。署名鍵は 1Password が保持する。実行経路は `gpg.ssh.program` の設定によって変わる（後述）。
 - `main` は保護されている。直接 push できない。変更は必ず PR 経由で入れる。
 
-## 1Password 連携が必要な操作
+## commit 署名
 
-署名を伴う次の操作は、1Password SSH agent との連携に依存する。
+署名を伴う操作は次のとおり。
 
 - `git commit`
 - merge commit を作る `git merge`
@@ -19,27 +19,39 @@
 - `git cherry-pick`
 - `git tag -s`
 
-AI agent の実行環境、sandbox、権限分離、TTY 設定などにより、agent socket への接続や承認プロンプトが阻害される場合がある。
+署名の実行経路は `gpg.ssh.program` の設定で変わる。切り分けは必ずこの確認から始める。
 
-### 署名が通らないときの確認手順
+```sh
+git config --get gpg.ssh.program
+```
 
-`error: Load key ... agent refused operation`、`failed to write commit object`、承認プロンプト不達などが出た場合は、次の順で確認する。
+### 1Password の signer を使う場合
 
-1. 現在の環境で agent に鍵が見えているか確認する。
+`gpg.ssh.program` が 1Password の `op-ssh-sign` を指している場合、署名は 1Password app が直接処理する。**SSH agent を経由しないため、`SSH_AUTH_SOCK` を設定する必要はない。** `ssh-add -l` の結果は署名の可否と無関係なので、これを根拠に原因を判断しない。
 
-   ```sh
-   ssh-add -l
-   ```
+署名に失敗する場合は次を確認する。
 
-2. `The agent has no identities.` と出る場合、`SSH_AUTH_SOCK` が 1Password の agent を指していない。1Password の socket を明示して再実行する。
+- 1Password app が起動し、unlock されているか。
+- 署名の承認プロンプトが表示され、応答できる状態か。AI agent の実行環境、sandbox、TTY 設定によっては承認プロンプトが届かない場合がある。
+- `gpg.ssh.program` が指す実行ファイルが存在するか。
 
-   ```sh
-   SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" git commit ...
-   ```
+解決できない場合は、制約のない実行環境で同じコマンドを再実行する。
 
-3. それでも通らない場合は、制約のない実行環境で同じコマンドを再実行する。
+### 標準の ssh-keygen を使う場合
 
-`~/.ssh/config` の `IdentityAgent` は `ssh` 接続には効くが、署名に使う `ssh-keygen -Y sign` は `SSH_AUTH_SOCK` を見る。両者は別経路である。
+`gpg.ssh.program` が未設定の場合、署名は `ssh-keygen -Y sign` が行い、鍵を SSH agent から取得する。この経路では `SSH_AUTH_SOCK` が対象の agent を指している必要がある。
+
+```sh
+ssh-add -l
+```
+
+署名鍵が一覧に出ない場合、その agent には利用可能な鍵がない。接続先が違うとは限らないため、まず使う agent を確定させる。1Password の SSH agent を使う構成なら、socket を明示して再実行する。
+
+```sh
+SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" git commit ...
+```
+
+`~/.ssh/config` の `IdentityAgent` は `ssh` 接続には効くが、`ssh-keygen -Y sign` は `SSH_AUTH_SOCK` を見る。両者は別経路である。
 
 ### 署名の確認
 

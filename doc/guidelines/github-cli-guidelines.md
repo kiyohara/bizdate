@@ -4,12 +4,26 @@
 
 PR / Issue / レビューコメント / workflow など、GitHub 上のリソースを操作する場合はこのルールに従う。`git commit` や `git push` など local git の操作は `doc/guidelines/git-operation-guidelines.md` に従う。
 
-## 認証
+## 1Password op plugin 連携
 
-`gh` は `gh auth login` 済みの認証情報を使う。実行前に確認する場合は次を使う。
+`gh` を実行する前に、リポジトリ直下の `.op/` の有無と `op` コマンドの利用可否を確認する。
+
+`.op/` が存在し、かつ `op` が実行可能な場合、`gh ...` を直接実行せず次の形式を使う。shell alias には依存しない。
 
 ```sh
-gh auth status
+op plugin run -- gh ...
+```
+
+この経路では、このリポジトリにスコープを限定した fine-grained PAT が使われる。`.op/` が無い、または `op` が使えない場合は通常の `gh ...` を使ってよい。
+
+`op plugin run -- gh ...` は 1Password app との連携を必要とする。AI agent の実行環境、sandbox、TTY 設定により承認プロンプトが届かない場合は、制約のない実行環境で再実行する。
+
+## 認証
+
+認証状態は次で確認する。
+
+```sh
+op plugin run -- gh auth status
 ```
 
 token の値そのものを出力・log しない。認証が切れている場合は、agent が再認証せずユーザーに依頼する。

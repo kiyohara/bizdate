@@ -59,9 +59,32 @@ Copilot 用ファイルに要点を直接書くという構成自体は維持す
 
 - `issue-driven-task-execution.md` は現時点で GitHub 操作を `github-cli-guidelines.md` に委ねている。フェーズ 3 で GitHub MCP を導入したら、MCP 優先へ記述を更新する必要がある。
 
+## レビュー対応（PR #2）
+
+Codex から `[must]` 1 件、`[fyi]` 1 件。いずれも一次資料で確認のうえ反映した。
+
+### [must] 署名の切り分け手順（`git-operation-guidelines.md`）
+
+指摘は正しい。本リポジトリの有効設定は `gpg.ssh.program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign` であり、署名は 1Password app が直接処理する。`ssh-keygen -Y sign` は使われないため、`SSH_AUTH_SOCK` は署名の可否と無関係である。
+
+**この誤りの原因は、実証せずに書いたことにある。** 作業時に `ssh-add -l` が `The agent has no identities.` を返したのを見て「署名は失敗するはず」と推論し、commit を試さないまま `SSH_AUTH_SOCK` を上書きして実行した。上書き後の commit が成功したため、上書きが必要だったと誤って結論づけた。実際には上書き無しでも成功していた可能性が高い。
+
+対応として、切り分けを `git config --get gpg.ssh.program` の確認から始める形に変え、1Password signer を使う場合と標準 `ssh-keygen` を使う場合に分けた。前者では `ssh-add -l` を根拠にしないことを明記した。また `no identities` は「その agent に利用可能な鍵がない」ことしか示さず、接続先違いの確定条件ではない点も反映した。
+
+本 PR の commit は `SSH_AUTH_SOCK` を上書きせずに作成し、記述が正しいことを実地で確認する。
+
+### [fyi] instruction file の文字数上限
+
+指摘は正しい。GitHub は 2026-06-12 の changelog で「That limit has now been removed」と明記しており、旧 4,000 文字制限は撤廃されている。`agent-configuration-management.md` の「上限は公表されていない」を「旧制限は撤廃された。分量ではなくシグナルの濃さで絞る」へ改めた。PR #1 の note の該当記述もあわせて訂正した。
+
+### 環境変化への追随
+
+作業中に `.op/` が作成され、`op plugin run -- gh` が利用可能になった。`github-cli-guidelines.md` に op plugin 連携のセクションを追加し、`.op/` と `op` が使える場合は `op plugin run -- gh ...` を使う運用を正本化した。この経路ではリポジトリにスコープを限定した fine-grained PAT が使われる。
+
 ## セッションログ
 
 - 2026-09-06: PR #1 merge 後に main から分岐。本 note を作成した。
 - 2026-09-06: Codex レビュー指摘 3 点を一次資料で確認のうえ反映（Cursor `.mdc` 必須 / Copilot の AGENTS.md 対応 / 文字数の計測誤り）。あわせて根拠の取れなかった「約 4,000 文字上限」の記述を、上限非公表を前提とした運用表現へ改めた。
 - 2026-09-06: PR #2 を作成し、note を採番した。
+- 2026-09-06: Codex レビュー（[must] 1 件 / [fyi] 1 件）へ対応。署名の切り分け手順を実行経路の確認から始める形へ修正し、文字数上限の記述を撤廃済みの事実へ改めた。あわせて op plugin 連携を GitHub CLI ルールへ追加した。
 - 2026-09-06: 開発ループの正本 4 本と入口 8 本を追加。`AGENTS.md` / `doc/guidelines/README.md` / `progress.md` を更新した。

@@ -29,7 +29,7 @@
 - **`.agents/skills/` を直接読める tool には固有ディレクトリへの symlink を作らない**。Cursor と Codex は `.agents/skills/` を直読するため symlink 不要。Claude Code は `.claude/skills/` しか読まないため symlink を作る。
 - Codex は **AGENTS.md に書かれていない情報には自力で到達できない**（skill は除く: `.agents/skills/` は自動走査される）。新しい rule や正本を作ったら、Codex がそこへ辿り着けるよう **AGENTS.md からのリンクは必須** とする。
 - Claude Code は `.claude/rules/` と CLAUDE.md（`@AGENTS.md` 経由）の両方を読む。役割分担は後述の「正本と入口の整理」を参照。
-- GitHub Copilot code review は、GitHub.com 上のレビューでは AGENTS.md を読む。ただし **そこからリンクされた `doc/guidelines/` の正本まで辿る保証はない**。よって repo 全体のレビュー方針は `.github/copilot-instructions.md` に、path 別の詳細レビュー観点は `.github/instructions/*.instructions.md`（`applyTo:`）に **直接** 書く。正本へのリンクは人間 / 他 tool 向けポインタとして併記し、Copilot がそれを辿ることは当てにしない。instruction file の文字数上限は公表されていないため、要点を前方に置き、末尾が失われても致命的にならない順序で書く。
+- GitHub Copilot code review は、GitHub.com 上のレビューでは AGENTS.md を読む。ただし **そこからリンクされた `doc/guidelines/` の正本まで辿る保証はない**。よって repo 全体のレビュー方針は `.github/copilot-instructions.md` に、path 別の詳細レビュー観点は `.github/instructions/*.instructions.md`（`applyTo:`）に **直接** 書く。正本へのリンクは人間 / 他 tool 向けポインタとして併記し、Copilot がそれを辿ることは当てにしない。instruction file にはかつて先頭 4,000 文字までという制限があったが、2026-06-12 に撤廃された。長さの制約は無くなったので、分量ではなくシグナルの濃さで絞る。
 
 ## 使い分け
 
