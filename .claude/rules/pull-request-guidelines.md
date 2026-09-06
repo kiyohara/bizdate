@@ -1,0 +1,6 @@
+# Pull Request 作成
+
+- 詳細は `doc/guidelines/pull-request-guidelines.md`
+- PR を作成・更新する前に共通正本を読む。
+- description は日本語で書き、tool 名や tool 由来の prefix を含めない。
+- PR の merge は agent が行わない。レビューと merge 判断は人間が行う。

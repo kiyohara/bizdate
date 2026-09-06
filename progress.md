@@ -25,7 +25,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 
 | # | 内容 | 状態 | PR |
 |---|---|---|---|
-| 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | todo | - |
+| 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | done（PR merge 後） | [#1](https://github.com/kiyohara/bizdate/pull/1) |
 | 2 | 開発ループの正本（development-loop、Issue 駆動タスク実行、git / GitHub CLI 操作ルール、`progress.md` 再構成） | todo | - |
 | 3 | GitHub MCP 連携（共通資材、利用ルール、各 tool の MCP 設定、worktree 補助） | todo | - |
 | 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | todo | - |

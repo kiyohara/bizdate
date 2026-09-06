@@ -7,6 +7,17 @@
 - 記録の仕方、文体、開発作業の進め方などの恒久ルール
 - 1 テーマ 1 ファイル
 
+## 一覧
+
+| ファイル | 扱う範囲 |
+|---|---|
+| `agent-configuration-management.md` | skill / rule / agent 固有入口の作成・削除・rename・配置 |
+| `pull-request-guidelines.md` | PR title / description / 検証記載 |
+| `working-branch-notes-handling.md` | 作業メモの性質・整合性スコープ・ライフサイクル・ファイル名規約 |
+| `working-branch-notes-security.md` | 作業メモの情報統制（秘密情報・個人情報の禁則） |
+| `decision-log-guidelines.md` | 方針決定ログの作成・更新・index 管理 |
+| `document-style-guidelines.md` | 日本語ドキュメントの文末・トーン・用語表記 |
+
 ## 置かないもの
 
 - プロダクトの仕様: `doc/design/` に置く
