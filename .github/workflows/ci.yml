@@ -1,0 +1,58 @@
+# fmt / clippy / test / build を回す CI。方針は doc/design/decision-log/0010-hosting-and-ci-platform.md、
+# toolchain と cargo option は doc/design/decision-log/0014-dependency-crates-and-toolchain.md と
+# doc/guidelines/development-command-guidelines.md に従う。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# 検査のみを行う workflow であり、書き込み権限を必要としない。
+permissions:
+  contents: read
+
+# 同一 PR へ push が続いたときに古い run を打ち切る。main への push は履歴として残す。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: fmt / clippy / test / build
+    runs-on: ubuntu-latest
+    # 未指定だと GitHub-hosted runner の上限 6 時間まで走る。応答の返らない処理が
+    # 紛れ込んだときの頭打ちとして置く。現状の実行時間は 1 分未満である。
+    timeout-minutes: 15
+    steps:
+      # 第三者 action は commit SHA で固定する。末尾のコメントは固定時点の tag を示す。
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。
+      - name: Install Rust toolchain
+        # v1 は上流が更新のたびに付け替える tag のため、固定した commit の日付を添える。
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1 (2026-08-05 時点)
+        with:
+          toolchain: "1.98"
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      # cargo fmt は Cargo.lock を解決しないため --locked を受け付けない。
+      - name: cargo fmt
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --locked
+
+      - name: cargo build
+        run: cargo build --locked

@@ -58,17 +58,18 @@ docker compose build dev
 
 ## MSRV を上げるとき
 
-MSRV の値は 3 箇所に現れる。上げるときは 3 つを同時に更新する。
+MSRV の値は 4 箇所に現れる。上げるときは 4 つを同時に更新する。
 
 | 箇所 | 値 | 役割 |
 |---|---|---|
 | `Cargo.toml` | `rust-version` | crate が要求する最小 Rust version |
 | `Dockerfile` | `FROM rust:<MSRV>-trixie` | container の toolchain を実際に決める |
 | `compose.yaml` | `image: bizdate-dev:<MSRV>` | build した image に付ける local tag 名 |
+| `.github/workflows/ci.yml` | `toolchain: "<MSRV>"` | CI の toolchain を決める |
 
-`compose.yaml` の tag はビルド結果に影響しないが、ずれると tag が実態を偽る。`Dockerfile` の `FROM` だけ古いまま `rust-version` を上げると、build が MSRV エラーで落ちる。
+`compose.yaml` の tag はビルド結果に影響しないが、ずれると tag が実態を偽る。`Dockerfile` の `FROM` だけ古いまま `rust-version` を上げると、build が MSRV エラーで落ちる。`.github/workflows/ci.yml` の `toolchain` だけ古いまま上げると、CI が `Cargo.toml` の `rust-version` を満たせず落ちる。
 
-3 箇所を更新したうえで image を作り直す。
+4 箇所を更新したうえで image を作り直す。
 
 ```sh
 docker compose build dev
@@ -103,5 +104,5 @@ docker compose down -v
 ## やらないこと
 
 - host の `cargo` で実行した結果を、Compose 経由の検証結果として報告する。
-- MSRV の 3 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag）をずらす。
+- MSRV の 4 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag、`.github/workflows/ci.yml` の `toolchain`）をずらす。
 - container 内へ開発用の追加 component を場当たりで入れる。恒常的に必要なものは `Dockerfile` に書く。
