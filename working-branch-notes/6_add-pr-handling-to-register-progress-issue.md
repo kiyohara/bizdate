@@ -12,7 +12,7 @@ skill は編集手順までしか定めておらず、`main` が保護されて�
 
 ## 現在の状況
 
-PR #6 を作成し、note を採番済み。review comment 7 件のうち、skill 記述に閉じる 5 件へ対応した。開発ループ正本側への例外反映（Codex `[must]` / Claude Code `[ask]`）はユーザー判断待ち。
+PR #6 を作成し、note を採番済み。review comment 7 件すべてへ対応した。開発ループ正本側への例外反映は、ユーザー判断により本 PR で実施した。
 
 ## 決定事項
 
@@ -20,6 +20,7 @@ PR #6 を作成し、note を採番済み。review comment 7 件のうち、skil
 - 手順の末尾に新しい step を足すのではなく、**step 6 として PR 化を挿入し、既存の step 6・7 を 7・8 へ繰り下げる**。確認は PR 作成後に行うのが自然なため。
 - 「参照する正本」に `git-operation-guidelines.md` / `pull-request-guidelines.md` / `working-branch-notes-handling.md` の 3 本を追加する。現状いずれも挙がっておらず、追記する手順がこれらを参照するため。review 対応で `working-branch-notes-security.md` を加えて計 4 本とした。
 - 既存の step 6（Issue へ確認コメントを残す）は、`progress.md` 編集より前に行う判断もあり得るが、現行の順序を変えない。本 Issue のスコープは「commit / PR の扱いの追記」であり、既存手順の並べ替えは含まない。
+- 索引登録の例外（起点 Issue を作らず `Closes` を付けない）を `doc/guidelines/development-loop.md` にも反映する。skill にしか例外が無いと、正本だけを追う agent が到達できないため。ユーザー判断で follow-up Issue ではなく本 PR で実施した。Issue #5 の スコープ外 は `development-loop.md` の **skill 表** の変更だけを除いており、skill 表は触っていない。
 
 ## review 対応（2026-09-06）
 
@@ -32,11 +33,11 @@ Codex と Claude Code の 2 cycle から inline comment 7 件。対応は次の�
 | `[imo]` 変更が生じなかった場合のガードが無い | 採用。step 6 の先頭に「変更が無ければ commit と PR を作らず終了する」を追加し、「終了報告」の PR URL も条件付きにした |
 | `[imo]` 「やらないこと」の対象が広すぎる | 採用。「索引登録による `progress.md` の変更を〜」へ限定した |
 | `[fyi]` note の stale 表現 | 採用。note を編集する機会に合わせて修正した |
-| `[must]` / `[ask]` 索引登録の例外が開発ループ正本から辿れない | 指摘は妥当。本 PR で `development-loop.md` を直すか follow-up Issue にするかはユーザー判断待ち |
+| `[must]` / `[ask]` 索引登録の例外が開発ループ正本から辿れない | 採用。ユーザー判断により本 PR で `development-loop.md` の基本方針・資材表・標準フロー・参照順の 4 箇所へ反映した |
 
 ## 次にやること
 
-- 開発ループ正本への例外反映の扱い（本 PR / follow-up Issue）をユーザーに確認する。
+- ユーザーの review と merge 判断を待つ。
 
 ## 検証
 
@@ -60,4 +61,5 @@ Issue #5 の検証項目 4 件をすべて実施した。
 - 2026-09-06: Issue #5 に着手。main から分岐し、本 note を作成した。
 - 2026-09-06: skill に step 6（PR 化）を挿入し、既存 6・7 を繰り下げ。「参照する正本」に 3 本、「やらないこと」に 2 項目、「終了報告」に PR URL を追加した。検証 4 項目を実施し、すべて通過した。
 - 2026-09-06: PR #6 を作成し、note を採番した。
-- 2026-09-06: review comment 7 件へ対応。skill 記述に閉じる 5 件を反映し、note の stale 表現を修正した。開発ループ正本への例外反映は保留とし、ユーザー判断を仰ぐ。
+- 2026-09-06: review comment 7 件へ対応。skill 記述に閉じる 5 件を反映し、note の stale 表現を修正した。
+- 2026-09-06: 開発ループ正本への例外反映についてユーザー判断を得て、`doc/guidelines/development-loop.md` の 4 箇所を修正した。
