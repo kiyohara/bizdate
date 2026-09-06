@@ -6,7 +6,7 @@
 
 ## 基本方針
 
-- 作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` の索引登録そのものだけで、これには起点 Issue を作らない（`register-progress-issue`）。「Issue を索引に登録するための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 1 件に限り、他へ広げない。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
+- 作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` を保守する運用作業そのもの、すなわち索引登録（`register-progress-issue`）と進捗整理（`maintain-progress`）の 2 件で、これらには起点 Issue を作らない。「Issue を索引に登録するための Issue」「進捗整理を行うための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 2 件に限り、通常の作業へ広げない。リリース手順を担う skill を追加する場合も、同種の運用作業として同じ扱いへ揃える。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
 - 複数 Issue をまとめて 1 ブランチで進めない。実行時は `doc/guidelines/issue-driven-task-execution.md` に従い、1 Issue = 1 ブランチ = 1 PR とする。
 - タスクは直列に消化する。複数 Issue の並行作業はしない。
 - 横断的に見渡したい Issue 群は `progress.md` の進行中タスク索引に登録する。
@@ -28,7 +28,9 @@ flowchart TD
     G --> H{"区切りか"}
     H -- "はい" --> I["progress.md を整理する"]
     H -- "いいえ" --> A
-    I --> A
+    I --> I2["進捗整理だけの独立 PR を出す<br/>起点 Issue なし / Closes なし"]
+    I2 --> I3["ユーザーが review / merge"]
+    I3 --> A
 ```
 
 ## 各資材の役割
@@ -37,7 +39,7 @@ flowchart TD
 |---|---|
 | GitHub Issue | 作業の入力。背景、依存、作業内容、スコープ外、検証を置く。 |
 | `progress.md` | リリース台帳と進行中タスクの索引。詳細経緯やブランチ作業ログは置かない。 |
-| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。索引登録だけは起点 Issue を持たない独立 PR となるため、`Closes` を付けず、登録した Issue の一覧と順序・依存の根拠を description に書く。 |
+| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。索引登録と進捗整理は起点 Issue を持たない独立 PR となるため、`Closes` を付けない。代わりに、索引登録では登録した Issue の一覧と順序・依存の根拠を、進捗整理では圧縮した完了フェーズと要約に残した参照を description に書く。 |
 | `working-branch-notes/` | ブランチ単位の作業目的、状況、判断、引き継ぎメモ。PR に含めるが最終仕様書ではない。 |
 | decision log | 後から辿る必要がある設計判断や方針変更の記録。進捗管理や作業ログは置かない。 |
 | guideline | 人間と AI agent が共通で従う恒久的な作業ルール。 |
@@ -63,7 +65,7 @@ skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills
 4. git 操作は `doc/guidelines/git-operation-guidelines.md`、GitHub 操作は `doc/guidelines/github-mcp-guidelines.md`（fallback は `doc/guidelines/github-cli-guidelines.md`）に従う。
 5. 実装中に方針決定が必要になった場合は `doc/guidelines/decision-log-guidelines.md` に従う。
 6. PR 作成時は `doc/guidelines/pull-request-guidelines.md` に従う。
-7. 区切りで `maintain-progress` skill を使い、`progress.md` を整理する。
+7. 区切りで `maintain-progress` skill を使い、`progress.md` を整理する。進捗整理も索引登録と同じく、起点 Issue を作らず独立 PR として出す。
 
 ## 重複させない情報
 

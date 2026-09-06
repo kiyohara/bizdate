@@ -11,6 +11,21 @@ description: bizdate の `progress.md` を定期的に整理し、進行中タ�
 
 完了したタスクの詳細経緯は decision log / 各 Issue / 各 PR / working-branch-notes が正本である。`progress.md` には到達点と参照だけを残し、それらを複製しない。
 
+## 参照する正本
+
+作業前に必要な範囲で次を読む。
+
+- `AGENTS.md` — agent 向け入口。
+- `doc/guidelines/development-loop.md` — 索引に載せる単位と、進捗整理が独立 PR となる前提。
+- `doc/guidelines/issue-driven-task-execution.md` — 索引を依存確認・状態更新に使う側の手順。
+- `doc/guidelines/git-operation-guidelines.md` — commit 署名、保護ブランチ。
+- `doc/guidelines/pull-request-guidelines.md` — PR title / description の書式。
+- `doc/guidelines/working-branch-notes-handling.md` — 作業 note の作成と採番。
+- `doc/guidelines/working-branch-notes-security.md` — 作業 note の情報統制。
+- `doc/guidelines/decision-log-guidelines.md` — 検討経緯の置き場との境界。
+- `doc/guidelines/agent-configuration-management.md` — `progress.md` の役割そのものを変える場合の手順（観点 6）。
+- `progress.md` — 整理対象。
+
 ## いつ実行するか
 
 次のいずれかに当てはまり、ボードが現状を素早く把握しづらくなっているとき:
@@ -74,12 +89,29 @@ description: bizdate の `progress.md` を定期的に整理し、進行中タ�
 - Issue 本文の指示内容を複製しない。それは Issue の役割。
 - `working-branch-notes/**` と既存 decision log は履歴記録なので、本 skill では遡って書き換えない。
 
+## commit と PR
+
+整理した結果を変更としてリポジトリへ入れるまでを、この skill の範囲に含める。
+
+1. 編集を始める前に、専用ブランチと working branch note を作る。`doc/guidelines/issue-driven-task-execution.md` はブランチ作成 → note 作成 → 作業の順であり、note は作業中の判断を残す前提の資材である。
+2. 「整理の観点」に従って `progress.md` を編集する。
+3. `progress.md` に変更が生じなかった場合は、commit と PR を作らず、その旨を伝えて終了する。点検の結果、整理すべき箇所が 1 件も無い結末があり得るためである。
+4. 変更を PR として出す。
+   - `main` は保護されている。**専用ブランチを切り、独立した PR** として出す。他の作業 PR へ同梱しない。
+   - **進捗整理そのものには起点 Issue を作らない。PR に `Closes` を付けない。** 「進捗整理を行うための Issue」は、索引登録と同様に指示書として意味を持たないためである（`doc/guidelines/development-loop.md`）。
+   - `doc/guidelines/working-branch-notes-handling.md` に従い working branch note を作る。PR 採番後は `number-working-branch-note` skill で採番する。
+   - **PR 本文に、圧縮した完了フェーズと、要約に残した decision log / Issue / PR 参照を書く。** 索引の行は最小情報に絞る方針のため、何をどこへ送ったかは PR 側で辿れるようにする。判断に迷ってユーザーへ確認した点があれば、その結論も書く。
+   - commit / push は `doc/guidelines/git-operation-guidelines.md`、PR title / description は `doc/guidelines/pull-request-guidelines.md` に従う。
+   - **PR の merge は行わない。** レビューと merge 判断はユーザーが行う。
+
 ## やらないこと
 
 - `progress.md` の廃止やファイル削除（役割変更を伴うため本 skill の範囲外。観点 6 を参照）。
 - decision log・working-branch-notes の内容を `progress.md` へ転記する / それらを書き換える。
 - 進行中・未着手を含む表の繰り上げ圧縮。
 - 条件が未達の「後続で追加する」項目の削除。
+- 進捗整理による `progress.md` の変更を他の作業 PR へ同梱すること。
+- PR の merge。
 
 ## 終了時の確認
 
@@ -87,3 +119,4 @@ description: bizdate の `progress.md` を定期的に整理し、進行中タ�
 - 圧縮した完了フェーズに decision log / Issue / PR への参照が残っている。
 - 参照側ドキュメント（観点 6）の前提を壊していない。
 - 変更は status board として最小限で、検討経緯や引き継ぎメモを持ち込んでいない。
+- 変更を専用ブランチの独立 PR として出し、`Closes` を付けていない。変更が無かった場合は PR を作らず、その旨を報告している。
