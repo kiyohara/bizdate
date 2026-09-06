@@ -25,5 +25,5 @@ struct Cli {
 }
 
 fn main() {
-    let _cli = Cli::parse();
+        let _cli   =   Cli::parse();
 }
