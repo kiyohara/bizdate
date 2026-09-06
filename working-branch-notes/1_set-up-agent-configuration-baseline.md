@@ -37,7 +37,7 @@
 - rule の basename 整合: 6 本すべてで共通正本 / `.cursor/rules/` / `.claude/rules/` / `AGENTS.md` / `doc/guidelines/README.md` の 5 箇所が揃うことをスクリプトで確認済み。
 - 参照の解決: markdown リンクと repo 相対 path 参照を全 md / mdc に対して走査。未解決は decision log 0012 が名指しする `development-loop.md` と `issue-driven-task-execution.md` の 2 件のみで、いずれもフェーズ 2 の成果物を指す意図的な前方参照。
 - 秘密情報スキャン: 検出なし。
-- `.github/copilot-instructions.md` は 4,121 文字。目安の約 4,000 文字をわずかに超えるが、truncate されても影響が小さい順（prefix 体系 → 情報統制 → 指摘しない事項 → 構成観点 → note 観点）に並べてある。
+- `.github/copilot-instructions.md` は 2,087 文字（4,121 bytes）。当初 4,121 文字と記録したが、`LANG` 未設定の環境で `wc -m` がバイト数へフォールバックしていたための誤りである。なお Copilot の 4,000 文字制限は 2026-06-12 に撤廃されており、そもそも上限に触れていない。順序は、影響が小さい順（prefix 体系 → 情報統制 → 指摘しない事項 → 構成観点 → note 観点）に並べてある。
 
 ## リスク・ブロッカー
 

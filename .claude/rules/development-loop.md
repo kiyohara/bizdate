@@ -1,0 +1,6 @@
+# 開発ループ
+
+- 詳細は `doc/guidelines/development-loop.md`
+- 作業は GitHub Issue から始める。1 Issue = 1 ブランチ = 1 PR、直列に消化する。
+- PR の merge は agent が行わない。レビューと merge 判断は人間が行う。
+- 個別 Issue の実行手順は `doc/guidelines/issue-driven-task-execution.md`。

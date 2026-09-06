@@ -23,16 +23,16 @@
 
 各 tool の loading 機構が異なる点が判断材料になる。
 
-- Cursor: `.cursor/rules/*.{md,mdc}` を frontmatter に従ってロードする。skill は `.agents/skills/` を直接 discover する。
+- Cursor: `.cursor/rules/*.mdc` を frontmatter に従ってロードする。skill は `.agents/skills/` を直接 discover する。
 - Codex: `AGENTS.md` を読む。リンク先を自力では辿らないため、正本への到達経路を `AGENTS.md` に明示する必要がある。skill は `.agents/skills/` を走査する。
 - Claude Code: `.claude/rules/*.md` と `CLAUDE.md` を読む。skill は `.claude/skills/<name>/SKILL.md` しか見ない。
-- GitHub Copilot code review: `.github/copilot-instructions.md` をレビュー時に読む。リンクを辿らず、読み込む文字数にも上限がある。
+- GitHub Copilot code review: `.github/copilot-instructions.md` をレビュー時に読む。GitHub.com では AGENTS.md も読むが、そこからリンクされた正本まで辿る保証はない。
 
 C 案は、同じルールを 3 か所に複製することになり、更新漏れで tool 間の挙動がずれる。A 案は tool 固有の制約が開発全体の制約になる。
 
 B 案では、共通正本を `doc/guidelines/`（rule）と `.agents/skills/`（skill）に置き、各 tool 固有ファイルは「いつ正本を読むか」だけを書く薄い入口にできる。skill は Cursor と Codex が `.agents/skills/` を直読するため、Claude Code 用の symlink だけ用意すればよい。
 
-Copilot code review だけは例外になる。リンクを辿らないため、効かせたい要点を指示ファイル内に直接書く必要がある。これは複製だが、対象を高シグナルな要点に絞れば維持できる。
+Copilot code review だけは例外になる。リンク先の正本まで辿る保証がないため、効かせたい要点を指示ファイル内に直接書く必要がある。これは複製だが、対象を高シグナルな要点に絞れば維持できる。
 
 ## 決定
 

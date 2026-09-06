@@ -19,17 +19,17 @@
 
 | Tool | Rule の自動ロード | Skill の自動ロード | AGENTS.md 扱い |
 | --- | --- | --- | --- |
-| Cursor | `.cursor/rules/*.{md,mdc}` を frontmatter に従ってロード | `.agents/skills/` を起動時に自動 discover | 公式に rules の代替として認識 |
+| Cursor | `.cursor/rules/*.mdc` を frontmatter に従ってロード（`.md` は frontmatter を持てないため無視される） | `.agents/skills/` を起動時に自動 discover | 公式に rules の代替として認識 |
 | Codex | AGENTS.md（global / project 階層, 32 KiB 上限） | `.agents/skills/` を cwd -> repo root で走査し、name + description のみ system prompt に preload。SKILL.md 全文は使用時にロード | プロジェクトルートの AGENTS.md を読む |
 | Claude Code | `.claude/rules/*.md`（任意の `paths:` frontmatter で path scoping）+ CLAUDE.md（`@path` import で AGENTS.md を取り込み） | `.claude/skills/<name>/SKILL.md` を frontmatter に従ってロード | `CLAUDE.md` から `@AGENTS.md` で取り込む構成が公式推奨 |
-| GitHub Copilot code review | `.github/copilot-instructions.md`（repo 全体）と `.github/instructions/*.instructions.md`（`applyTo:` で path scoping）をレビュー時に読む。各 instruction file は先頭〜約 4,000 文字のみ反映 | なし | AGENTS.md も他ファイルへのリンクも辿らない。効かせたい内容は instruction file 内に直接書く |
+| GitHub Copilot code review | `.github/copilot-instructions.md`（repo 全体）と `.github/instructions/*.instructions.md`（`applyTo:` で path scoping）をレビュー時に読む | なし | GitHub.com のレビューでは AGENTS.md も読む。ただしリンク先の正本まで辿る保証はないため、効かせたい内容は instruction file 内に直接書く |
 
 帰結:
 
 - **`.agents/skills/` を直接読める tool には固有ディレクトリへの symlink を作らない**。Cursor と Codex は `.agents/skills/` を直読するため symlink 不要。Claude Code は `.claude/skills/` しか読まないため symlink を作る。
 - Codex は **AGENTS.md に書かれていない情報には自力で到達できない**（skill は除く: `.agents/skills/` は自動走査される）。新しい rule や正本を作ったら、Codex がそこへ辿り着けるよう **AGENTS.md からのリンクは必須** とする。
 - Claude Code は `.claude/rules/` と CLAUDE.md（`@AGENTS.md` 経由）の両方を読む。役割分担は後述の「正本と入口の整理」を参照。
-- GitHub Copilot code review は AGENTS.md も他ファイルへのリンクも辿らず、各 instruction file の先頭〜約 4,000 文字しか読まない。よって repo 全体のレビュー方針は `.github/copilot-instructions.md` に、path 別の詳細レビュー観点は `.github/instructions/*.instructions.md`（`applyTo:`）に **直接** 書く。`doc/guidelines/` 正本へのリンクは人間 / 他 tool 向けポインタであり、Copilot がそれを読むことは当てにしない。
+- GitHub Copilot code review は、GitHub.com 上のレビューでは AGENTS.md を読む。ただし **そこからリンクされた `doc/guidelines/` の正本まで辿る保証はない**。よって repo 全体のレビュー方針は `.github/copilot-instructions.md` に、path 別の詳細レビュー観点は `.github/instructions/*.instructions.md`（`applyTo:`）に **直接** 書く。正本へのリンクは人間 / 他 tool 向けポインタとして併記し、Copilot がそれを辿ることは当てにしない。instruction file にはかつて先頭 4,000 文字までという制限があったが、2026-06-12 に撤廃された。長さの制約は無くなったので、分量ではなくシグナルの濃さで絞る。
 
 ## 使い分け
 
