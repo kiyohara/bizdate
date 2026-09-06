@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `add-pr-handling-to-register-progress-issue`
-- PR: （採番前）
+- PR: #6
 - 最終更新: 2026-09-06
 
 ## 目的
