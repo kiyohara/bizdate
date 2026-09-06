@@ -6,7 +6,7 @@ use jiff::{Timestamp, civil::Date, tz::TimeZone};
 
 #[derive(Debug)]
 pub enum DateError {
-    InvalidFormat,
+    InvalidFormat(String),
     InvalidDate(jiff::Error),
     UnknownTimeZone(String),
     NonUnicodeTimeZone,
@@ -16,7 +16,9 @@ pub enum DateError {
 impl fmt::Display for DateError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidFormat => write!(f, "date must have the format YYYY-MM-DD"),
+            Self::InvalidFormat(input) => {
+                write!(f, "date must have the format YYYY-MM-DD: {input:?}")
+            }
             Self::InvalidDate(error) => write!(f, "invalid calendar date: {error}"),
             Self::UnknownTimeZone(name) => write!(f, "unknown IANA time zone: {name:?}"),
             Self::NonUnicodeTimeZone => write!(f, "BIZDATE_TZ must be a Unicode IANA name"),
@@ -29,7 +31,7 @@ impl Error for DateError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::InvalidDate(error) | Self::LocalTimeZone(error) => Some(error),
-            Self::InvalidFormat | Self::UnknownTimeZone(_) | Self::NonUnicodeTimeZone => None,
+            Self::InvalidFormat(_) | Self::UnknownTimeZone(_) | Self::NonUnicodeTimeZone => None,
         }
     }
 }
@@ -46,7 +48,7 @@ pub fn parse_date(input: &str) -> Result<Date, DateError> {
             }
         })
     {
-        return Err(DateError::InvalidFormat);
+        return Err(DateError::InvalidFormat(input.to_owned()));
     }
     input.parse().map_err(DateError::InvalidDate)
 }
@@ -168,7 +170,15 @@ mod tests {
 
     #[test]
     fn invalid_overrides_do_not_fall_back() {
-        for name in ["Unknown/Zone", "Etc/Unknown", "", "+09:00", " UTC "] {
+        for name in [
+            "Unknown/Zone",
+            "Etc/Unknown",
+            "",
+            "+09:00",
+            " UTC ",
+            "/etc/localtime",
+            "EST5EDT,M3.2.0,M11.1.0",
+        ] {
             assert!(matches!(
                 resolve_timezone_with(Some(name), |_| panic!("must not fall back"), no_local),
                 Err(DateError::UnknownTimeZone(_))
@@ -178,6 +188,20 @@ mod tests {
                 Err(DateError::UnknownTimeZone(_))
             ));
         }
+    }
+
+    #[test]
+    fn iana_names_are_ascii_case_insensitive() {
+        for name in ["asia/tokyo", "ASIA/TOKYO"] {
+            let timezone =
+                resolve_timezone_with(Some(name), |_| panic!("unused"), no_local).unwrap();
+            assert_eq!(today(&timezone, instant()), Date::new(2027, 1, 1).unwrap());
+        }
+        let timezone = resolve_timezone_with(None, |_| Ok("utc".into()), no_local).unwrap();
+        assert_eq!(
+            today(&timezone, instant()),
+            Date::new(2026, 12, 31).unwrap()
+        );
     }
 
     #[test]
@@ -276,9 +300,11 @@ mod tests {
             "２０２６-01-01",
             "2026-0é-1",
         ] {
-            assert!(
-                matches!(parse_date(input), Err(DateError::InvalidFormat)),
-                "{input}"
+            let error = parse_date(input).unwrap_err();
+            assert!(matches!(&error, DateError::InvalidFormat(value) if value == input));
+            assert_eq!(
+                error.to_string(),
+                format!("date must have the format YYYY-MM-DD: {input:?}")
             );
         }
     }
