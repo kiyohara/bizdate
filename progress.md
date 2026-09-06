@@ -17,9 +17,9 @@
 
 ## 現況
 
-設計フェーズを完了した。プロダクト仕様（0002–0009）と開発体制の方針（0001、0010–0013）を decision log に記録し、`business-day.md` / `cli-interface.md` を仕様の正本とした。
+設計フェーズと開発環境整備を完了した。プロダクト仕様（0002–0009）と開発体制の方針（0001、0010–0013）を decision log に記録し、`business-day.md` / `cli-interface.md` を仕様の正本とした。開発ループ、AI agent 設定、GitHub MCP 連携、レビュー体制、skill は PR #1〜#4 で整備済み。
 
-次は開発環境の整備に進む。GitHub 上に開発ループ、AI agent 設定、レビュー体制を用意してから実装に入る。
+次は v1 実装に進む。Issue #7〜#15 を進行中タスクとして追跡する。
 
 ## 進行中タスク: 開発環境整備
 
@@ -30,12 +30,29 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | 1 | agent 入口と作業記録の基盤（agent 設定管理、working branch notes、PR ガイドライン、Copilot review 指示） | done | [#1](https://github.com/kiyohara/bizdate/pull/1) |
 | 2 | 開発ループの正本（development-loop、Issue 駆動タスク実行、git / GitHub CLI 操作ルール、`progress.md` 再構成） | done | [#2](https://github.com/kiyohara/bizdate/pull/2) |
 | 3 | GitHub MCP 連携（共通資材、利用ルール、各 tool の MCP 設定、worktree 補助） | done | [#3](https://github.com/kiyohara/bizdate/pull/3) |
-| 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | done（PR merge 後） | [#4](https://github.com/kiyohara/bizdate/pull/4) |
+| 4 | 開発ループ skill（Issue 実行、進捗登録、進捗整理、note 採番、PR レビュー） | done | [#4](https://github.com/kiyohara/bizdate/pull/4) |
+
+## 進行中タスク: v1 実装
+
+表の順を推奨順とし、直列に消化する。依存欄は必須条件のみを記載し、単なる推奨順は含めない。
+
+| ID | Issue | 状態 | 依存 | 次にやること | PR |
+|---|---|---|---|---|---|
+| V1-01 | [#7](https://github.com/kiyohara/bizdate/issues/7) Cargo と開発環境の骨組み | todo | - | 依存クレートを選定し 0014 に記録する | - |
+| V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | todo | #7 | fmt / clippy / test を回す | - |
+| V1-03 | [#9](https://github.com/kiyohara/bizdate/issues/9) 日付とタイムゾーンの解決 | todo | #7 | TZ 解決順と日付パースを実装する | - |
+| V1-04 | [#10](https://github.com/kiyohara/bizdate/issues/10) 祝日データのローカル読み取り | todo | #7 | メタ行・expire・年カバーを実装する | - |
+| V1-05 | [#11](https://github.com/kiyohara/bizdate/issues/11) 業務日判定と月の最初 / 最後 | todo | #9, #10 | `--day-off` パースと判定を実装する | - |
+| V1-06 | [#12](https://github.com/kiyohara/bizdate/issues/12) 判定サブコマンドの CLI | todo | #11 | exit 0/1/2 の写像を実装する | - |
+| V1-07 | [#13](https://github.com/kiyohara/bizdate/issues/13) `fetch-holidays` | todo | #10, #12 | 取得・変換・保存を実装する | - |
+| V1-08 | [#14](https://github.com/kiyohara/bizdate/issues/14) 統合テストと E2E | todo | #12, #13 | 往復とエラー系を網羅する | - |
+| V1-09 | [#15](https://github.com/kiyohara/bizdate/issues/15) README の利用方法 | todo | #14 | `doc/help/` の要否を判断する | - |
 
 ## 次にやること
 
-- 整備完了後、実装タスクを GitHub Issue として登録し、Issue 駆動ループへ移行する。
-- 実装がある程度形になった段階で、CI とリリース体制（`compose.yaml`、Cargo プロジェクト、開発コマンド実行ルール、GitHub Actions、`dist` による配布）を導入する。
+- v1 実装の索引を V1-01 から直列に消化する。
+- 完了済みの開発環境整備の表は、`maintain-progress` skill でフェーズ要約へ圧縮する。
+- #14 で「ローカルと CI で正しく動く CLI」に到達した時点で、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
 
 ## 完了
 
