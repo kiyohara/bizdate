@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `add-development-loop-skills`
-- PR: （採番前）
+- PR: #4
 - 最終更新: 2026-09-06
 
 ## 目的
@@ -65,5 +65,6 @@ skill は slapex の実装を土台にする。ただし bizdate に存在しな
 ## セッションログ
 
 - 2026-09-06: PR #3 merge 後に main から分岐。本 note を作成した。
+- 2026-09-06: PR #4 を作成し、note を採番した。
 - 2026-09-06: skill 5 種と references 3 本を配置。slapex 版から development-command-guidelines と release skill への参照を落とし、`review-pull-request` には CI tool（`actions_list` / `get_job_logs`）と Copilot と共通の prefix 体系を追記した。
 - 2026-09-06: `.claude/skills/` の symlink 5 本を作成。`development-loop.md` に skill 表を追加（PR #2 で予告した分）。
