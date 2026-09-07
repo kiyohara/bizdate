@@ -1,11 +1,5 @@
 use super::*;
-use std::sync::atomic::{AtomicU64, Ordering};
-
-const FIXTURE: &str = include_str!("../../tests/fixtures/holidays.csv");
-
-fn now() -> Timestamp {
-    "2026-09-06T02:24:33Z".parse().unwrap()
-}
+use crate::test_support::{FIXTURE, TempDir, now};
 
 fn date(input: &str) -> Date {
     input.parse().unwrap()
@@ -268,27 +262,6 @@ fn invalid_csv_and_dates_are_errors_not_partial_holiday_sets() {
         );
     }
     assert_eq!(parse_csv_date("2028/02/29").unwrap(), date("2028-02-29"));
-}
-
-struct TempDir(PathBuf);
-
-impl TempDir {
-    fn new() -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let path = env::temp_dir().join(format!(
-            "bizdate-holidays-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&path).unwrap();
-        Self(path)
-    }
-}
-
-impl Drop for TempDir {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
 }
 
 #[test]

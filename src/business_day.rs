@@ -55,8 +55,8 @@ impl DaysOff {
                             b.is_ascii_digit()
                         }
                     }) {
-                    let month = ((bytes[0] - b'0') * 10 + bytes[1] - b'0') as i8;
-                    let day = ((bytes[3] - b'0') * 10 + bytes[4] - b'0') as i8;
+                    let month = element[..2].parse().expect("validated as two ASCII digits");
+                    let day = element[3..].parse().expect("validated as two ASCII digits");
                     Date::new(today.year(), month, day).map_err(DateError::InvalidDate)
                 } else {
                     parse_date(element)

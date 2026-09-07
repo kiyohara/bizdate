@@ -1,15 +1,10 @@
 use super::*;
-use crate::date::{resolve_date, today};
-use jiff::tz::TimeZone;
-use std::{
-    fs,
-    path::Path,
-    sync::atomic::{AtomicU64, Ordering},
+use crate::{
+    date::{resolve_date, today},
+    test_support::{FIXTURE, TempDir, now},
 };
-
-fn now() -> Timestamp {
-    "2026-09-06T02:24:33Z".parse().unwrap()
-}
+use jiff::tz::TimeZone;
+use std::{fs, path::Path};
 
 fn date(input: &str) -> Date {
     parse_date(input).unwrap()
@@ -25,23 +20,10 @@ fn fixture() -> HolidayData {
 
 // #10 の fixture に人工的な境界ケースを足し、公開の読み取り API を通す。
 fn extended_fixture(rows: &str) -> HolidayData {
-    static NEXT: AtomicU64 = AtomicU64::new(0);
-    let path = std::env::temp_dir().join(format!(
-        "bizdate-business-day-{}-{}.csv",
-        std::process::id(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    ));
-    fs::write(
-        &path,
-        format!(
-            "{}{rows}",
-            include_str!("../../tests/fixtures/holidays.csv")
-        ),
-    )
-    .unwrap();
-    let result = HolidayData::load(&path, now());
-    fs::remove_file(path).unwrap();
-    result.unwrap()
+    let dir = TempDir::new();
+    let path = dir.0.join("holidays.csv");
+    fs::write(&path, format!("{FIXTURE}{rows}")).unwrap();
+    HolidayData::load(&path, now()).unwrap()
 }
 
 #[test]
