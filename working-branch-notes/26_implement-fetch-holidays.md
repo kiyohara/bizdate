@@ -26,7 +26,7 @@ Issue #13 の `fetch-holidays` サブコマンドを実装する。祝日デー�
 
 ## 次にやること
 
-- PR 採番後に note を rename し、`progress.md` の PR 欄を埋める。
+- PR #26 のレビュー指摘に対応する。merge はユーザーが行う。
 - 統合テストと E2E は #14、README は #15 の対象とする。
 
 ## 検証
