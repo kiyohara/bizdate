@@ -43,9 +43,16 @@ fn parse_error(command: &[&str]) -> clap::Error {
 
 /// argv の parse から exit code までを `execute` ごと通す。
 fn observe_argv(argv: &[&str]) -> (u8, String, String) {
+    observe_argv_with(argv, fixture)
+}
+
+fn observe_argv_with(
+    argv: &[&str],
+    data_path: impl FnOnce() -> Result<PathBuf, HolidayError>,
+) -> (u8, String, String) {
     let cli = Cli::try_parse_from(argv).unwrap();
     let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
-    let result = execute(&cli.command, now(), fixture, &mut stdout);
+    let result = execute(&cli.command, now(), data_path, download, &mut stdout);
     let code = finish(result, &mut stderr);
     (
         code,
@@ -53,6 +60,22 @@ fn observe_argv(argv: &[&str]) -> (u8, String, String) {
         String::from_utf8(stderr).unwrap(),
     )
 }
+
+/// 取得の実体を差し替える。判定サブコマンドではそもそも呼ばれない。
+fn download(source: &str) -> Result<Payload, FetchError> {
+    if source.contains("unreachable") {
+        return Err(FetchError::Request(Box::new(io::Error::from(
+            io::ErrorKind::ConnectionRefused,
+        ))));
+    }
+    Ok(Payload {
+        charset: None,
+        body: SOURCE_BODY.as_bytes().to_vec(),
+    })
+}
+
+/// 取得元が返す本文。メタ行は保存側が付ける。
+const SOURCE_BODY: &str = "国民の祝日・休日月日,国民の祝日・休日名称\r\n2026/1/1,元日\r\n";
 
 #[test]
 fn matching_days_exit_zero_and_others_exit_one() {
@@ -288,6 +311,7 @@ fn help_and_version_exit_zero_and_usage_errors_exit_two() {
         vec!["bizdate", "--version"],
         vec!["bizdate", "first", "--help"],
         vec!["bizdate", "last", "--help"],
+        vec!["bizdate", "fetch-holidays", "--help"],
     ] {
         let error = parse_error(&command);
         assert_eq!(error.exit_code(), 0, "{command:?}");
@@ -310,6 +334,13 @@ fn help_and_version_exit_zero_and_usage_errors_exit_two() {
         vec!["bizdate", "-h"],
         vec!["bizdate", "-V"],
         vec!["bizdate", "first", "-q"],
+        // --version は root だけで受ける。判定の option は取得サブコマンドに無い。
+        vec!["bizdate", "fetch-holidays", "--version"],
+        vec!["bizdate", "fetch-holidays", "--date", "2026-09-01"],
+        vec!["bizdate", "fetch-holidays", "--quiet"],
+        vec!["bizdate", "fetch-holidays", "--source"],
+        // 取得の option は判定サブコマンドに無い。
+        vec!["bizdate", "first", "--source", "https://example.com/h.csv"],
         // 提供しない positional 日付と、値を要求する option の値欠落。
         vec!["bizdate", "first", "2026-09-01"],
         vec!["bizdate", "first", "--date"],
@@ -349,6 +380,18 @@ fn help_describes_the_command_and_every_option_in_japanese() {
         assert!(root.contains(text), "{text}\n{root}");
     }
 
+    assert!(
+        root.contains("祝日データを取得してローカルへ保存する"),
+        "{root}"
+    );
+
+    let fetch = parse_error(&["bizdate", "fetch-holidays", "--help"]).to_string();
+    for text in ["祝日データの取得先", "usage を表示して終了する"] {
+        assert!(fetch.contains(text), "{text}\n{fetch}");
+    }
+    // 既定の取得先を help で示す。
+    assert!(fetch.contains(fetch::DEFAULT_SOURCE), "{fetch}");
+
     let first = parse_error(&["bizdate", "first", "--help"]).to_string();
     for text in [
         "判定対象日。既定は採用タイムゾーンの今日",
@@ -364,4 +407,88 @@ fn help_describes_the_command_and_every_option_in_japanese() {
         assert!(!first.contains(text), "{text}\n{first}");
     }
     assert!(!root.contains("Print this message"), "{root}");
+}
+
+#[test]
+fn fetch_holidays_saves_the_data_and_prints_the_destination() {
+    let dir = TempDir::new();
+    let path = dir.0.join("bizdate/holidays/holidays.csv");
+    let (code, stdout, stderr) = observe_argv_with(
+        &[
+            "bizdate",
+            "fetch-holidays",
+            "--source",
+            "https://example.com/h.csv",
+        ],
+        || Ok(path.clone()),
+    );
+    // 取得サブコマンドは判定の `NO` を使わない。
+    assert_eq!(code, SAVED);
+    assert_eq!(stdout, format!("{}\n", path.display()));
+    assert!(stderr.is_empty(), "{stderr}");
+    // 保存したデータはそのまま判定に使える。
+    assert_eq!(
+        observe_argv_with(
+            &[
+                "bizdate",
+                "first",
+                "--date",
+                "2026-01-01",
+                "--timezone",
+                "Asia/Tokyo"
+            ],
+            || Ok(path.clone()),
+        )
+        .0,
+        NO
+    );
+}
+
+#[test]
+fn fetch_holidays_maps_every_failure_to_the_error_code() {
+    let dir = TempDir::new();
+    let path = dir.0.join("holidays.csv");
+    for source in [
+        // 到達不能な取得元と、http(s) ではない取得元。
+        "https://unreachable.example/h.csv",
+        "file:///etc/passwd",
+    ] {
+        let (code, stdout, stderr) =
+            observe_argv_with(&["bizdate", "fetch-holidays", "--source", source], || {
+                Ok(path.clone())
+            });
+        assert_eq!(code, ERROR, "{source}");
+        // 失敗した実行は path を出さず、保存先も作らない。
+        assert!(stdout.is_empty(), "{source}");
+        assert_eq!(stderr.lines().count(), 1, "{source}: {stderr}");
+        assert!(stderr.starts_with("bizdate: "), "{source}: {stderr}");
+        assert!(!path.exists(), "{source}");
+    }
+
+    // 保存先の解決に失敗した場合も同じ写像になる。
+    let (code, stdout, _) = observe_argv_with(&["bizdate", "fetch-holidays"], || {
+        Err(HolidayError::InvalidHome)
+    });
+    assert_eq!((code, stdout.as_str()), (ERROR, ""));
+}
+
+#[test]
+fn the_source_option_defaults_to_the_cabinet_office_csv() {
+    let cli = Cli::try_parse_from(["bizdate", "fetch-holidays"]).unwrap();
+    let Command::FetchHolidays(args) = &cli.command else {
+        panic!("{:?}", cli.command)
+    };
+    assert_eq!(args.source, fetch::DEFAULT_SOURCE);
+
+    let cli = Cli::try_parse_from([
+        "bizdate",
+        "fetch-holidays",
+        "--source",
+        "http://example.com/h.csv",
+    ])
+    .unwrap();
+    let Command::FetchHolidays(args) = &cli.command else {
+        panic!("{:?}", cli.command)
+    };
+    assert_eq!(args.source, "http://example.com/h.csv");
 }

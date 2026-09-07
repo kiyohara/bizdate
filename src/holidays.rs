@@ -118,7 +118,8 @@ impl HolidayData {
         Self::parse(&input, now)
     }
 
-    fn parse(input: &str, now: Timestamp) -> Result<Self, HolidayError> {
+    /// 取得側も保存前の検証に使う。読めない本文で既存データを置き換えないため。
+    pub(crate) fn parse(input: &str, now: Timestamp) -> Result<Self, HolidayError> {
         let (metadata, body) = Metadata::parse(input)?;
         let expires_at = metadata.expiration()?;
         if now >= expires_at {
