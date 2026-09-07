@@ -4,7 +4,7 @@
 
 - 状態: decided
 - 作成日: 2026-09-06
-- 最終更新日: 2026-09-06
+- 最終更新日: 2026-09-07
 - 関連: `doc/design/cli-interface.md`
 
 ## 背景
@@ -75,3 +75,15 @@ bizdate fetch-holidays [--source URL]
 - JSON 出力や短 option の需要が明確になった場合
 - exit 1 を失敗とみなす利用者層への互換 option が必要になった場合
 - XDG 以外の保存場所が必要になった場合
+
+## 追記 (2026-09-07): help 文面の日本語化の範囲
+
+「help 文面は日本語とする」の適用範囲を定める。[0014](0014-dependency-crates-and-toolchain.md) の CLI パーサ節が Issue #12 へ持ち越していた論点である。derive の記述だけでは about と各 option の説明しか日本語にならず、`Usage:` / `Options:` の section heading は clap 側の文字列として英語のまま残る。
+
+- 日本語化の対象は、コマンドの説明と各 option の説明とする。
+- section heading は英語のまま残す。`help_template` / `next_help_heading` による上書きは行わない。
+- clap 既定の `help` subcommand は無効にする。説明文が英語であり、本ログが定めた subcommand 構成（`first` / `last` / `fetch-holidays`）にも含まれないためである。
+
+heading まで日本語へ揃える案は採らない。利用者が読む情報はコマンドと option の説明であり、英語の section heading は CLI の慣習として通用する。上書きは clap の内部 template 構造に依存し、clap の更新で壊れる保守コストを負う。
+
+`cli-interface.md` の文言をこの解釈へ寄せる。

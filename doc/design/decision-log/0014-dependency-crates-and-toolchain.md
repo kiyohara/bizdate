@@ -46,7 +46,7 @@ edition は 2024 を使う。edition 2024 は Rust 1.85 以降で利用でき、
 
 `cli-interface.md` の要件は、サブコマンド 3 つ、long option のみ、日本語 help、`--version` である。`clap` は derive でこれらを満たせ、ライセンスは MIT OR Apache-2.0、pure Rust である。バイナリサイズは `argh` / `pico-args` より大きいが、v1 では配布サイズを制約に置いていない。
 
-ただし「日本語 help」は derive の記述だけでは完全には満たさない。about と各 option の説明は日本語になるが、`Usage:` / `Options:` の section heading は clap 側の文字列であり、`help_template` と `next_help_heading` で明示的に上書きしない限り英語のまま残る。help 文面をどこまで日本語にするか（heading まで揃えるか、説明文が日本語なら足りるとするか）は、CLI の option を配線する Issue #12 で決める。
+ただし「日本語 help」は derive の記述だけでは完全には満たさない。about と各 option の説明は日本語になるが、`Usage:` / `Options:` の section heading は clap 側の文字列であり、`help_template` と `next_help_heading` で明示的に上書きしない限り英語のまま残る。help 文面をどこまで日本語にするか（heading まで揃えるか、説明文が日本語なら足りるとするか）は、CLI の option を配線する Issue #12 で決めた。説明文が日本語なら仕様を満たすとし、heading は英語のまま残す（[0007](0007-cli-shape.md) の追記）。
 
 「短 option は v1 では提供しない」という仕様は clap 既定の `-h` / `-V` にも及ぶと読める。`disable_help_flag` / `disable_version_flag` を立て、`ArgAction::Help` / `ArgAction::Version` を long option として明示的に定義すれば満たせることを実機で確認した。`-V` は exit code 2 で拒否される。
 
