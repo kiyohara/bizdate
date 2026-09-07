@@ -14,6 +14,7 @@ use jiff::Timestamp;
 use crate::{
     business_day::{BusinessCalendar, DayOffError, DaysOff},
     date::{self, DateError},
+    fetch::{self, FetchError, Payload},
     holidays::{self, HolidayData, HolidayError},
 };
 
@@ -21,6 +22,9 @@ use crate::{
 const YES: u8 = 0;
 /// 該当しない。判定の「否」であり、失敗ではない。
 const NO: u8 = 1;
+/// 取得・保存に成功した。判定の `YES` と同じ値だが意味が違うため別に置く。
+/// 取得サブコマンドは `NO` を使わない (doc/design/cli-interface.md)。
+const SAVED: u8 = 0;
 /// 用法誤り、不正入力、祝日データの不備、内部エラー。clap の既定 exit code と揃える。
 const ERROR: u8 = 2;
 
@@ -61,6 +65,8 @@ enum Command {
     First(Judgment),
     /// 指定日がその月の最後の業務日かどうかを判定する
     Last(Judgment),
+    /// 祝日データを取得してローカルへ保存する
+    FetchHolidays(Fetch),
 }
 
 /// `first` と `last` は探す端が違うだけで、option は共通である。
@@ -85,6 +91,16 @@ struct Judgment {
     quiet: bool,
 }
 
+/// 取得サブコマンドの option。判定と共有するものは無い。
+#[derive(Args, Debug)]
+// 親の `--help` を global option として受け取るため、subcommand 側の既定 help flag を止める。
+#[command(disable_help_flag = true)]
+struct Fetch {
+    /// 祝日データの取得先
+    #[arg(long, value_name = "URL", default_value = fetch::DEFAULT_SOURCE)]
+    source: String,
+}
+
 /// 月内のどちらの端を探すか。
 #[derive(Clone, Copy, Debug)]
 enum Edge {
@@ -98,6 +114,7 @@ enum CliError {
     Date(DateError),
     DayOff(DayOffError),
     Holiday(HolidayError),
+    Fetch(FetchError),
     Output(io::Error),
 }
 
@@ -107,6 +124,7 @@ impl fmt::Display for CliError {
             Self::Date(error) => error.fmt(f),
             Self::DayOff(error) => error.fmt(f),
             Self::Holiday(error) => error.fmt(f),
+            Self::Fetch(error) => error.fmt(f),
             Self::Output(error) => write!(f, "cannot write the result: {error}"),
         }
     }
@@ -118,6 +136,7 @@ impl Error for CliError {
             Self::Date(error) => Some(error),
             Self::DayOff(error) => Some(error),
             Self::Holiday(error) => Some(error),
+            Self::Fetch(error) => Some(error),
             Self::Output(error) => Some(error),
         }
     }
@@ -141,7 +160,13 @@ impl From<HolidayError> for CliError {
     }
 }
 
-/// 判定 1 回分の入口。clap が help / version / 用法誤りを先に処理する。
+impl From<FetchError> for CliError {
+    fn from(error: FetchError) -> Self {
+        Self::Fetch(error)
+    }
+}
+
+/// 実行 1 回分の入口。clap が help / version / 用法誤りを先に処理する。
 pub fn run() -> ExitCode {
     let cli = Cli::parse();
     let mut stdout = io::stdout().lock();
@@ -149,6 +174,7 @@ pub fn run() -> ExitCode {
         &cli.command,
         Timestamp::now(),
         holidays::data_path,
+        fetch::download,
         &mut stdout,
     ) {
         // 書き出しに失敗した実行を、判定の成否として返さない。
@@ -158,20 +184,37 @@ pub fn run() -> ExitCode {
     ExitCode::from(finish(result, &mut io::stderr()))
 }
 
-/// subcommand を月内の端へ対応付ける。取り違えると判定が反転するため、
-/// 保存先の解決は `decide` と同じく closure で受け取り、この対応も検査対象にする。
+/// subcommand を実際の処理へ対応付ける。first / last の取り違えは判定を反転させるため、
+/// 保存先の解決と取得は `decide` と同じく closure で受け取り、この対応も検査対象にする。
 fn execute(
     command: &Command,
     now: Timestamp,
     data_path: impl FnOnce() -> Result<PathBuf, HolidayError>,
+    download: impl FnOnce(&str) -> Result<Payload, FetchError>,
     stdout: &mut impl Write,
 ) -> Result<u8, CliError> {
     let (edge, args) = match command {
         Command::First(args) => (Edge::First, args),
         Command::Last(args) => (Edge::Last, args),
+        Command::FetchHolidays(args) => return store(args, now, data_path, download, stdout),
     };
     let matched = decide(edge, args, now, data_path)?;
     report(matched, args.quiet, stdout)
+}
+
+/// 取得して保存し、保存先を stdout へ 1 行だけ書く。判定と違い `NO` は返さない。
+fn store(
+    args: &Fetch,
+    now: Timestamp,
+    data_path: impl FnOnce() -> Result<PathBuf, HolidayError>,
+    download: impl FnOnce(&str) -> Result<Payload, FetchError>,
+    stdout: &mut impl Write,
+) -> Result<u8, CliError> {
+    let path = data_path()?;
+    fetch::save(&args.source, &path, now, download)?;
+    // 保存できた実行だけが path を出す。
+    writeln!(stdout, "{}", path.display()).map_err(CliError::Output)?;
+    Ok(SAVED)
 }
 
 /// 保存先の解決は closure で受け取り、利用者入力の検証を先に済ませる。

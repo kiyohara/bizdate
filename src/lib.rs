@@ -3,6 +3,7 @@
 pub mod business_day;
 pub mod cli;
 pub mod date;
+pub mod fetch;
 pub mod holidays;
 
 #[cfg(test)]
