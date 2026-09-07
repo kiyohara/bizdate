@@ -41,7 +41,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | V1-01 | [#7](https://github.com/kiyohara/bizdate/issues/7) Cargo と開発環境の骨組み | done | - | - | [#19](https://github.com/kiyohara/bizdate/pull/19) |
 | V1-02 | [#8](https://github.com/kiyohara/bizdate/issues/8) CI workflow | done | #7 | - | [#20](https://github.com/kiyohara/bizdate/pull/20) |
 | V1-03 | [#9](https://github.com/kiyohara/bizdate/issues/9) 日付とタイムゾーンの解決 | done | #7 | - | [#22](https://github.com/kiyohara/bizdate/pull/22) |
-| V1-04 | [#10](https://github.com/kiyohara/bizdate/issues/10) 祝日データのローカル読み取り | done | #7 | - | - |
+| V1-04 | [#10](https://github.com/kiyohara/bizdate/issues/10) 祝日データのローカル読み取り | done | #7 | - | [#23](https://github.com/kiyohara/bizdate/pull/23) |
 | V1-05 | [#11](https://github.com/kiyohara/bizdate/issues/11) 業務日判定と月の最初 / 最後 | todo | #9, #10 | `--day-off` パースと判定を実装する | - |
 | V1-06 | [#12](https://github.com/kiyohara/bizdate/issues/12) 判定サブコマンドの CLI | todo | #11 | exit 0/1/2 の写像を実装する | - |
 | V1-07 | [#13](https://github.com/kiyohara/bizdate/issues/13) `fetch-holidays` | todo | #10, #12 | 取得・変換・保存を実装する | - |
