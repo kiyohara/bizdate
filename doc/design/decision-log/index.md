@@ -16,7 +16,7 @@
 | 0002 | decided | CLI command name | CLI command name は `bizdate` とする | [0002-cli-command-name.md](0002-cli-command-name.md) |
 | 0003 | decided | v1 スコープ | 主用途はゲート。公開は first/last と fetch-holidays。埋め込み会社カレンダーは対象外。`--day-off` は可。v1 既定は日本。他国は `--source` 想定 | [0003-v1-scope.md](0003-v1-scope.md) |
 | 0004 | decided | 日付とタイムゾーン | 日付のみ・`YYYY-MM-DD`。今日の既定は local。上書きは `--timezone` > `BIZDATE_TZ` > local | [0004-date-and-timezone.md](0004-date-and-timezone.md) |
-| 0005 | decided | 業務日の定義 | 月〜金かつ国民の祝日でなく利用者指定休日でもない日。`--day-off`。config 上書きは将来 | [0005-business-day-definition.md](0005-business-day-definition.md) |
+| 0005 | decided | 業務日の定義 | 月〜金かつ国民の祝日でなく利用者指定休日でもない日。`--day-off`。業務日 0 日の月は first / last とも該当なし。config 上書きは将来 | [0005-business-day-definition.md](0005-business-day-definition.md) |
 | 0006 | decided | 祝日データ | fetch-holidays がネット取得してローカル保存。判定はローカルのみ。欠落/1年expireはエラー。`--source` 既定は内閣府 CSV | [0006-holiday-data-source.md](0006-holiday-data-source.md) |
 | 0007 | decided | CLI の形 | サブコマンド `first`/`last`/`fetch-holidays`。判定 exit 0/1/2。`--day-off`。保存先は XDG data | [0007-cli-shape.md](0007-cli-shape.md) |
 | 0008 | decided | 実装言語と配布 | Rust（pure Rust/rustls、Docker ビルド、CI で fmt/clippy/test）。内部用 lib は置くが外部 API の互換性は保証しない。Homebrew は後続視野。まずはローカル+CI で動く CLI | [0008-language-and-distribution.md](0008-language-and-distribution.md) |
