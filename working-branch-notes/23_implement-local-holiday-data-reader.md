@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `implement-local-holiday-data-reader`
-- PR: 未作成
+- PR: #23
 - 最終更新: 2026-09-07
 
 ## 目的
