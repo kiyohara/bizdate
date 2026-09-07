@@ -45,7 +45,7 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | V1-05 | [#11](https://github.com/kiyohara/bizdate/issues/11) 業務日判定と月の最初 / 最後 | done | #9, #10 | - | [#24](https://github.com/kiyohara/bizdate/pull/24) |
 | V1-06 | [#12](https://github.com/kiyohara/bizdate/issues/12) 判定サブコマンドの CLI | done | #11 | - | [#25](https://github.com/kiyohara/bizdate/pull/25) |
 | V1-07 | [#13](https://github.com/kiyohara/bizdate/issues/13) `fetch-holidays` | done | #10, #12 | - | [#26](https://github.com/kiyohara/bizdate/pull/26) |
-| V1-08 | [#14](https://github.com/kiyohara/bizdate/issues/14) 統合テストと E2E | done | #12, #13 | - | - |
+| V1-08 | [#14](https://github.com/kiyohara/bizdate/issues/14) 統合テストと E2E | done | #12, #13 | - | [#27](https://github.com/kiyohara/bizdate/pull/27) |
 | V1-09 | [#15](https://github.com/kiyohara/bizdate/issues/15) README の利用方法 | todo | #14 | `doc/help/` の要否を判断する | - |
 
 ## 次にやること
