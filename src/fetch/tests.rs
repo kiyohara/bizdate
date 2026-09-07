@@ -31,6 +31,12 @@ fn destination(dir: &TempDir) -> PathBuf {
     dir.0.join("bizdate/holidays/holidays.csv")
 }
 
+/// 保存先の解決も closure で渡す。`decide` と同じく利用者入力の検証を先に通すため。
+fn at(path: &Path) -> impl FnOnce() -> Result<PathBuf, HolidayError> + use<> {
+    let path = path.to_owned();
+    move || Ok(path)
+}
+
 /// 一時ファイルを残していないことも含めて、ディレクトリの中身を見る。
 fn entries(dir: &Path) -> Vec<String> {
     let mut names: Vec<String> = fs::read_dir(dir)
@@ -103,10 +109,36 @@ fn unusable_encodings_are_errors_rather_than_replacement_characters() {
     ));
     // 宣言どおりに読めない本文を、置換文字で埋めた本文として保存しない。
     let mislabelled = payload(Some("utf-8"), cp932().body);
-    assert!(matches!(
-        decode(&mislabelled),
-        Err(FetchError::Undecodable(_))
-    ));
+    let error = decode(&mislabelled).unwrap_err();
+    assert!(
+        matches!(
+            error,
+            FetchError::Undecodable {
+                encoding: "UTF-8",
+                declared: true
+            }
+        ),
+        "{error}"
+    );
+    assert_eq!(error.to_string(), "source is not valid UTF-8");
+
+    // 推定で選んだ文字コードは、取得元が名乗ったものと同じ文言にしない。
+    let guessed = payload(None, vec![0x00, 0xFF, 0x81, 0x20]);
+    let error = decode(&guessed).unwrap_err();
+    assert!(
+        matches!(
+            error,
+            FetchError::Undecodable {
+                encoding: "Shift_JIS",
+                declared: false
+            }
+        ),
+        "{error}"
+    );
+    assert_eq!(
+        error.to_string(),
+        "source declares no charset and is not valid Shift_JIS"
+    );
 }
 
 #[test]
@@ -118,6 +150,10 @@ fn content_type_charset_is_read_only_from_the_parameters() {
         ("text/csv; foo=bar; charset = utf-8", Some("utf-8")),
         // media type 側の charset らしき文字列は parameter ではない。
         ("charset/csv", None),
+        // 空値は何も伝えていない。宣言が無い場合と同じく推定へ落とす。
+        ("text/csv; charset=", None),
+        ("text/csv; charset=\"\"", None),
+        ("text/csv; charset= ", None),
     ] {
         assert_eq!(charset_of(header).as_deref(), expected, "{header}");
     }
@@ -129,7 +165,12 @@ fn saved_data_carries_metadata_and_is_readable_by_the_judgment_side() {
     let path = destination(&dir);
     // 親ディレクトリが無い状態から保存できる。
     assert!(!path.parent().unwrap().exists());
-    save("https://example.com/h.csv", &path, now(), |_| Ok(cp932())).unwrap();
+    let saved_to = save("https://example.com/h.csv", at(&path), now(), |_| {
+        Ok(cp932())
+    })
+    .unwrap();
+    // 保存できた path を返す。CLI はこれを stdout へ出す。
+    assert_eq!(saved_to, path);
 
     let saved = fs::read_to_string(&path).unwrap();
     assert_eq!(
@@ -163,7 +204,10 @@ fn saved_data_carries_metadata_and_is_readable_by_the_judgment_side() {
 fn a_failed_run_leaves_the_previous_data_intact() {
     let dir = TempDir::new();
     let path = destination(&dir);
-    save("https://example.com/h.csv", &path, now(), |_| Ok(cp932())).unwrap();
+    save("https://example.com/h.csv", at(&path), now(), |_| {
+        Ok(cp932())
+    })
+    .unwrap();
     let saved = fs::read_to_string(&path).unwrap();
 
     // 取得失敗と、ローカル形式として読めない本文。どちらも既存データを置き換えない。
@@ -180,18 +224,52 @@ fn a_failed_run_leaves_the_previous_data_intact() {
         ),
     ];
     for (label, download) in attempts {
-        let error = save("https://example.com/h.csv", &path, now(), download).unwrap_err();
+        let error = save("https://example.com/h.csv", at(&path), now(), download).unwrap_err();
         assert!(!matches!(error, FetchError::Io(_)), "{label}: {error}");
         assert_eq!(fs::read_to_string(&path).unwrap(), saved, "{label}");
         assert_eq!(entries(path.parent().unwrap()), ["holidays.csv"], "{label}");
     }
 
     // 用法誤りの取得元でも、取得そのものを試みない。
-    let unreachable = save("file:///etc/passwd", &path, now(), |_| {
+    let unreachable = save("file:///etc/passwd", at(&path), now(), |_| {
         panic!("must not download from a rejected source")
     });
     assert!(matches!(unreachable, Err(FetchError::InvalidSource(_))));
     assert_eq!(fs::read_to_string(&path).unwrap(), saved);
+}
+
+#[test]
+fn user_input_is_checked_before_the_destination_and_the_network() {
+    // `--source` の誤りと保存先の不正が重なっても、先に返るのは利用者入力の方である。
+    let error = save(
+        "file:///etc/passwd",
+        || Err(HolidayError::InvalidHome),
+        now(),
+        |_| panic!("must not download"),
+    )
+    .unwrap_err();
+    assert!(matches!(error, FetchError::InvalidSource(_)), "{error}");
+
+    // 保存先を解決できないまま取得へ進まない。診断は読み取り側の文言をそのまま出す。
+    let error = save(
+        "https://example.com/h.csv",
+        || Err(HolidayError::InvalidDataHome),
+        now(),
+        |_| panic!("must not download"),
+    )
+    .unwrap_err();
+    assert!(matches!(error, FetchError::Destination(_)), "{error}");
+    assert_eq!(error.to_string(), HolidayError::InvalidDataHome.to_string());
+}
+
+#[test]
+fn the_agent_bounds_how_long_a_fetch_can_take() {
+    // ureq の既定は await_100 以外すべて timeout 無しであり、応答しない取得元で終了しない。
+    let timeouts = agent().config().timeouts();
+    assert_eq!(timeouts.global, Some(TIMEOUT_GLOBAL));
+    assert_eq!(timeouts.connect, Some(TIMEOUT_CONNECT));
+    // 接続の上限は全体の上限を超えない。
+    assert!(TIMEOUT_CONNECT <= TIMEOUT_GLOBAL);
 }
 
 #[test]
@@ -202,7 +280,7 @@ fn saving_reports_the_reason_when_the_destination_is_unusable() {
     fs::write(&blocked, "not a directory").unwrap();
     let error = save(
         "https://example.com/h.csv",
-        &blocked.join("holidays.csv"),
+        at(&blocked.join("holidays.csv")),
         now(),
         |_| Ok(cp932()),
     )

@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
     process,
     str::from_utf8,
+    time::Duration,
 };
 
 use encoding_rs::{Encoding, SHIFT_JIS, UTF_8};
@@ -23,6 +24,12 @@ const SCHEMA: &str = "1";
 /// UTF-8 の BOM。取得元が付けてきた場合に取り除く。
 const BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
 
+/// 取得全体の上限。応答しない取得元で、cron やスクリプトから回した実行が張り付かないようにする。
+const TIMEOUT_GLOBAL: Duration = Duration::from_secs(30);
+
+/// 接続確立の上限。到達できない取得元を全体上限より早く諦める。
+const TIMEOUT_CONNECT: Duration = Duration::from_secs(10);
+
 /// 取得元が返した本文と、宣言された文字コード。HTTP 層と変換層を分けるための受け渡し。
 #[derive(Debug)]
 pub struct Payload {
@@ -36,7 +43,12 @@ pub enum FetchError {
     InvalidSource(String),
     Request(Box<dyn Error + Send + Sync>),
     UnknownCharset(String),
-    Undecodable(&'static str),
+    Undecodable {
+        encoding: &'static str,
+        /// 取得元が宣言した文字コードか、宣言が無く本文から決めたか。
+        declared: bool,
+    },
+    Destination(HolidayError),
     Rejected(HolidayError),
     Io(io::Error),
 }
@@ -47,9 +59,15 @@ impl fmt::Display for FetchError {
             Self::InvalidSource(source) => write!(f, "source must be an http(s) URL: {source:?}"),
             Self::Request(error) => write!(f, "cannot fetch holiday data: {error}"),
             Self::UnknownCharset(label) => write!(f, "unknown source charset: {label:?}"),
-            Self::Undecodable(encoding) => {
-                write!(f, "source is not valid {encoding}")
-            }
+            Self::Undecodable {
+                encoding,
+                declared: true,
+            } => write!(f, "source is not valid {encoding}"),
+            Self::Undecodable {
+                encoding,
+                declared: false,
+            } => write!(f, "source declares no charset and is not valid {encoding}"),
+            Self::Destination(error) => error.fmt(f),
             Self::Rejected(error) => write!(f, "fetched data is unusable: {error}"),
             Self::Io(error) => write!(f, "cannot save holiday data: {error}"),
         }
@@ -60,6 +78,7 @@ impl Error for FetchError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Request(error) => Some(error.as_ref()),
+            Self::Destination(error) => Some(error),
             Self::Rejected(error) => Some(error),
             Self::Io(error) => Some(error),
             _ => None,
@@ -67,25 +86,29 @@ impl Error for FetchError {
     }
 }
 
-/// 取得から保存までの全体。取得の実体は closure で受け取り、テストからネットに触れずに通す。
+/// 取得から保存までの全体。保存先の解決と取得の実体は `decide` と同じく closure で受け取り、
+/// 利用者入力の検証を先に済ませる。保存できた path を返す。
 pub fn save(
     source: &str,
-    path: &Path,
+    data_path: impl FnOnce() -> Result<PathBuf, HolidayError>,
     now: Timestamp,
     download: impl FnOnce(&str) -> Result<Payload, FetchError>,
-) -> Result<(), FetchError> {
+) -> Result<PathBuf, FetchError> {
     validate_source(source)?;
+    // 保存先を解決できないまま取得へ進まない。ネットワークより先に環境を確かめる。
+    let path = data_path().map_err(FetchError::Destination)?;
     let payload = download(source)?;
     let document = compose(source, &decode(&payload)?, now);
     // 読めない本文で既存データを置き換えない。取得は成功しても保存はしない。
     HolidayData::parse(&document, now).map_err(FetchError::Rejected)?;
-    replace(path, &document).map_err(FetchError::Io)
+    replace(&path, &document).map_err(FetchError::Io)?;
+    Ok(path)
 }
 
 /// 実際の HTTP GET。redirect と TLS は ureq に委ねる。
 pub fn download(source: &str) -> Result<Payload, FetchError> {
     let request = |error: ureq::Error| FetchError::Request(Box::new(error));
-    let mut response = ureq::get(source).call().map_err(request)?;
+    let mut response = agent().get(source).call().map_err(request)?;
     let charset = response
         .headers()
         .get("content-type")
@@ -93,6 +116,16 @@ pub fn download(source: &str) -> Result<Payload, FetchError> {
         .and_then(charset_of);
     let body = response.body_mut().read_to_vec().map_err(request)?;
     Ok(Payload { charset, body })
+}
+
+/// 取得に上限を入れた agent。ureq の既定は `await_100` 以外すべて timeout 無しであり、
+/// 応答しない取得元に当たると exit code へ写像される前に実行が終わらなくなる。
+fn agent() -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(TIMEOUT_GLOBAL))
+        .timeout_connect(Some(TIMEOUT_CONNECT))
+        .build()
+        .new_agent()
 }
 
 /// `--source` は http(s) だけを受ける (doc/design/cli-interface.md)。
@@ -107,33 +140,40 @@ fn validate_source(source: &str) -> Result<(), FetchError> {
 }
 
 /// Content-Type から charset parameter を取り出す。media type 側は見ない。
+/// 空値は文字コードを何も伝えていないため、宣言が無い場合と同じく推定へ落とす。
 fn charset_of(content_type: &str) -> Option<String> {
     content_type.split(';').skip(1).find_map(|parameter| {
         let (name, value) = parameter.split_once('=')?;
         name.trim()
             .eq_ignore_ascii_case("charset")
             .then(|| value.trim().trim_matches('"').to_owned())
+            .filter(|value| !value.is_empty())
     })
 }
 
 /// 保存は UTF-8 に揃える (doc/design/business-day.md)。既定の取得先は charset を宣言せず
 /// CP932 を返すため、宣言が無い場合だけ本文から推定する。置換文字で埋めた本文は保存しない。
 fn decode(payload: &Payload) -> Result<String, FetchError> {
-    let (encoding, body) = if let Some(body) = payload.body.strip_prefix(BOM) {
-        (UTF_8, body)
+    // 宣言と推定は診断で区別する。推定した文字コードの名前だけを出すと、
+    // 取得元がそれを名乗っていない場合に読み手が原因を追えない。
+    let (encoding, declared, body) = if let Some(body) = payload.body.strip_prefix(BOM) {
+        (UTF_8, true, body)
     } else if let Some(label) = payload.charset.as_deref() {
         let encoding = Encoding::for_label(label.as_bytes())
             .ok_or_else(|| FetchError::UnknownCharset(label.to_owned()))?;
-        (encoding, payload.body.as_slice())
+        (encoding, true, payload.body.as_slice())
     } else if from_utf8(&payload.body).is_ok() {
-        (UTF_8, payload.body.as_slice())
+        (UTF_8, false, payload.body.as_slice())
     } else {
-        (SHIFT_JIS, payload.body.as_slice())
+        (SHIFT_JIS, false, payload.body.as_slice())
     };
     encoding
         .decode_without_bom_handling_and_without_replacement(body)
         .map(|decoded| decoded.into_owned())
-        .ok_or(FetchError::Undecodable(encoding.name()))
+        .ok_or(FetchError::Undecodable {
+            encoding: encoding.name(),
+            declared,
+        })
 }
 
 /// メタ行を先頭に付ける。`expires_at` は書かず、読み取り側の `fetched_at + 1 year` に委ねる。

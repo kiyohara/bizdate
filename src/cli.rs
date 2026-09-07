@@ -210,8 +210,8 @@ fn store(
     download: impl FnOnce(&str) -> Result<Payload, FetchError>,
     stdout: &mut impl Write,
 ) -> Result<u8, CliError> {
-    let path = data_path()?;
-    fetch::save(&args.source, &path, now, download)?;
+    // 保存先の解決は `decide` と同じく `fetch::save` へ委ね、`--source` の検証を先に済ませる。
+    let path = fetch::save(&args.source, data_path, now, download)?;
     // 保存できた実行だけが path を出す。
     writeln!(stdout, "{}", path.display()).map_err(CliError::Output)?;
     Ok(SAVED)
