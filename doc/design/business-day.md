@@ -74,8 +74,8 @@ CLI の option と exit code は `cli-interface.md` を参照する。決定経�
 
 ### ローカル読み取りの境界
 
-- schema `1` のメタ行は `# bizdate-meta schema=1`、`# fetched_at=<日時>`、`# source_url=<URL>`、任意の `# expires_at=<日時>` とする。既知フィールドの重複、必須フィールドの欠落・空値、未対応 schema はエラーとする。未知の先頭 `#` 行は読み飛ばす
-- `fetched_at` と `expires_at` は UTC の RFC 3339 とする。`Z` または `+00:00`、秒の小数部を扱う
+- schema `1` のメタ行は `# bizdate-meta schema=1`、`# fetched_at=<日時>`、`# source_url=<URL>`、任意の `# expires_at=<日時>` とする。`bizdate-meta` は schema 行だけに必須とする。既知フィールドの重複、必須フィールドの欠落・空値、未対応 schema はエラーとする。未知の先頭 `#` 行（prefix 無しの `schema`、prefix 付きの他フィールドを含む）は読み飛ばす
+- `fetched_at` と `expires_at` は UTC の RFC 3339 とする。日付と時刻の区切り `T` および UTC の `Z` は小文字も許す。`+00:00` と秒の小数部も扱う
 - `expires_at` があれば優先する。省略時は UTC 上で `fetched_at` に暦年を 1 年加算し、時刻を維持する。2 月 29 日は翌年の 2 月末に丸める
 - 現在時刻が有効期限以上になった時点で expire とする。ファイルを削除せず、欠落と同様に判定をエラーにする
 - v1 の本文は `国民の祝日・休日月日,国民の祝日・休日名称` の 2 列とし、日付は `YYYY/M/D`（月・日のゼロ埋めも可）で読む。日付の重複は集合にまとめる。ヘッダ不一致、列数不一致、不正日付、日付が 0 件の本文はエラーとする

@@ -16,9 +16,10 @@ const HEADER: [&str; 2] = ["国民の祝日・休日月日", "国民の祝日・
 #[derive(Debug)]
 pub enum HolidayError {
     InvalidDataHome,
-    MissingHome,
+    InvalidHome,
     MissingData,
     Io(io::Error),
+    InvalidEncoding(std::string::FromUtf8Error),
     InvalidMetadata(&'static str),
     UnsupportedSchema(String),
     Csv(csv::Error),
@@ -33,12 +34,13 @@ impl fmt::Display for HolidayError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidDataHome => write!(f, "XDG_DATA_HOME must be a nonempty absolute path"),
-            Self::MissingHome => write!(
+            Self::InvalidHome => write!(
                 f,
                 "HOME must be an absolute path when XDG_DATA_HOME is unset"
             ),
             Self::MissingData => write!(f, "local holiday data is missing"),
             Self::Io(error) => write!(f, "cannot read holiday data: {error}"),
+            Self::InvalidEncoding(error) => write!(f, "holiday data must be UTF-8: {error}"),
             Self::InvalidMetadata(key) => write!(f, "missing or invalid holiday metadata: {key}"),
             Self::UnsupportedSchema(schema) => write!(f, "unsupported holiday schema: {schema:?}"),
             Self::Csv(error) => write!(f, "invalid holiday CSV: {error}"),
@@ -60,6 +62,7 @@ impl Error for HolidayError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Io(error) => Some(error),
+            Self::InvalidEncoding(error) => Some(error),
             Self::Csv(error) => Some(error),
             _ => None,
         }
@@ -86,7 +89,7 @@ fn data_path_with(
             let home = read_env("HOME")
                 .map(PathBuf::from)
                 .filter(|p| p.is_absolute());
-            home.ok_or(HolidayError::MissingHome)?.join(".local/share")
+            home.ok_or(HolidayError::InvalidHome)?.join(".local/share")
         }
     };
     Ok(base.join("bizdate/holidays/holidays.csv"))
@@ -104,13 +107,14 @@ pub struct HolidayData {
 impl HolidayData {
     /// ローカルファイルだけを読む。欠落や不正データから空の集合へ fallback しない。
     pub fn load(path: &Path, now: Timestamp) -> Result<Self, HolidayError> {
-        let input = fs::read_to_string(path).map_err(|error| {
+        let bytes = fs::read(path).map_err(|error| {
             if error.kind() == io::ErrorKind::NotFound {
                 HolidayError::MissingData
             } else {
                 HolidayError::Io(error)
             }
         })?;
+        let input = String::from_utf8(bytes).map_err(HolidayError::InvalidEncoding)?;
         Self::parse(&input, now)
     }
 
@@ -135,8 +139,10 @@ impl HolidayData {
             let record = record.map_err(HolidayError::Csv)?;
             dates.insert(parse_csv_date(&record[0])?);
         }
-        let first_year = dates.first().ok_or(HolidayError::EmptyData)?.year();
-        let last_year = dates.last().ok_or(HolidayError::EmptyData)?.year();
+        let (Some(first), Some(last)) = (dates.first(), dates.last()) else {
+            return Err(HolidayError::EmptyData);
+        };
+        let (first_year, last_year) = (first.year(), last.year());
         Ok(Self {
             dates,
             expires_at,
@@ -184,12 +190,11 @@ impl<'a> Metadata<'a> {
             let (line, rest) = body.split_once('\n').unwrap_or((body, ""));
             body = rest;
             let line = line[1..].trim();
-            let line = line.strip_prefix("bizdate-meta ").unwrap_or(line);
             let Some((key, value)) = line.split_once('=') else {
                 continue;
             };
             let field = match key {
-                "schema" => &mut metadata.schema,
+                "bizdate-meta schema" => &mut metadata.schema,
                 "fetched_at" => &mut metadata.fetched_at,
                 "source_url" => &mut metadata.source_url,
                 "expires_at" => &mut metadata.expires_at,

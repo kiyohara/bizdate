@@ -44,6 +44,29 @@ fn leading_metadata_is_skipped_but_csv_quotes_and_hashes_are_preserved() {
 }
 
 #[test]
+fn metadata_prefix_identifies_only_the_schema_field() {
+    let unmarked = FIXTURE.replace("# bizdate-meta schema=", "# schema=");
+    assert!(matches!(
+        HolidayData::parse(&unmarked, now()),
+        Err(HolidayError::InvalidMetadata("schema"))
+    ));
+    for key in ["fetched_at", "source_url"] {
+        let prefixed = FIXTURE.replace(&format!("# {key}="), &format!("# bizdate-meta {key}="));
+        assert!(matches!(
+            HolidayData::parse(&prefixed, now()),
+            Err(HolidayError::InvalidMetadata(field)) if field == key
+        ));
+    }
+    // 無関係な schema コメントや未知の prefix 付きフィールドを採用しない。
+    let input = format!("# schema=2\n# bizdate-meta expires_at=invalid\n{FIXTURE}");
+    let data = HolidayData::parse(&input, now()).unwrap();
+    assert_eq!(
+        data.expires_at,
+        "2027-09-06T02:24:33Z".parse::<Timestamp>().unwrap()
+    );
+}
+
+#[test]
 fn expiration_boundary_is_exclusive_with_or_without_explicit_expiration() {
     for input in [FIXTURE.to_owned(), with_expiration("2027-09-06T02:24:33Z")] {
         for (instant, expired) in [
@@ -278,8 +301,13 @@ fn filesystem_missing_invalid_utf8_and_expired_data_are_errors() {
     ));
     fs::write(&path, [0xff, 0xfe]).unwrap();
     let error = HolidayData::load(&path, now()).unwrap_err();
-    assert!(matches!(error, HolidayError::Io(_)));
+    assert!(matches!(error, HolidayError::InvalidEncoding(_)));
     assert!(error.source().is_some());
+    // ディレクトリの読み取り失敗は文字コード不正と区別する。
+    assert!(matches!(
+        HolidayData::load(&dir.0, now()),
+        Err(HolidayError::Io(_))
+    ));
     fs::write(&path, FIXTURE).unwrap();
     assert!(matches!(
         HolidayData::load(&path, "2028-01-01T00:00:00Z".parse().unwrap()),
@@ -318,12 +346,12 @@ fn missing_or_invalid_base_paths_never_resolve_relative_to_current_directory() {
         ));
         assert!(matches!(
             data_path_with(|key| (key == "HOME").then(|| value.into())),
-            Err(HolidayError::MissingHome)
+            Err(HolidayError::InvalidHome)
         ));
     }
     assert!(matches!(
         data_path_with(|_| None),
-        Err(HolidayError::MissingHome)
+        Err(HolidayError::InvalidHome)
     ));
 }
 
@@ -345,6 +373,9 @@ fn public_path_resolver_reads_process_environment() {
         assert_eq!(data_path().unwrap(), PathBuf::from(expected));
         return;
     }
+    // 関数参照から名前を得て rename に追従する。libtest の名前は crate 名を含まない。
+    let full_name = std::any::type_name_of_val(&public_path_resolver_reads_process_environment);
+    let (_, filter) = full_name.split_once("::").unwrap();
     for (xdg, expected) in [
         (Some("/data"), "/data/bizdate/holidays/holidays.csv"),
         (
@@ -354,16 +385,19 @@ fn public_path_resolver_reads_process_environment() {
     ] {
         let mut command = std::process::Command::new(env::current_exe().unwrap());
         command
-            .args([
-                "--exact",
-                "holidays::tests::public_path_resolver_reads_process_environment",
-            ])
+            .args(["--exact", filter])
             .env(CHILD, expected)
             .env("HOME", "/home/example")
             .env_remove("XDG_DATA_HOME");
         if let Some(xdg) = xdg {
             command.env("XDG_DATA_HOME", xdg);
         }
-        assert!(command.status().unwrap().success());
+        let output = command.output().unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(output.status.success(), "{filter}: {output:?}");
+        assert!(
+            stdout.contains("test result: ok. 1 passed; 0 failed;"),
+            "{filter}: {stdout}"
+        );
     }
 }
