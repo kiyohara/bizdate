@@ -66,10 +66,20 @@ CLI の option と exit code は `cli-interface.md` を参照する。決定経�
 - CSV に掲載される日付（振替休日を含む）を祝日（休日）とする
 - 日本以外の祝日へ拡張する場合は、`--source` にインターネット上の任意 CSV URL を指定することを想定する。対象国・CSV スキーマの詳細は未決とする
 - ローカル保存場所は `$XDG_DATA_HOME/bizdate/holidays/holidays.csv` とする。`XDG_DATA_HOME` 未設定時は `~/.local/share/bizdate/holidays/holidays.csv` とする
+- 保存先の基点は絶対 path とする。`XDG_DATA_HOME` の空文字・相対 path はエラーとし、未設定時だけ `HOME` を使う。必要な `HOME` が未設定・空文字・相対 path の場合もエラーとする
 - ローカルファイルは UTF-8 の CSV とする。取得元が Shift_JIS / CP932 等の場合は保存時に UTF-8 へ変換する
 - bizdate 用メタデータは同一ファイル先頭の `#` 行に埋め込む。少なくとも `schema`、`fetched_at`（UTC RFC 3339）、`source_url` を記録する。`expires_at` を書いてよい（省略時は `fetched_at + 1 year`）
 - メタ行の直後に、UTF-8 化した取得元 CSV の本文（ヘッダとデータ行）を続ける。判定時は先頭の `#` 行をスキップしてから CSV を読む
 - 実装では外部 holiday ライブラリに寄せず、取得した CSV を自前で解釈する。詳細は [0009](decision-log/0009-holiday-csv-local-format.md)
+
+### ローカル読み取りの境界
+
+- schema `1` のメタ行は `# bizdate-meta schema=1`、`# fetched_at=<日時>`、`# source_url=<URL>`、任意の `# expires_at=<日時>` とする。`bizdate-meta` は schema 行だけに必須とする。既知フィールドの重複、必須フィールドの欠落・空値、未対応 schema はエラーとする。未知の先頭 `#` 行（prefix 無しの `schema`、prefix 付きの他フィールドを含む）は読み飛ばす
+- `fetched_at` と `expires_at` は UTC の RFC 3339 とする。日付と時刻の区切り `T` および UTC の `Z` は小文字も許す。`+00:00` と秒の小数部も扱う
+- `expires_at` があれば優先する。省略時は UTC 上で `fetched_at` に暦年を 1 年加算し、時刻を維持する。2 月 29 日は翌年の 2 月末に丸める
+- 現在時刻が有効期限以上になった時点で expire とする。ファイルを削除せず、欠落と同様に判定をエラーにする
+- v1 の本文は `国民の祝日・休日月日,国民の祝日・休日名称` の 2 列とし、日付は `YYYY/M/D`（月・日のゼロ埋めも可）で読む。日付の重複は集合にまとめる。ヘッダ不一致、列数不一致、不正日付、日付が 0 件の本文はエラーとする
+- 年カバーは本文の日付の最小年から最大年まで（両端を含む）とする。祝日照会では対象年と有効期限を検査し、年カバー外や期限切れを「祝日ではない」として扱わない
 
 ## v1 で扱わないこと
 

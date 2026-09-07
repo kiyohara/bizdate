@@ -20,7 +20,7 @@
 | 0006 | decided | 祝日データ | fetch-holidays がネット取得してローカル保存。判定はローカルのみ。欠落/1年expireはエラー。`--source` 既定は内閣府 CSV | [0006-holiday-data-source.md](0006-holiday-data-source.md) |
 | 0007 | decided | CLI の形 | サブコマンド `first`/`last`/`fetch-holidays`。判定 exit 0/1/2。`--day-off`。保存先は XDG data | [0007-cli-shape.md](0007-cli-shape.md) |
 | 0008 | decided | 実装言語と配布 | Rust（pure Rust/rustls、Docker ビルド、CI で fmt/clippy/test）。内部用 lib は置くが外部 API の互換性は保証しない。Homebrew は後続視野。まずはローカル+CI で動く CLI | [0008-language-and-distribution.md](0008-language-and-distribution.md) |
-| 0009 | decided | 祝日 CSV URL とローカル形式 | 既定 URL は内閣府 `syukujitsu.csv`。ローカルは UTF-8。先頭 `#` 行に fetched_at / source_url 等 | [0009-holiday-csv-local-format.md](0009-holiday-csv-local-format.md) |
+| 0009 | decided | 祝日 CSV URL とローカル形式 | 既定 URL は内閣府 `syukujitsu.csv`。ローカルは UTF-8 と先頭メタ行。期限は UTC 暦年、期限以上で無効。年カバー外・不正データはエラー | [0009-holiday-csv-local-format.md](0009-holiday-csv-local-format.md) |
 | 0010 | decided | 開発ホスティングと CI 基盤 | GitHub（`kiyohara/bizdate`、public）。Issue / Actions / Releases。Homebrew tap は `kiyohara/homebrew-tap` を共用。CI とリリースは実装が形になってから導入 | [0010-hosting-and-ci-platform.md](0010-hosting-and-ci-platform.md) |
 | 0011 | decided | AI agent 体制と設定配置 | Claude Code / Codex / Cursor の 3 体制 + Copilot review。共通正本は `doc/guidelines/` と `.agents/skills/`、tool 固有は薄い入口 | [0011-ai-agent-lineup.md](0011-ai-agent-lineup.md) |
 | 0012 | decided | 開発ループ | GitHub Issue 駆動。1 Issue = 1 ブランチ = 1 PR、直列消化。merge は人間。`progress.md` は索引、`working-branch-notes/` は作業メモ | [0012-development-loop.md](0012-development-loop.md) |
