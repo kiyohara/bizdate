@@ -34,7 +34,7 @@ bizdate fetch-holidays [--source URL]
 
 - 短 option は v1 では提供しない
 - JSON 出力は v1 では提供しない
-- help 文面は日本語とする
+- help の説明文は日本語とする（範囲は「共通」を参照）
 
 未知の option、不正な組み合わせ、不正な日付形式は usage またはエラーを stderr に出し、exit code `2` で終了する。
 
@@ -88,7 +88,13 @@ bizdate last && monthly-job
 | `--help` | usage を表示して終了する |
 | `--version` | version を表示して終了する |
 
-`--help` と `--version` は正常終了とし、exit code `0` とする。
+`--help` と `--version` は正常終了とし、exit code `0` とする。出力は stdout へ書く。用法誤りに伴う usage は stderr へ書く。
+
+subcommand へ伝播するのは `--help` だけとする。`bizdate first --help` は当該 subcommand の usage を表示するが、`--version` は root コマンドだけで受け、`bizdate first --version` は用法誤りとして exit code `2` で終了する。version は CLI 全体に 1 つであり、subcommand ごとに別の名前と version を示さないためである。
+
+help の日本語化は、コマンドの説明と各 option の説明を対象とする。`Usage:` / `Options:` などの section heading は CLI パーサ既定の英語表記のままとする（[0007](decision-log/0007-cli-shape.md)）。
+
+subcommand は `first` / `last` / `fetch-holidays` だけとし、CLI パーサ既定の `help` subcommand は提供しない。
 
 ローカル祝日データの保存場所は `$XDG_DATA_HOME/bizdate/holidays/holidays.csv`（未設定時は `~/.local/share/bizdate/holidays/holidays.csv`）とする。UTF-8・先頭メタ行の形式は `business-day.md` を参照する。
 

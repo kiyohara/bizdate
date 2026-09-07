@@ -18,7 +18,7 @@
 | 0004 | decided | 日付とタイムゾーン | 日付のみ・`YYYY-MM-DD`。今日の既定は local。上書きは `--timezone` > `BIZDATE_TZ` > local | [0004-date-and-timezone.md](0004-date-and-timezone.md) |
 | 0005 | decided | 業務日の定義 | 月〜金かつ国民の祝日でなく利用者指定休日でもない日。`--day-off`。業務日 0 日の月は first / last とも該当なし。config 上書きは将来 | [0005-business-day-definition.md](0005-business-day-definition.md) |
 | 0006 | decided | 祝日データ | fetch-holidays がネット取得してローカル保存。判定はローカルのみ。欠落/1年expireはエラー。`--source` 既定は内閣府 CSV | [0006-holiday-data-source.md](0006-holiday-data-source.md) |
-| 0007 | decided | CLI の形 | サブコマンド `first`/`last`/`fetch-holidays`。判定 exit 0/1/2。`--day-off`。保存先は XDG data | [0007-cli-shape.md](0007-cli-shape.md) |
+| 0007 | decided | CLI の形 | サブコマンド `first`/`last`/`fetch-holidays`。判定 exit 0/1/2。`--day-off`。保存先は XDG data。help は説明文のみ日本語 | [0007-cli-shape.md](0007-cli-shape.md) |
 | 0008 | decided | 実装言語と配布 | Rust（pure Rust/rustls、Docker ビルド、CI で fmt/clippy/test）。内部用 lib は置くが外部 API の互換性は保証しない。Homebrew は後続視野。まずはローカル+CI で動く CLI | [0008-language-and-distribution.md](0008-language-and-distribution.md) |
 | 0009 | decided | 祝日 CSV URL とローカル形式 | 既定 URL は内閣府 `syukujitsu.csv`。ローカルは UTF-8 と先頭メタ行。期限は UTC 暦年、期限以上で無効。年カバー外・不正データはエラー | [0009-holiday-csv-local-format.md](0009-holiday-csv-local-format.md) |
 | 0010 | decided | 開発ホスティングと CI 基盤 | GitHub（`kiyohara/bizdate`、public）。Issue / Actions / Releases。Homebrew tap は `kiyohara/homebrew-tap` を共用。CI とリリースは実装が形になってから導入 | [0010-hosting-and-ci-platform.md](0010-hosting-and-ci-platform.md) |
