@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `implement-business-day-logic`
-- PR: 未作成
+- PR: #24
 - 最終更新: 2026-09-07
 
 ## 目的
