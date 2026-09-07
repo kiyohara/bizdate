@@ -48,11 +48,14 @@ impl Sandbox {
     }
 
     pub fn write_data(&self, fetched_at: &str) {
+        self.write_csv(fetched_at, &csv());
+    }
+
+    pub fn write_csv(&self, fetched_at: &str, body: &str) {
         let path = self.data_path();
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, format!(
-            "# bizdate-meta schema=1\n# fetched_at={fetched_at}\n# source_url=https://example.com/holidays.csv\n{}",
-            csv()
+            "# bizdate-meta schema=1\n# fetched_at={fetched_at}\n# source_url=https://example.com/holidays.csv\n{body}"
         )).unwrap();
     }
 
@@ -96,10 +99,19 @@ pub fn assert_error(output: Output, diagnostic: &str) {
 // 1 回だけ GET に応答する。bind を先に済ませ、起動待ちの sleep を不要にする。
 // 接続・読み取りには上限を置き、CLI の配線が壊れても server が待ち続けないようにする。
 pub fn serve(status: &str, body: Vec<u8>) -> (String, thread::JoinHandle<()>) {
+    serve_with_type(status, "text/csv", body)
+}
+
+pub fn serve_with_type(
+    status: &str,
+    content_type: &str,
+    body: Vec<u8>,
+) -> (String, thread::JoinHandle<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let url = format!("http://{}/holidays.csv", listener.local_addr().unwrap());
     let status = status.to_owned();
+    let content_type = content_type.to_owned();
     let handle = thread::spawn(move || {
         let deadline = Instant::now() + Duration::from_secs(10);
         let mut stream = loop {
@@ -112,6 +124,8 @@ pub fn serve(status: &str, body: Vec<u8>) -> (String, thread::JoinHandle<()>) {
                 Err(error) => panic!("accept failed: {error}"),
             }
         };
+        // accept 後の flag 継承は OS に依存するため、timeout を使う状態を明示する。
+        stream.set_nonblocking(false).unwrap();
         stream
             .set_read_timeout(Some(Duration::from_secs(10)))
             .unwrap();
@@ -129,8 +143,7 @@ pub fn serve(status: &str, body: Vec<u8>) -> (String, thread::JoinHandle<()>) {
                 break;
             }
         }
-        // charset 無しの Shift_JIS も HTTP 層から保存まで通す。
-        write!(stream, "HTTP/1.1 {status}\r\nContent-Type: text/csv\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).unwrap();
+        write!(stream, "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).unwrap();
         stream.write_all(&body).unwrap();
     });
     (url, handle)
