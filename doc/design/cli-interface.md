@@ -90,6 +90,8 @@ bizdate last && monthly-job
 
 `--help` と `--version` は正常終了とし、exit code `0` とする。出力は stdout へ書く。用法誤りに伴う usage は stderr へ書く。
 
+subcommand へ伝播するのは `--help` だけとする。`bizdate first --help` は当該 subcommand の usage を表示するが、`--version` は root コマンドだけで受け、`bizdate first --version` は用法誤りとして exit code `2` で終了する。version は CLI 全体に 1 つであり、subcommand ごとに別の名前と version を示さないためである。
+
 help の日本語化は、コマンドの説明と各 option の説明を対象とする。`Usage:` / `Options:` などの section heading は CLI パーサ既定の英語表記のままとする（[0007](decision-log/0007-cli-shape.md)）。
 
 subcommand は `first` / `last` / `fetch-holidays` だけとし、CLI パーサ既定の `help` subcommand は提供しない。

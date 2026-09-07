@@ -16,6 +16,7 @@ Issue #12 の判定サブコマンド `first` / `last` を CLI として配線�
 - CLI 層の unit test 10 件を追加した。既存 45 件と合わせて 55 件。
 - 仕様正本、decision log 0007 / 0014 と index、進捗表を更新した。
 - Compose の 4 検査と、ビルドしたバイナリでの process レベル確認がすべて成功した。
+- PR #25 のレビュー指摘 3 件に対応した。`[imo]` を採用し、`[ask]` は現状維持のうえ仕様へ 1 行足し、`[fyi]` は情報として受けた。
 
 ## 決定事項
 
@@ -27,6 +28,9 @@ Issue #12 の判定サブコマンド `first` / `last` を CLI として配線�
 - 保存先の解決は closure で受け取り、利用者入力の検証を先に済ませる。`date.rs` / `holidays.rs` の `*_with` と同じ注入方式に揃えた。
 - stdout への書き出し失敗は `2` にする。書けなかった実行を判定の成否として返さない。
 - CLI レベルの検証は、CLI 層の unit test とビルドしたバイナリの手動実行で行う。バイナリを起動する統合テストの整備は #14 の作業内容であり、本 PR では作らない。
+- レビュー対応 1 周目。`execute` も `data_path` を closure で受け取る形にし、subcommand から exit code までを unit test で通す。`Command` → `Edge` の対応が検査の外に残っていた。取り違えると判定が反転するため、#14 を待たずに塞ぐ。
+- `--version` は root コマンドだけで受ける。subcommand へ伝播するのは `--help` だけとし、その旨を `cli-interface.md` の「共通」へ明記した。clap の挙動を実測した結果、`global = true` だけでは debug assertion で panic し（exit `101`）、`propagate_version = true` を併せると `bizdate first --version` が `bizdate-first 0.1.0` という root と別の名前を出す。version は CLI 全体に 1 つであり、subcommand ごとに別名を示す形は採らない。
+- stdout が EPIPE になる場合の挙動は現状のままとする。読み手が読まずに終了する相手（`head -c 0` など）では `2` と診断 1 行になるが、`head -n 1` では `yes` を返して `0`、仕様のゲート形は pipe を使わないため影響しない。
 
 ## 次にやること
 
@@ -36,7 +40,7 @@ Issue #12 の判定サブコマンド `first` / `last` を CLI として配線�
 
 Compose の `dev` service で次を実行し、すべて成功した。
 
-- `cargo test --locked`: 55 件成功（追加 10 件、既存 45 件）。
+- `cargo test --locked`: 56 件成功（追加 11 件、既存 45 件）。
 - `cargo fmt --check`
 - `cargo clippy --locked --all-targets -- -D warnings`
 - `cargo build --locked`
@@ -50,15 +54,25 @@ Compose の `dev` service で次を実行し、すべて成功した。
 
 CLI 層の unit test では、判定の写像、ストリーム内容、`--quiet`、エラー分類、月の両端が同じ日になる月と業務日 0 日の月、long option の配線、help / version の exit code と日本語文面を検査した。
 
+レビュー対応で追加した `subcommand_names_select_the_matching_month_edge` は、`Command::First` / `Command::Last` の対応を入れ替えると当該 1 件だけが赤になることを確認してから戻した。
+
+レビュー指摘の裏取りとして、container 内で次を実測した。
+
+- `bizdate first --version` は `2`、`bizdate --version` は `0`。
+- `--version` に `global = true` だけを足すと clap の debug assertion で panic し、exit `101`。`propagate_version = true` を併せると `bizdate first --version` が `bizdate-first 0.1.0` を出す。確認後に working tree を元へ戻した。
+- `| head -c 0` では bizdate 自身の exit code が `2` で stderr 1 行、`| head -n 1` では `yes` を返して `0`。fd 1 を閉じた起動（`>&-`）は `0`。
+
 `git diff --check`、ドキュメントの参照・Issue との整合性、note の情報統制を確認した。バイナリを起動する統合テストと `fetch-holidays` は未実装であり、#13 / #14 の対象。上記はローカル Compose の結果であり、GitHub CI の結果は PR checks で確認する。
 
 ## リスク・ブロッカー
 
 - ブロッカーなし。
 - subcommand の help で、global option の `--help` が `--day-off` と `--quiet` の間に並ぶ。clap が global option へ与える表示順によるもので、`display_order` を明示すれば動かせるが、magic number を増やすため今回は既定のままにした。
+- 読み手が読まずに終了する pipe（`head -c 0` など）では、判定に成功しても EPIPE で `2` を返す。cron から stderr がメール化される構成では診断 1 行が出る。仕様のゲート形は pipe を使わないため、実用上の影響は小さいと判断している。
 
 ## セッションログ
 
 - 2026-09-07: Issue #12 を開始した。依存 #11（PR #24）の merge を確認し、日本語 help の範囲を決めた。
 - 2026-09-07: CLI 層と unit test を実装した。値欠落エラーだけ clap が usage 行を出さないことと、既定の `help` subcommand が英語で残ることを実機で見つけ、後者は無効化した。
 - 2026-09-07: 仕様正本と decision log を更新し、Compose の 4 検査とバイナリでの process レベル確認を通した。
+- 2026-09-07: レビュー対応 1 周目。`execute` を引数注入に変えて subcommand の対応を検査対象へ入れ、`--version` の適用範囲を仕様へ明記した。指摘の前提は推論ではなく container 内の実測で確認した。

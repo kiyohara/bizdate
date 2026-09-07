@@ -145,7 +145,12 @@ impl From<HolidayError> for CliError {
 pub fn run() -> ExitCode {
     let cli = Cli::parse();
     let mut stdout = io::stdout().lock();
-    let result = match execute(&cli.command, Timestamp::now(), &mut stdout) {
+    let result = match execute(
+        &cli.command,
+        Timestamp::now(),
+        holidays::data_path,
+        &mut stdout,
+    ) {
         // 書き出しに失敗した実行を、判定の成否として返さない。
         Ok(code) => stdout.flush().map(|()| code).map_err(CliError::Output),
         Err(error) => Err(error),
@@ -153,12 +158,19 @@ pub fn run() -> ExitCode {
     ExitCode::from(finish(result, &mut io::stderr()))
 }
 
-fn execute(command: &Command, now: Timestamp, stdout: &mut impl Write) -> Result<u8, CliError> {
+/// subcommand を月内の端へ対応付ける。取り違えると判定が反転するため、
+/// 保存先の解決は `decide` と同じく closure で受け取り、この対応も検査対象にする。
+fn execute(
+    command: &Command,
+    now: Timestamp,
+    data_path: impl FnOnce() -> Result<PathBuf, HolidayError>,
+    stdout: &mut impl Write,
+) -> Result<u8, CliError> {
     let (edge, args) = match command {
         Command::First(args) => (Edge::First, args),
         Command::Last(args) => (Edge::Last, args),
     };
-    let matched = decide(edge, args, now, holidays::data_path)?;
+    let matched = decide(edge, args, now, data_path)?;
     report(matched, args.quiet, stdout)
 }
 

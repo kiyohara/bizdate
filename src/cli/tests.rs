@@ -41,6 +41,19 @@ fn parse_error(command: &[&str]) -> clap::Error {
     Cli::try_parse_from(command).unwrap_err()
 }
 
+/// argv の parse から exit code までを `execute` ごと通す。
+fn observe_argv(argv: &[&str]) -> (u8, String, String) {
+    let cli = Cli::try_parse_from(argv).unwrap();
+    let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
+    let result = execute(&cli.command, now(), fixture, &mut stdout);
+    let code = finish(result, &mut stderr);
+    (
+        code,
+        String::from_utf8(stdout).unwrap(),
+        String::from_utf8(stderr).unwrap(),
+    )
+}
+
 #[test]
 fn matching_days_exit_zero_and_others_exit_one() {
     // 2026-09 は火曜始まりで月末が水曜。2026-01 は元日と土日で両端がずれる。
@@ -190,6 +203,45 @@ fn the_same_day_can_be_both_edges_and_a_month_can_have_none() {
     };
     assert_eq!(observe(Edge::First, &none).0, NO);
     assert_eq!(observe(Edge::Last, &none).0, NO);
+}
+
+#[test]
+fn subcommand_names_select_the_matching_month_edge() {
+    // first と last の取り違えは判定を反転させるため、subcommand 名から exit code まで通す。
+    for (name, date, expected, line) in [
+        ("first", "2026-09-01", YES, "yes\n"),
+        ("first", "2026-09-30", NO, "no\n"),
+        ("last", "2026-09-30", YES, "yes\n"),
+        ("last", "2026-09-01", NO, "no\n"),
+    ] {
+        let (code, stdout, stderr) =
+            observe_argv(&["bizdate", name, "--timezone", "Asia/Tokyo", "--date", date]);
+        assert_eq!((code, stdout.as_str()), (expected, line), "{name} {date}");
+        assert!(stderr.is_empty(), "{name} {date}: {stderr}");
+    }
+
+    // エラーと `--quiet` も subcommand 経由で同じ写像になる。
+    let (code, stdout, stderr) = observe_argv(&[
+        "bizdate",
+        "last",
+        "--date",
+        "2026-02-30",
+        "--timezone",
+        "UTC",
+    ]);
+    assert_eq!(code, ERROR);
+    assert!(stdout.is_empty());
+    assert!(stderr.starts_with("bizdate: "), "{stderr}");
+    let (code, stdout, _) = observe_argv(&[
+        "bizdate",
+        "last",
+        "--date",
+        "2026-09-30",
+        "--timezone",
+        "Asia/Tokyo",
+        "--quiet",
+    ]);
+    assert_eq!((code, stdout.as_str()), (YES, ""));
 }
 
 #[test]
