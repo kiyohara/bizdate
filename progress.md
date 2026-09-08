@@ -50,9 +50,8 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 
 ## 次にやること
 
-- v1 実装の索引は全件 done。完了済みフェーズの要約は `maintain-progress` skill で別途行う。
-- 完了済みの開発環境整備の表は、`maintain-progress` skill でフェーズ要約へ圧縮する。
-- #14 で「ローカルと CI で正しく動く CLI」に到達した時点で、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
+- 全件 done となった開発環境整備・v1 実装の表を、`maintain-progress` skill で別途フェーズ要約へ圧縮する。
+- #14 で「ローカルと CI で正しく動く CLI」に到達済みのため、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
 
 ## 完了
 
