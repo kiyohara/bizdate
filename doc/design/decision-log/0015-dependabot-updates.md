@@ -61,3 +61,18 @@ SHA 固定を続けながら、更新の発見と PR 作成を自動化できる
 PR #29 のレビューを受け、merge 後の設定受理・更新チェック・更新 PR の内容・bot PR の CI は [Issue #30](https://github.com/kiyohara/bizdate/issues/30) で追跡する。PR #29 は実行ルールどおり `Closes #21` を維持するが、#21 の自動 close は実動確認の完了を意味しない。未確認事項が残る間は #30 を open で維持する。
 
 `dtolnay/rust-toolchain` は同じ `v1` tag の移動を追うため、更新 PR の有無だけで判断せず、上流 tag と workflow の SHA を照合する。一致は現時点の差分なし、不一致で PR が無い場合は更新チェックの完了・cooldown・ignore・open PR 上限・grouping・log を調べる。未検知が残る場合は原因と対処を #30 に記録する。上流 tag が動いていない時点で、将来の移動検知を実証したとは扱わない。
+
+## 2026-09-09 追記: 既定 cooldown 3 日
+
+Issue #30 の実動確認で、`.github/dependabot.yml` に `cooldown` を設定していないにもかかわらず、update job の log に cooldown filter の動作が記録されていることを確認した。
+
+```text
+Initializing cooldown filter
+Days since release : 35 (cooldown days 3)
+```
+
+[Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference) によれば、`cooldown` が未設定でも version update には既定で 3 日の cooldown が適用される。新しい version は release から 3 日経つまで version update の対象にならない。security update はこの既定の対象外である。既定化は [2026-07-14 の changelog](https://github.blog/changelog/2026-07-14-dependabot-version-updates-introduce-default-package-cooldown/) で告知されている。
+
+このため、上流が新 version を出しても直後は更新 PR が出ない。「更新 PR が出ない」原因を切り分けるときは、更新チェックの完了、ignore、open PR 上限、grouping に加えて既定 cooldown も候補に含める。
+
+`cooldown` は明示設定していない。既定のままとし、window を変える必要が生じた時点で改めて判断する。「決定」の内容は変更しない。観測した log と run URL は [Issue #30 のコメント](https://github.com/kiyohara/bizdate/issues/30#issuecomment-5593296663) にある。既定値は上流の変更で動きうるため、恒久の仕様として扱わない。

@@ -4,8 +4,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # cooldown は設定していない。GitHub の既定で version update には 3 日の cooldown が
+    # 効くため、新 release 直後は更新 PR が出ない。security update は対象外。
     # 更新を 1 本にまとめ、直列にレビューする。
-    # 方針は doc/design/decision-log/0015-dependabot-updates.md を参照。
+    # 方針、および cooldown の実測と出典は
+    # doc/design/decision-log/0015-dependabot-updates.md を参照。
     groups:
       github-actions:
         patterns:
