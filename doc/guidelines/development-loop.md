@@ -16,7 +16,7 @@
 
 上記の Issue 起点の手順は、人間・AI agent が開始する作業に適用する。Dependabot が定期的に作成する GitHub Actions の更新 PR は bot による保守として別に扱い、起点 Issue、working branch note、`progress.md` への登録を要求しない。設定の導入・変更や、更新に伴う仕様変更・機能改修は通常の Issue 駆動タスクとする。
 
-更新は `.github/dependabot.yml` の週次チェックでグループ化し、version update の open PR 上限を 1 本とする。更新 PR は直列にレビューし、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合、CI の成功を確認してから人間が merge する。自動 merge は使わない。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
+更新頻度、グループ化、version update の open PR 上限は `.github/dependabot.yml` を正とする。更新 PR は直列にレビューし、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合、CI の成功を確認してから人間が merge する。自動 merge は使わない。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
 
 ## 標準フロー
 

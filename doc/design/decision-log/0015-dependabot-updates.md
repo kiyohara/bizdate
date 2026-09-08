@@ -1,3 +1,5 @@
+<!-- 記入前に doc/guidelines/decision-log-guidelines.md の「正本と参照の関係」を確認する。関連は decision log → spec の向きで書く。本ログは仕様の正本ではない。状態は proposed / decided / superseded / rejected のいずれか。index 未決表の open は使わない。 -->
+
 # Dependabot による GitHub Actions の更新
 
 - 状態: decided
@@ -53,3 +55,9 @@ SHA 固定を続けながら、更新の発見と PR 作成を自動化できる
 
 - [Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference)
 - [About the dependabot.yml file](https://docs.github.com/en/code-security/concepts/supply-chain-security/about-the-dependabot-yml-file)
+
+## 2026-09-09 追記: 実動確認の追跡先
+
+PR #29 のレビューを受け、merge 後の設定受理・更新チェック・更新 PR の内容・bot PR の CI は [Issue #30](https://github.com/kiyohara/bizdate/issues/30) で追跡する。PR #29 は実行ルールどおり `Closes #21` を維持するが、#21 の自動 close は実動確認の完了を意味しない。未確認事項が残る間は #30 を open で維持する。
+
+`dtolnay/rust-toolchain` は同じ `v1` tag の移動を追うため、更新 PR の有無だけで判断せず、上流 tag と workflow の SHA を照合する。一致は現時点の差分なし、不一致で PR が無い場合は更新チェックの完了・cooldown・ignore・open PR 上限・grouping・log を調べる。未検知が残る場合は原因と対処を #30 に記録する。上流 tag が動いていない時点で、将来の移動検知を実証したとは扱わない。

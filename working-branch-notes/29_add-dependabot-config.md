@@ -26,7 +26,7 @@ Issue #21 に従い、SHA 固定した第三者 action を Dependabot で継続�
 ## 次にやること
 
 - PR のレビューとユーザーによる merge。
-- merge 後に下記の GitHub 実動確認を行い、結果を Issue #21 または PR に記録する。
+- merge 後に下記の GitHub 実動確認を行い、結果を [Issue #30](https://github.com/kiyohara/bizdate/issues/30) に記録する。未確認事項が残る間は #30 を open で維持する。
 
 ## 検証
 
@@ -43,6 +43,7 @@ Issue #21 に従い、SHA 固定した第三者 action を Dependabot で継続�
 
 - GitHub による設定受理: 既定ブランチへの反映後、Dependency graph の Dependabot 画面で設定エラーが無いことを確認する。YAML parse 成功だけでは受理確認としない。
 - 更新チェックの実行: 初回実行の log と結果を確認する。PR が出ない場合も「更新不要」で完了したのか、エラーなのかを区別する。必要ならユーザーが `Check for updates` を実行する。
+- `dtolnay/rust-toolchain` の移動検知: 上流 `v1` と workflow の SHA を照合する。一致なら現時点で上流移動なしであり、移動検知の実証ではない。不一致で PR が無い場合は更新チェックの完了・cooldown・ignore・open PR 上限・grouping・log を調べ、未検知が残れば原因と対処を #30 で追跡する。
 - 更新 PR の SHA と末尾コメント: 各 action の上流 commit / tag との対応を確認する。同じ tag 内の SHA 更新ではコメントが変わらないこともある。日付が再導入されていないことも見る。
 - Dependabot PR の CI: 実際の bot PR で `fmt` / `clippy` / `test` / `build` の成功を確認する。設定追加 PR の CI 成功を代替としない。更新 PR が出なければこの項目は保留である。
 - ローカルの Rust `fmt` / `clippy` / `test` / `build` は未実施。変更は設定・コメント・開発文書で、CI の構造比較が一致しているためである。
@@ -55,3 +56,5 @@ Issue #21 に従い、SHA 固定した第三者 action を Dependabot で継続�
 
 - 2026-09-09: Issue #21 の開始指示を受け、依存と未着手状態を確認した。
 - 2026-09-09: 設定、運用境界、decision log を追加した。Issue 本文の予測と異なり日付コメントが残る可能性を上流実装から確認し、末尾 tag のみに統一した。
+- 2026-09-09: review cycle `claude-code-9eb7df9-20260908153245` の指摘 5 件を採用した。実動確認の追跡先 #30 を作成し、PR の `Closes #21` を維持した。`git ls-remote --tags` で上流 tag が `v1` 1 本、現在の固定 SHA と一致することを確認した。将来の tag 移動時の動作は未検証であり、上流実装には SHA を扱う経路もあるため、version 表記だけを理由に未検知とは断定しない。guideline の設定値再掲を参照へ変え、設定コメントの path とログの template 冒頭コメントを揃えた。
+- 2026-09-09: review 対応後も Compose 内の YAML parse、CI 構造比較、3 action の SHA 固定、相対リンク確認、`git diff --check` が成功した。今回の差分はコメントと文書のみであり、ローカルの Rust 検証は再実行していない。

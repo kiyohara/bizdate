@@ -4,7 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    # 更新を 1 本にまとめ、直列にレビューする。方針は decision log 0015 を参照。
+    # 更新を 1 本にまとめ、直列にレビューする。
+    # 方針は doc/design/decision-log/0015-dependabot-updates.md を参照。
     groups:
       github-actions:
         patterns:
