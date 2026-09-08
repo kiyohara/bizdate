@@ -2,7 +2,7 @@
 
 - 状態: decided
 - 作成日: 2026-08-18
-- 最終更新日: 2026-09-06
+- 最終更新日: 2026-09-08
 - 関連: `doc/README.md`, `doc/guidelines/README.md`, `doc/design/README.md`, `doc/design/concept.md`, `progress.md`, `AGENTS.md`
 
 ## 背景
@@ -74,3 +74,9 @@ working-branch-notes/
 ## 追記 (2026-08-20)
 
 `doc/guidelines/README.md` を追加した。各ディレクトリの README を配置判断の入口とする運用と揃えるためである。骨格の意図は変えない。
+
+## 追記 (2026-09-08): v1 の利用方法の配置
+
+Issue #15 で CLI の実装後に `doc/help/` の要否を検討した。v1 は `first` / `last` / `fetch-holidays` の 3 subcommand で、判定の option は共通である。祝日データの準備、判定、exit code、シェル・cron のゲート例は root の `README.md` に収まるため、現時点では `doc/help/` を作らない。分割すると短い利用手順を複数ページにまたがって読む必要が生じる。
+
+CLI の形が固まったことを自動的なディレクトリ追加の条件とはせず、README から独立した利用手順や複数ページの説明が必要になった時点で分割を見直す。配布手段の決定後にインストール・運用の説明を加える場合も、README に収まるかを再評価する。出力サンプルの方針は本追記の対象外とする。

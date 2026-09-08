@@ -12,7 +12,7 @@
 
 | ID | 状態 | 主題 | 現在の結論 | 詳細 |
 |---|---|---|---|---|
-| 0001 | decided | ドキュメント配置 | 仕様は `doc/design/`、経緯は `decision-log/`、進捗は root の `progress.md`、作業メモは `working-branch-notes/`。`doc/help/` と出力サンプルは CLI の形が固まってから | [0001-document-directory-structure.md](0001-document-directory-structure.md) |
+| 0001 | decided | ドキュメント配置 | 仕様は `doc/design/`、経緯は `decision-log/`、進捗は root の `progress.md`、作業メモは `working-branch-notes/`。v1 の利用方法は README にまとめ、独立した手順や複数ページの説明が必要になったら `doc/help/` を再検討する | [0001-document-directory-structure.md](0001-document-directory-structure.md) |
 | 0002 | decided | CLI command name | CLI command name は `bizdate` とする | [0002-cli-command-name.md](0002-cli-command-name.md) |
 | 0003 | decided | v1 スコープ | 主用途はゲート。公開は first/last と fetch-holidays。埋め込み会社カレンダーは対象外。`--day-off` は可。v1 既定は日本。他国は `--source` 想定 | [0003-v1-scope.md](0003-v1-scope.md) |
 | 0004 | decided | 日付とタイムゾーン | 日付のみ・`YYYY-MM-DD`。今日の既定は local。上書きは `--timezone` > `BIZDATE_TZ` > local | [0004-date-and-timezone.md](0004-date-and-timezone.md) |
