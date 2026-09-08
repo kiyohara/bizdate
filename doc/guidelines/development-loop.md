@@ -6,11 +6,17 @@
 
 ## 基本方針
 
-- 作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` を保守する運用作業そのもの、すなわち索引登録（`register-progress-issue`）と進捗整理（`maintain-progress`）の 2 件で、これらには起点 Issue を作らない。「Issue を索引に登録するための Issue」「進捗整理を行うための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 2 件に限り、通常の作業へ広げない。リリース手順を担う skill を追加する場合も、同種の運用作業として同じ扱いへ揃える。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
+- 人間・AI agent が開始する作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` を保守する運用作業そのもの、すなわち索引登録（`register-progress-issue`）と進捗整理（`maintain-progress`）の 2 件で、これらには起点 Issue を作らない。「Issue を索引に登録するための Issue」「進捗整理を行うための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 2 件に限り、通常の作業へ広げない。リリース手順を担う skill を追加する場合も、同種の運用作業として同じ扱いへ揃える。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
 - 複数 Issue をまとめて 1 ブランチで進めない。実行時は `doc/guidelines/issue-driven-task-execution.md` に従い、1 Issue = 1 ブランチ = 1 PR とする。
 - タスクは直列に消化する。複数 Issue の並行作業はしない。
 - 横断的に見渡したい Issue 群は `progress.md` の進行中タスク索引に登録する。
 - **PR の merge は AI agent が行わない**。レビューと merge 判断は人間が行う。
+
+### Dependabot が作成する更新 PR
+
+上記の Issue 起点の手順は、人間・AI agent が開始する作業に適用する。Dependabot が定期的に作成する GitHub Actions の更新 PR は bot による保守として別に扱い、起点 Issue、working branch note、`progress.md` への登録を要求しない。設定の導入・変更や、更新に伴う仕様変更・機能改修は通常の Issue 駆動タスクとする。
+
+更新頻度、グループ化、version update の open PR 上限は `.github/dependabot.yml` を正とする。更新 PR は直列にレビューし、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合、CI の成功を確認してから人間が merge する。自動 merge は使わない。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
 
 ## 標準フロー
 

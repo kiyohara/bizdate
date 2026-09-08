@@ -35,8 +35,8 @@ jobs:
 
       # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。
       - name: Install Rust toolchain
-        # v1 は上流が更新のたびに付け替える tag のため、固定した commit の日付を添える。
-        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1 (2026-08-05 時点)
+        # 末尾は Dependabot が認識する tag のみとし、固定時点は SHA と Git 履歴で追う。
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
           toolchain: "1.98"
           components: rustfmt, clippy
