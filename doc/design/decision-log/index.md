@@ -26,6 +26,7 @@
 | 0012 | decided | 開発ループ | GitHub Issue 駆動。1 Issue = 1 ブランチ = 1 PR、直列消化。merge は人間。`progress.md` は索引、`working-branch-notes/` は作業メモ | [0012-development-loop.md](0012-development-loop.md) |
 | 0013 | decided | ライセンス選定 | MIT License。copyright は `2026 Tomokazu Kiyohara` | [0013-license-selection.md](0013-license-selection.md) |
 | 0014 | decided | 依存クレートと toolchain | edition 2024、MSRV 1.98。`clap` / `jiff` / `csv` / `ureq`(rustls) / `encoding_rs`。XDG パス解決は自前実装 | [0014-dependency-crates-and-toolchain.md](0014-dependency-crates-and-toolchain.md) |
+| 0015 | decided | Dependabot 更新 | GitHub Actions を週次・グループ化・open PR 上限 1 本で更新。bot PR は Issue 起点の対象外、レビューは直列、merge は人間。末尾は tag のみ、Cargo は今回対象外 | [0015-dependabot-updates.md](0015-dependabot-updates.md) |
 
 ## 未決事項
 
