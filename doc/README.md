@@ -19,4 +19,4 @@ AI agent 専用の説明を別ファイルとして分離せず、人間も読�
 
 ## まだ置かないもの
 
-- `doc/help/`: 利用者がリポジトリ上で直接読む help / how-to。CLI の形と出力が固まってから追加する（`doc/design/decision-log/0001-document-directory-structure.md`）。
+- `doc/help/`: 利用者がリポジトリ上で直接読む help / how-to。v1 の利用方法は root の `README.md` にまとめる。独立した利用手順や複数ページの説明が必要になった時点で追加を見直す（`doc/design/decision-log/0001-document-directory-structure.md`）。

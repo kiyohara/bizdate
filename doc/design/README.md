@@ -11,7 +11,7 @@
 
 ## 置かないもの
 
-- 利用者がそのまま手順として読む help: CLI の形が固まってから `doc/help/` に置く
+- 利用者がそのまま手順として読む help: v1 は root の `README.md` にまとめ、独立した利用手順や複数ページの説明が必要になったら `doc/help/` への分割を見直す
 - AI agent / Git / GitHub / PR などの作業ルール: `doc/guidelines/` に置く
 - 作業状況の一覧: `progress.md` に置く
 

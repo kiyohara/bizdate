@@ -19,7 +19,7 @@
 
 設計フェーズと開発環境整備を完了した。プロダクト仕様（0002–0009）と開発体制の方針（0001、0010–0013）を decision log に記録し、`business-day.md` / `cli-interface.md` を仕様の正本とした。開発ループ、AI agent 設定、GitHub MCP 連携、レビュー体制、skill は PR #1〜#4 で整備済み。
 
-v1 実装に着手した。Issue #7〜#15 を進行中タスクとして追跡する。#7 で Cargo プロジェクト、Compose の実行環境、依存クレートの選定（0014）を置き、#8 で GitHub Actions の CI を入れた。#9 で日付とタイムゾーンの解決 API、#10 でローカル祝日 CSV の読み取りと期限・年カバーの検証、#11 で利用者指定休日と業務日・月の最初 / 最後の判定を実装し、#12 で判定サブコマンド `first` / `last` の CLI を配線して exit code 0 / 1 / 2 の写像を入れ、#13 で `fetch-holidays` の取得・UTF-8 変換・保存を実装した。#14 で実バイナリを起動する統合テストを整備し、取得から判定までの往復とエラー時の exit code を検証した。実装 PR は `fmt` / `clippy` / `test` / `build` の検査を受ける。
+v1 の CLI 実装と利用方法の整備を完了した。Issue #7〜#15 の実装履歴を以下の索引に残す。#7 で Cargo プロジェクト、Compose の実行環境、依存クレートの選定（0014）を置き、#8 で GitHub Actions の CI を入れた。#9 で日付とタイムゾーンの解決 API、#10 でローカル祝日 CSV の読み取りと期限・年カバーの検証、#11 で利用者指定休日と業務日・月の最初 / 最後の判定を実装し、#12 で判定サブコマンド `first` / `last` の CLI を配線して exit code 0 / 1 / 2 の写像を入れ、#13 で `fetch-holidays` の取得・UTF-8 変換・保存を実装した。#14 で実バイナリを起動する統合テストを整備し、取得から判定までの往復とエラー時の exit code を検証した。#15 で README に利用方法を記載し、v1 は `doc/help/` を作らず README にまとめると判断した（0001 追記）。実装 PR は `fmt` / `clippy` / `test` / `build` の検査を受ける。
 
 ## 進行中タスク: 開発環境整備
 
@@ -46,13 +46,12 @@ Issue 駆動ループそのものを用意する作業であり、この整備�
 | V1-06 | [#12](https://github.com/kiyohara/bizdate/issues/12) 判定サブコマンドの CLI | done | #11 | - | [#25](https://github.com/kiyohara/bizdate/pull/25) |
 | V1-07 | [#13](https://github.com/kiyohara/bizdate/issues/13) `fetch-holidays` | done | #10, #12 | - | [#26](https://github.com/kiyohara/bizdate/pull/26) |
 | V1-08 | [#14](https://github.com/kiyohara/bizdate/issues/14) 統合テストと E2E | done | #12, #13 | - | [#27](https://github.com/kiyohara/bizdate/pull/27) |
-| V1-09 | [#15](https://github.com/kiyohara/bizdate/issues/15) README の利用方法 | todo | #14 | `doc/help/` の要否を判断する | - |
+| V1-09 | [#15](https://github.com/kiyohara/bizdate/issues/15) README の利用方法 | done | #14 | - | [#28](https://github.com/kiyohara/bizdate/pull/28) |
 
 ## 次にやること
 
-- v1 実装の索引を V1-09 から直列に消化する。
-- 完了済みの開発環境整備の表は、`maintain-progress` skill でフェーズ要約へ圧縮する。
-- #14 で「ローカルと CI で正しく動く CLI」に到達した時点で、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
+- 全件 done となった開発環境整備・v1 実装の表を、`maintain-progress` skill で別途フェーズ要約へ圧縮する。
+- #14 で「ローカルと CI で正しく動く CLI」に到達済みのため、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
 
 ## 完了
 
