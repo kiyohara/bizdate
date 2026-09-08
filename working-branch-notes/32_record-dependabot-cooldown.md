@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `record-dependabot-cooldown`
-- PR: 未採番
+- PR: #32
 - 最終更新: 2026-09-09
 
 ## 目的
