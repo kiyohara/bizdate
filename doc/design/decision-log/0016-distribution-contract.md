@@ -37,7 +37,7 @@ third-party ライセンス表記について。
 macOS 署名について。
 
 - I: 署名・notarization を行わない
-- J: Apple Developer Program に加入し、`dist` の外で署名工程を自作する
+- J: Apple Developer Program に加入し、`dist` の `macos-sign` で署名する（notarization は別途自作する）
 
 ## 検討内容
 
@@ -57,7 +57,11 @@ runner の公式一覧を 2026-09-09 に再確認したところ、`macos-15` / 
 
 ### 実行時前提
 
-`jiff` は Unix では tzdb を bundle せず、`TZDIR` か既定ディレクトリのシステム tzdb を読む。実測では、`/usr/share/zoneinfo` と `/etc/localtime` を消すと `first` が exit code `2` で失敗した。`--date` と `--timezone` を両方与えても失敗する。local timezone の解決を先に行うためである。`--version` は成功した。配布バイナリは外部データに依存する。
+`jiff` は Unix では tzdb を bundle せず、`TZDIR` か既定ディレクトリのシステム tzdb を読む。実測では、`/usr/share/zoneinfo` と `/etc/localtime` を消すと `first` が exit code `2` で失敗した。`--version` は成功した。配布バイナリは外部データに依存する。
+
+失敗の因果は採用経路で分かれる。`src/date.rs` の `resolve_timezone_with` は `--timezone` があればその IANA 名を直接解決して return し、local timezone は `--timezone` と `BIZDATE_TZ` の両方が無い場合だけ参照する。実測でも、`Asia/Tokyo` の zoneinfo だけを戻して `/etc/localtime`・`TZ`・`BIZDATE_TZ` を欠いたままにすると `--timezone Asia/Tokyo` は成功した（`--date` の有無によらない）。tzdb 全体を消したときの `--timezone Asia/Tokyo` の失敗は、local timezone の先行解決ではなく指定 IANA 名のデータ不在による。
+
+必要なのは採用するタイムゾーンのデータであって、local timezone が設定されていること自体ではない。local timezone を採用する経路（`--timezone` も `BIZDATE_TZ` も無い場合）だけは、`--date` を与えても解決を省略しない。CI と利用者案内で local timezone の設定まで必須化しないよう、この区別を spec の表に落とす。
 
 TLS trust は逆だった。`/etc/ssl/certs` と `/usr/share/ca-certificates` を削除しても `fetch-holidays` は成功した。`webpki-roots` が Mozilla root store をバイナリへ埋め込むためである。システム CA store に依存しない代わりに、root 証明書の更新には再リリースが要る。
 
@@ -86,7 +90,9 @@ Homebrew 経由でも保持されるかは、`dist` 0.32.0 の Formula template 
 
 ### 署名
 
-`dist` 0.32.0 は Windows の署名に対応する一方、macOS の署名・notarization には対応しない。候補 J は `dist` の外に工程を自作することになり、Apple Developer Program の年額費用も要る。
+`dist` 0.32.0 のソースを確認したところ、macOS の署名には対応している。build 設定に `macos-sign` があり、`sign/macos.rs` が一時 keychain へ証明書を取り込んで `/usr/bin/codesign` を実行する。生成される release workflow も、有効時に `CODESIGN_IDENTITY` / `CODESIGN_CERTIFICATE` / `CODESIGN_CERTIFICATE_PASSWORD`（任意で `CODESIGN_OPTIONS`）を secret から渡す。一方 notarization には対応せず、同モジュールの doc comment に将来対応する旨だけが書かれている。
+
+したがって候補 J の障壁は機能の有無ではない。Apple Developer Program の年額費用、証明書と secret の運用（失効・更新を含む）、notarization を `dist` の外に自作する必要が残ることである。
 
 一方、Gatekeeper は `com.apple.quarantine` 属性が付いたファイルにだけ働く。Homebrew と `curl` はこの属性を付けず、ブラウザでの直接ダウンロードだけが付ける。主導線を Homebrew と `curl` に置けば、未署名の影響は限定される。
 
@@ -98,7 +104,11 @@ Homebrew 経由でも保持されるかは、`dist` 0.32.0 の Formula template 
 
 ### 公開の運用条件
 
-`dist` の release workflow は tag push を trigger とし、plan / build / host / publish / announce の順に進む。GitHub Release は draft として作られ、announce で公開される。
+`dist` の release workflow は tag push を trigger とし、plan / build / host / publish / announce の順に進む。GitHub Release が作られる段階は `github-release` 設定で決まり、既定の `auto` は `host` に解決される。既定のままなら Release は host 段階で公開され、announce まで draft に留まるわけではない。
+
+この既定を変えない。`github-release = "announce"` にすると、生成した Homebrew installer が公開前の URL を参照する短い窓ができ、その間の install が失敗する。公式文書も既定からの変更を勧めていない。
+
+運用上の帰結として、publish 段階の Homebrew 更新が失敗して announce に到達しなくても、GitHub Release は公開済みになり得る。失敗時に「Release は未公開」と決めつけず、Release の実状を確認してから復旧を判断する。
 
 tap への push には `HOMEBREW_TAP_TOKEN` という secret（`repo` scope の PAT）を source リポジトリ側に置く必要がある。secrets の設定はユーザーが行う。agent は secrets を操作しない（`doc/guidelines/github-cli-guidelines.md`）。
 
@@ -111,12 +121,12 @@ Homebrew は単一 version しか保持しない。同じ version を作り直�
 - 対象は 4 target。Linux は gnu 版のみとし、musl 版は配らない（候補 A）。すべて native runner でビルドする。
 - ビルド runner は `macos-15` / `macos-15-intel` / `ubuntu-22.04` / `ubuntu-22.04-arm` とする。Linux 側は最低 glibc を上げないため古い側に固定する。
 - 最低 glibc は `objdump -T` の参照 GLIBC symbol version で実測し、release ごとに確認する。実測は #37 の CI に置く。
-- tzdb はバイナリに bundle せず、システム tzdb を前提とする。tzdb が無い環境では `first` / `last` が失敗することを spec と利用者向け案内に明記する。
+- tzdb はバイナリに bundle せず、システム tzdb を前提とする。採用するタイムゾーンのデータが読めない場合に `first` / `last` が失敗することを、採用経路（`--timezone` / `BIZDATE_TZ` / local）ごとに spec の表へ書く。local timezone の設定を一律に必須要件としない。
 - TLS trust は `webpki-roots` の埋め込みを維持する。root 更新には再リリースが要ることを記録する。
 - archive は `.tar.gz`、checksum は `sha256` とする。
 - `THIRD-PARTY-LICENSES.md` を `cargo-about` 0.9.2 で生成し、archive に同梱する（候補 E）。commit はせず release build のたびに生成する。Homebrew 経由では `pkgshare` に入る。
 - 初回配布の version は `0.1.0`、tag は `v0.1.0` とする（候補 G）。
-- macOS の署名と notarization は行わない（候補 I）。利用者向けの主導線を Homebrew と `curl` に置く。
+- macOS の署名と notarization は行わない（候補 I）。`dist` の `macos-sign` は使えるが、費用と運用負担に見合わないと判断した。利用者向けの主導線を Homebrew と `curl` に置く。
 - `Cargo.toml` の `publish = false` を維持し、package 単位の `dist = true` で bin を配布対象にする。
 - installer は Homebrew のみとする。shell installer は v1 では提供しない。
 - `CHANGELOG.md` は導入しない。Release 本文は `dist` の生成物一覧に人間が要約を加える。
@@ -127,6 +137,7 @@ Homebrew は単一 version しか保持しない。同じ version を作り直�
 - release workflow は `contents: write` を要する。tap 更新のため `HOMEBREW_TAP_TOKEN` を source リポジトリの secret に置く。secrets の設定と tag の push はユーザーが行う。
 - 公開前に、CI が green であること、`Cargo.toml` の version と tag が一致すること、`dist plan` が想定どおりの成果物を列挙すること、third-party 表記が生成できることを確認する。
 - 公開後に、4 target の archive と checksum が揃っていること、Homebrew での install と upgrade が通ること、`bizdate --version` が tag と一致することを確認する。
+- `github-release` は既定（`auto` → `host`）のままとする。Release は host 段階で公開されるため、publish 段階の Homebrew 更新が失敗して announce に到達しなくても Release は公開済みになり得る。復旧手順では Release の実状を確認してから判断し、未公開と決めつけない。
 - 失敗時は同じ version を作り直さず、version を上げてやり直す。Homebrew Formula が単一 version しか保持しないためである。
 
 `doc/guidelines/development-command-guidelines.md` に、Compose がローカル検証の正であること、CI / release workflow 上の macOS native ビルドと対象環境での実行確認はその例外であることを追記する。原則そのものは変えない。
@@ -139,7 +150,7 @@ third-party 表記を入れるのは、`webpki-roots` の CDLA-Permissive-2.0 �
 
 初回を `0.1.0` にするのは、配布導線が初回で、まだ安定を約束する段階ではないためである。
 
-macOS を署名しないのは、`dist` が対応せず費用も要る一方、主導線では Gatekeeper が働かないためである。
+macOS を署名しないのは、`dist` の署名機能は使えるものの、Apple Developer Program の費用と証明書・secret の運用負担が要り、notarization は結局自作になる一方で、主導線では Gatekeeper が働かないためである。
 
 ## 影響
 
@@ -158,5 +169,6 @@ macOS を署名しないのは、`dist` が対応せず費用も要る一方、�
 - macOS Intel runner が使えなくなった場合。`x86_64-apple-darwin` は Tier 2 であり、2027 年秋に提供終了が予告されている。cross-build のみになった時点でサポート範囲を再判断する。
 - Homebrew を使わない Linux 利用者の導線が必要になった場合。shell installer の追加を検討する。
 - 配布バイナリの改竄検知を強めたい場合。署名付き checksum や sigstore を再検討する。
-- `dist` が macOS の署名・notarization に対応した場合。
+- macOS で Gatekeeper の確認が実際に利用者の障害になった場合。`dist` の `macos-sign` は既に使えるため、費用と運用負担を引き受けるかの判断になる。
+- `dist` が notarization に対応した場合。
 - 公開契約が安定し、`1.0.0` を名乗る段階になった場合。

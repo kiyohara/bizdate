@@ -59,7 +59,19 @@ objdump -T <binary> | grep -o 'GLIBC_[0-9.]*' | sort -u -V | tail -1
 
 #### time zone database
 
-`first` / `last` は tzdb が無いと exit code `2` で失敗する。`--date` と `--timezone` を両方与えた場合も失敗する。local timezone の解決を先に行うためである。`--version` と `--help` は tzdb が無くても成功する。
+`first` / `last` は、採用するタイムゾーンのデータが読めないと exit code `2` で失敗する。必要なのは採用するタイムゾーンのデータであり、local timezone が設定されていること自体ではない。失敗の条件は採用経路によって分かれる。
+
+| 採用経路 | 必要なデータ | 欠けたときの診断 |
+|---|---|---|
+| `--timezone <IANA 名>` | その IANA 名の zoneinfo | `unknown IANA time zone` |
+| `BIZDATE_TZ` | その IANA 名の zoneinfo | `unknown IANA time zone` |
+| local timezone（上記いずれも未指定） | システムの local timezone 解決 | `cannot resolve local time zone` |
+
+`--timezone` または `BIZDATE_TZ` を与えた場合、local timezone は参照しない。該当 zone のデータさえあれば、`/etc/localtime` も `TZ` も無い環境で成功する。
+
+local timezone を採用する経路では、`--date` を与えても解決を省略しない。`--date` があれば「今日」を計算しないが、採用タイムゾーンの決定自体は先に行うためである。
+
+`--version` と `--help` はどの経路でもタイムゾーンを解決しないため、tzdb が無くても成功する。
 
 tzdb をバイナリへ bundle する選択は取らない。システム側の更新で祝日以外の時刻解釈が最新に保たれる利点を優先する。tzdb を持たない最小コンテナ（`scratch`、tzdata を入れていない distroless / Alpine など）では、tzdb を別途導入する必要がある。この前提は利用者向けの案内へ反映する。
 
@@ -149,7 +161,8 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 ## 署名
 
 - macOS の署名と notarization は行わない。
-- `dist` 0.32.0 は macOS の署名・notarization に対応しない。Apple Developer Program の費用も要る。
+- `dist` 0.32.0 は macOS の署名に対応する。`macos-sign` の build 設定があり、CI から `CODESIGN_IDENTITY` / `CODESIGN_CERTIFICATE` / `CODESIGN_CERTIFICATE_PASSWORD` を渡して `codesign` を実行する経路を持つ。notarization には対応しない。
+- 採用しない理由は機能の有無ではなく、Apple Developer Program の年額費用、証明書と secret の運用負担、notarization を別途自作する必要があることによる。
 - 利用上の影響は、macOS の Gatekeeper が `com.apple.quarantine` 属性の付いたファイルにだけ働くことで限定される。Homebrew と `curl` はこの属性を付けない。ブラウザで archive を直接ダウンロードした場合は付くため、Gatekeeper の確認が出る。
 - 利用者向けの案内では、macOS では Homebrew か `curl` での取得を主導線とする。
 - Windows の署名は、Windows を対象外とするため扱わない。

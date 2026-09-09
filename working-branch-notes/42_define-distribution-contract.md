@@ -10,7 +10,7 @@ Issue #36 の作業として、初回配布の対象環境・成果物・公開�
 
 ## 現在の状況
 
-仕様・decision log・関連文書の更新と、後続 Issue の同期まで完了した。PR 作成待ち。
+PR #42 を作成し、レビュー指摘 3 件へ対応した。
 
 ## 調査結果
 
@@ -32,7 +32,7 @@ Issue #36 の作業として、初回配布の対象環境・成果物・公開�
 
 ### 実行時前提（Compose の dev container で実測）
 
-- **IANA tzdb は必須**。`/usr/share/zoneinfo` と `/etc/localtime` を消すと、`--date` と `--timezone` を両方与えても `first` が exit 2 で失敗する（`cannot resolve local time zone: failed to find system time zone`）。`--timezone Asia/Tokyo` だけを与えた場合も `unknown IANA time zone` になる。`--version` は成功する。jiff は Unix では既定で bundle せず `TZDIR` → 既定ディレクトリの順に探すため。
+- **採用するタイムゾーンのデータが必須**。jiff は Unix では既定で bundle せず `TZDIR` → 既定ディレクトリの順に探す。失敗条件は採用経路で分かれる。`--timezone` / `BIZDATE_TZ` を与えた場合はその IANA 名の zoneinfo が要り、無ければ `unknown IANA time zone`。どちらも無い場合だけ local timezone を解決し、解決できないと `cannot resolve local time zone`（`--date` があっても解決は省略されない）。`Asia/Tokyo` の zoneinfo だけを戻せば、`/etc/localtime`・`TZ`・`BIZDATE_TZ` が無くても `--timezone Asia/Tokyo` は成功する。`--version` はどの経路でも成功する。
 - **システム CA store は不要**。`/etc/ssl/certs` と `/usr/share/ca-certificates` を削除しても `fetch-holidays` は成功した。TLS trust は `webpki-roots` が bundle する Mozilla root store を使う。root 証明書の更新には再ビルドと再リリースが要る。
 - **`*-linux-gnu` は静的リンクではない**。release build は `libc.so.6` と `libgcc_s.so.1` に動的リンクし、`file` は `dynamically linked` を示した。pure Rust 方針は C ライブラリを引き込まないことを意味するが、libc への動的リンクは残る。
 
@@ -41,7 +41,8 @@ Issue #36 の作業として、初回配布の対象環境・成果物・公開�
 - Rust platform support: `aarch64-apple-darwin` は Tier 1 / macOS 11.0+、`x86_64-apple-darwin` は **Tier 2 に降格済み** / macOS 10.12+、`*-unknown-linux-gnu` は Tier 1 / glibc 2.17+、`*-unknown-linux-musl` は Tier 2 / musl 1.2.5。<https://doc.rust-lang.org/rustc/platform-support.html>
 - GitHub-hosted runner: `ubuntu-22.04` / `ubuntu-24.04` と `-arm` 版、`macos-15` / `macos-26`（arm64）、`macos-15-intel` / `macos-26-intel`（Intel）。public repo は無料。<https://docs.github.com/en/actions/reference/runners/github-hosted-runners>
 - macOS Intel runner は 2027 年秋の macOS 15 image 引退で提供終了予定。
-- dist の最新安定版は 0.32.0（2026-05-22）。Homebrew formula は tap の `Formula/` へ書き、`HOMEBREW_TAP_TOKEN` を source repo の secret として要求する。Cask 生成は非対応。macOS の署名・notarization も非対応。
+- dist の最新安定版は 0.32.0（2026-05-22）。Homebrew formula は tap の `Formula/` へ書き、`HOMEBREW_TAP_TOKEN` を source repo の secret として要求する。Cask 生成は非対応。macOS の署名は `macos-sign` で対応するが、notarization は非対応。
+- dist の `github-release` 既定は `auto` で `host` に解決される。Release は host 段階で公開され、announce まで draft に留まらない。
 - 既存 tap `kiyohara/homebrew-tap` は `Casks/slapex.rb` と `README.md` のみ。`Formula/` は未作成のため、ディレクトリが分かれて共存できる。
 - macOS の Gatekeeper は `com.apple.quarantine` が付いたファイルにだけ働く。Homebrew と `curl` は付けないが、ブラウザでの直接ダウンロードは付ける。Apple Silicon は ad-hoc でも署名を要求するが、macOS 上で native link すればリンカが自動で付ける。
 
@@ -64,15 +65,25 @@ Issue #36 の作業として、初回配布の対象環境・成果物・公開�
 
 README の「配布用バイナリは提供していません」は変更していない。公開前に手順だけ書くと事実と食い違うため、実公開後に #40 の専用 PR で切り替える。
 
+## レビュー対応
+
+PR #42 のレビューで [must] 2 件・[ask] 1 件を受け、いずれも一次資料と実測で裏を取ったうえで採用した。
+
+- **公開段階**: dist の `github-release` 既定は `auto` → `host` であり、Release は host 段階で公開される。「draft で作られ announce で公開される」は誤りだった。0016 を訂正し、publish 段階が失敗しても Release は公開済みになり得る点を復旧の前提に加えた。#40 にも同期した。
+- **tzdb の因果**: `src/date.rs` の `resolve_timezone_with` は `--timezone` があれば local timezone を参照しない。「`--date` と `--timezone` を両方与えても local timezone の解決で失敗する」は誤りだった。採用経路ごとの表へ書き換え、local timezone の設定を一律の必須要件にしないようにした。#37 / #40 と PR 本文も訂正した。
+- **macOS 署名**: dist 0.32.0 は `macos-sign` と `sign/macos.rs` で署名に対応する。非対応なのは notarization だけだった。不採用の理由を「dist が対応しない」から「費用と証明書・secret の運用負担、notarization は自作になる」へ差し替え、候補 J と見直し条件も直した。
+
 ## 次にやること
 
-- PR 採番後に note を rename する。
-- レビュー後、#37 へ進む。
+- レビュー対応の再確認（verify-comments）を待つ。
+- merge 後、#37 へ進む。
 
 ## 検証
 
 - Compose で `cargo fmt --check`（OK）、`cargo clippy --locked --all-targets -- -D warnings`（OK）、`cargo test --locked`（unit 69 件・CLI E2E 12 件すべて成功）、`cargo build --locked`（OK）。文書のみの変更だが、調査中に release build と実行確認を行ったため、最終状態でも一通り実行した。ソースコードは変更していない。
 - 実行時前提の実測（Compose の dev container、aarch64）。tzdb を消すと `first` が exit 2 で失敗し `--version` は成功すること、CA store を消しても `fetch-holidays` が成功すること、release build が `libc.so.6` と `libgcc_s.so.1` に動的リンクすることを確認した。
+- レビュー後の追加実測。tzdb 全消し後に `Asia/Tokyo` の zoneinfo だけを戻し、`/etc/localtime` を消したまま `TZ` と `BIZDATE_TZ` を未設定にして、`--timezone Asia/Tokyo` が `--date` の有無によらず成功することを確認した。同条件で `--timezone` を外すと `cannot resolve local time zone` になる。
+- dist v0.32.0 のソースを直接確認した。`cargo-dist/src/sign/macos.rs`（`codesign` 実行と notarization 未対応の doc comment）、`templates/ci/github/release.yml.j2` の `CODESIGN_*` secret、`book/src/reference/config.md` の `github-release` 既定（`auto` → host 段階で作成）。
 - 最低 glibc の実測方法を確認した。`objdump -T` の参照 GLIBC symbol version の最大は `GLIBC_2.34` で、ビルド環境の glibc 2.41 とは一致しなかった。
 - musl ビルドを試し、`aarch64-linux-musl-gcc` が見つからず失敗することを確認した。musl を採らない根拠にした。
 - `cargo-about` 0.9.2 を dev container に入れて実際に生成させ、`webpki-roots` の CDLA-Permissive-2.0、`encoding_rs` の BSD-3-Clause、`ring` の ISC / Apache-2.0、`unicode-ident` の Unicode-3.0 を含む一覧が出ることを確認した。`cargo install` には `--features cli` が要る。
@@ -98,3 +109,4 @@ README の「配布用バイナリは提供していません」は変更して�
 - 2026-09-09: Issue #36 を読み、依存（PR #41 merge 済み）を確認して着手した。
 - 2026-09-09: 依存ライセンス、実行時前提、対象環境、dist、tap の調査を実施した。実行時前提は dev container で実測した。
 - 2026-09-09: `doc/design/distribution.md` と decision log 0016 を作成し、index・concept・cli-interface・design README・AGENTS・copilot 指示・開発コマンド guideline・progress を更新した。Issue #37〜#40 に「#36 の決定（同期）」節を追加した。
+- 2026-09-10: レビュー指摘 3 件（公開段階、tzdb の因果、macOS 署名）を dist v0.32.0 のソースと Compose 上の実測で確認し、いずれも指摘どおりだったため spec・0016・note・Issue・PR 本文を訂正した。
