@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: register-distribution-plan
-- PR: （採番前）
+- PR: #41
 - 最終更新: 2026-09-09
 
 ## 目的
