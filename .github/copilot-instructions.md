@@ -7,7 +7,7 @@ I want to review in Japanese.
 - 目的はマージ前に修正すべき問題を見つけることであり、改善案の網羅的な列挙ではない。**重要な問題が無ければ、追加コメントを生成しないことを正しい結果とする。**
 - 本リポジトリは v1 の CLI 実装を完了している。実装言語は Rust で、`src/` に実装と unit test、`tests/` に実バイナリを起動する統合テストがある。
 - CI（GitHub Actions）が PR ごとに `cargo fmt --check` / `clippy`（warning を error 扱い）/ `test` / `build` を検査する。フォーマット違反、clippy の lint、ビルドエラーは CI が検出するため指摘しない。
-- 配布手段（GitHub Releases / Homebrew）は未決である。インストール手順や release workflow が無いことは指摘しない。
+- 配布仕様は `doc/design/distribution.md` で決定済みだが、実装は未着手である。release workflow、配布対象 4 target の CI、Homebrew Formula、インストール手順が無いことは指摘しない。
 
 ## 原則
 
@@ -43,7 +43,8 @@ I want to review in Japanese.
 - 入口に恒久ルールが直接書かれていたら指摘する。
 - rule の追加・削除・rename では、共通正本・Cursor 入口・Claude Code 入口の basename が揃っているか、`AGENTS.md` にリンクがあるかを確認する。**Codex は `AGENTS.md` からしか正本に到達できないため、リンク漏れは `[must]` で指摘する。**
 - 存在しないファイルへの参照とリンク切れは指摘する。
-- `doc/design/` 直下の spec（`concept.md` / `business-day.md` / `cli-interface.md`）が仕様の正本である。spec 間の矛盾や decision log の決定との食い違いを指摘する。decision log を仕様の正本として扱う記述も指摘する。
+- `doc/design/` 直下の spec（`concept.md` / `business-day.md` / `cli-interface.md` / `distribution.md`）が仕様の正本である。spec 間の矛盾や decision log の決定との食い違いを指摘する。decision log を仕様の正本として扱う記述も指摘する。
+- `distribution.md` は配布物の仕様だけを扱う。公開の作業手順（誰がいつ何を実行するか）が spec 側に混ざっていたら指摘する。手順の正本は `doc/guidelines/` のリリース guideline である。
 - `doc/design/decision-log/*.md` は 1 テーマ 1 ファイル。背景・候補・検討内容・決定・理由・影響・見直し条件のうち判断に必要なものが欠けていれば指摘する。`index.md` は入口であり、詳細議論の詰め込み、参照漏れ、有効な方針と未決事項の混同を指摘する。
 - `progress.md` は横断的な作業状況の一覧である。Issue 本文や skill 手順の複製、内容が混ざって読めなくなる変更を指摘する。
 - 文末は読者層で分かれる。利用者向け（repo root `README.md`）はですます調、開発者向け（`doc/` 配下、`AGENTS.md`、`progress.md`、`working-branch-notes/`、各ディレクトリの `README.md`）は常体。混在は `[nits]` で指摘する。

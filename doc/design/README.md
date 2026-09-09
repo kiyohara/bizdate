@@ -20,4 +20,5 @@
 - `concept.md`: 現在合意しているコンセプトの正本
 - `business-day.md`: 日付・業務日・祝日の仕様正本
 - `cli-interface.md`: CLI の option・exit code・入出力の仕様正本
+- `distribution.md`: 配布物の対象環境・成果物・version / tag・同梱要件の仕様正本
 - `decision-log/`: 方針決定ログ

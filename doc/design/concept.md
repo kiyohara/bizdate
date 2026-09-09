@@ -22,11 +22,13 @@
 - CLI・入出力・exit code の詳細は `cli-interface.md`。経緯は [0007](decision-log/0007-cli-shape.md)
 - 実装言語は Rust（pure Rust / rustls、Docker でビルド再現、CI で fmt・clippy・test）。Homebrew は後続視野。経緯は [0008](decision-log/0008-language-and-distribution.md)
 - 公開ライセンスは MIT とする。`LICENSE` は設置済み。経緯は [0013](decision-log/0013-license-selection.md)
+- 配布は GitHub Releases を起点とし、macOS / Linux の arm64 / amd64 の 4 target を native ビルドで配る。Homebrew は既存の個人 tap に Formula を置く。詳細は `distribution.md`。経緯は [0016](decision-log/0016-distribution-contract.md)
 
 ## 関連仕様
 
 - 日付・業務日・祝日: [`business-day.md`](business-day.md)
 - CLI: [`cli-interface.md`](cli-interface.md)
+- 配布: [`distribution.md`](distribution.md)
 
 ## 次点の候補（v1 対象外）
 
@@ -37,11 +39,9 @@
 - option 既定をコンフィグファイルで上書きする仕組み（例: `--config`、`~/.config/bizdate/options`）
 - 翌 / 前営業日、第 N 営業日、営業日数
 - 日本以外の祝日への本格対応（`--source` 差し替え想定は記録済み）
-- GitHub Releases / Homebrew による配布（動作確認後）
 
 ## まだ決めていないこと
 
 実装前のプロダクト方針は上記まで決まった。残る未決は次のとおりである。
 
-- 配布手段（Releases / Homebrew）の詳細
 - 日本以外の祝日 CSV のスキーマ

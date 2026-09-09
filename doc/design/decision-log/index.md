@@ -27,12 +27,12 @@
 | 0013 | decided | ライセンス選定 | MIT License。copyright は `2026 Tomokazu Kiyohara` | [0013-license-selection.md](0013-license-selection.md) |
 | 0014 | decided | 依存クレートと toolchain | edition 2024、MSRV 1.98。`clap` / `jiff` / `csv` / `ureq`(rustls) / `encoding_rs`。XDG パス解決は自前実装 | [0014-dependency-crates-and-toolchain.md](0014-dependency-crates-and-toolchain.md) |
 | 0015 | decided | Dependabot 更新 | GitHub Actions を週次・グループ化・open PR 上限 1 本で更新。bot PR は Issue 起点の対象外、レビューは直列、merge は人間。末尾は tag のみ、Cargo は今回対象外 | [0015-dependabot-updates.md](0015-dependabot-updates.md) |
+| 0016 | decided | 初回配布の契約 | macOS / Linux の arm64 / amd64 を native ビルドで 4 target。Linux は gnu のみで最低 glibc は実測。tzdb はシステム依存、TLS trust は埋め込み。`.tar.gz` + `sha256`、third-party 表記を同梱。初回は `0.1.0` / tag `v0.1.0`、macOS 署名なし | [0016-distribution-contract.md](0016-distribution-contract.md) |
 
 ## 未決事項
 
 | 主題 | 状態 | 次に決めること | 関連ログ |
 |---|---|---|---|
-| 配布手段の詳細 | open | GitHub Releases / Homebrew（`dist` + 個人 tap）の具体手順。実装が形になってから着手する | [0008-language-and-distribution.md](0008-language-and-distribution.md), [0010-hosting-and-ci-platform.md](0010-hosting-and-ci-platform.md) |
 | 日本以外の祝日対応 | open | 対象国・CSV スキーマ・時期（`--source` 差し替え想定は記録済み） | [0003-v1-scope.md](0003-v1-scope.md), [0006-holiday-data-source.md](0006-holiday-data-source.md) |
 | コンフィグファイル | open | `--config` や `~/.config/bizdate/options` など（v1 対象外） | [0005-business-day-definition.md](0005-business-day-definition.md) |
 

@@ -19,7 +19,7 @@
 
 v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22〜#28）を完了し、続けて Dependabot による GitHub Actions の更新運用を導入した（Issue #21、#31 / PR #29、#32）。各フェーズの到達点と参照は「完了」の表にまとめる。
 
-2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。既定の macOS / Linux・amd64 / arm64、GitHub Releases / dist / Homebrew を前提に、配布詳細の具体化から順に進める。個別実装と初回公開は未着手である。
+2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。最初の #36 で配布仕様を確定し、正本を `doc/design/distribution.md`、経緯を decision log 0016 に置いた。以降の CI・release workflow・Homebrew・手順整備と初回公開は未着手である。
 
 [#30](https://github.com/kiyohara/bizdate/issues/30) は Dependabot の更新 PR 待ちの単発 Issue として継続する。索引には載せず、配布準備の依存にしない。
 
@@ -29,7 +29,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
-| DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | todo | なし | 配布対象・成果物・公開手順の詳細を具体化する | - |
+| DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | done | なし | 完了。配布仕様を `doc/design/distribution.md` に、経緯を 0016 に置いた | - |
 | DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | todo | #36 | 対象環境での CLI 検証を CI に追加する | - |
 | DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #37 | dist の成果物と Releases workflow を整備する | - |
 | DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #38 | Homebrew Formula 生成と更新連携を整備する | - |
@@ -37,7 +37,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 
 ## 次にやること
 
-- 索引登録 PR の merge 後、`run-issue-task` で #36 から開始する。配布手段の詳細は decision log index で `open` のままであり、#36 で正本と decision log を整える。
+- #36 の PR merge 後、`run-issue-task` で #37 へ進む。配布対象 4 target の native ビルドと実行確認、最低 glibc の実測を CI に載せる。
 - #36〜#40 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 

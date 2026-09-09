@@ -10,6 +10,19 @@ toolchain と依存クレートの選定経緯は `doc/design/decision-log/0014-
 - 実行環境は repo root の `compose.yaml` と `Dockerfile` を正とする。開発用 service 名は `dev` とする。
 - host に Rust toolchain を入れることは禁止しない。ただし、検証結果として記録・報告する実行は Compose 経由のものとする。host の toolchain は MSRV や component 構成が揃っている保証が無い。
 
+## Compose の外に出るもの
+
+Compose は Linux コンテナ 1 種類の実行環境であり、配布対象すべてを賄えない。次は Compose の対象外とし、CI / release workflow 上で実行する。配布仕様の正本は `doc/design/distribution.md`、経緯は `doc/design/decision-log/0016-distribution-contract.md` を参照する。
+
+| 実行 | 場所 | 理由 |
+|---|---|---|
+| macOS 向けの native ビルド | GitHub Actions の macOS runner | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
+| 配布対象 4 target での実行確認 | GitHub Actions の各 native runner | 対象 OS / architecture 上でしか実行成功を確認できない |
+| 最低 glibc の実測 | GitHub Actions の Linux runner | 配布に使うバイナリそのものを測る必要がある |
+| release 成果物の生成と公開 | GitHub Actions の release workflow | `dist` が runner 上で成果物一式を作る |
+
+原則は変えない。ローカルで行う検証は Compose 経由を正とする。上記を実行した結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
+
 ## 基本形
 
 ```sh
