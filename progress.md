@@ -19,15 +19,26 @@
 
 v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22〜#28）を完了し、続けて Dependabot による GitHub Actions の更新運用を導入した（Issue #21、#31 / PR #29、#32）。各フェーズの到達点と参照は「完了」の表にまとめる。
 
-2026-09-09 時点で、進行中の横断プランは無い。open の PR は無く、open の Issue は [#30](https://github.com/kiyohara/bizdate/issues/30)（Dependabot 導入後の実動確認。上流の更新 PR 待ちの単発 Issue）だけで、索引には載せない。
+2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。既定の macOS / Linux・amd64 / arm64、GitHub Releases / dist / Homebrew を前提に、配布詳細の具体化から順に進める。個別実装と初回公開は未着手である。
+
+[#30](https://github.com/kiyohara/bizdate/issues/30) は Dependabot の更新 PR 待ちの単発 Issue として継続する。索引には載せず、配布準備の依存にしない。
 
 ## 進行中タスク
 
-現在、索引する横断タスクは無い。新しい横断タスクが始まったら、`register-progress-issue` skill で状態・依存・参照（Issue / PR）が分かる最小の表をこの節に追加する。
+配布準備を次の順で直列に消化する。依存欄は直前の必須依存だけを記載し、その Issue に対応する PR の merge を確認してから着手する。推移的な依存は先行 Issue の完了を通じて満たす。詳細な作業内容・検証・スコープ外は各 Issue を正とする。
+
+| ID | Issue | 状態 | 依存 | 次にやること | PR |
+|---|---|---|---|---|---|
+| DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | todo | なし | 配布対象・成果物・公開手順の詳細を具体化する | - |
+| DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | todo | #36 | 対象環境での CLI 検証を CI に追加する | - |
+| DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #37 | dist の成果物と Releases workflow を整備する | - |
+| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #38 | Homebrew Formula 生成と更新連携を整備する | - |
+| DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
 
 ## 次にやること
 
-- #14 で「ローカルと CI で正しく動く CLI」に到達済みのため、配布手段（GitHub Releases / Homebrew / `dist`）を decision log で決め、Issue 化する。配布手段の詳細は decision log index で `open` のままである。
+- 索引登録 PR の merge 後、`run-issue-task` で #36 から開始する。配布手段の詳細は decision log index で `open` のままであり、#36 で正本と decision log を整える。
+- #36〜#40 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 
 ## 完了
@@ -38,5 +49,5 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | プロダクト仕様の方針決定 | done | 0002–0009 を `decided`。`business-day.md` / `cli-interface.md` を正本化 |
 | 開発体制の方針決定 | done | 0010–0013 を `decided`。ホスティング、agent 体制、開発ループ、ライセンス |
 | 開発環境整備 | done | PR #1〜#4。agent 入口と作業記録の基盤、開発ループの正本、GitHub MCP 連携、開発ループ skill。ループ整備そのものは Issue を作らずフェーズ単位の PR で記録した（0012） |
-| v1 実装 | done | Issue #7〜#15 / PR #19、#20、#22〜#28。Cargo と Compose の実行環境（0014）、CI（`fmt` / `clippy` / `test` / `build`）、日付とタイムゾーンの解決、祝日データの読み取り、業務日判定、`first` / `last` と `fetch-holidays` の CLI、統合テスト、README の利用方法（0001 追記） |
+| v1 実装 | done | Issue #7〜#15 / PR #19、#20、#22〜#28。Cargo と Compose の実行環境（0014）、CI（`fmt` / `clippy` / `test` / `build`）、日付とタイムゾーンの解決、祝日データの読み取り、業務日判定、`first` / `last` と `fetch-holidays` の CLI、統合テスト、README の利用方法（0001 追記）。後続で Copilot 指示の現況更新（Issue #34 / PR #35）も完了 |
 | Dependabot による action 更新の運用 | done | Issue #21 / PR #29、Issue #31 / PR #32（0015）。設定と運用境界を導入し、実動確認の残項目は #30 で追跡 |
