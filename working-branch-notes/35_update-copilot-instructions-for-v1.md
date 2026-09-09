@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `update-copilot-instructions-for-v1`
-- PR: （採番前）
+- PR: #35
 - 最終更新: 2026-09-09
 
 ## 目的
