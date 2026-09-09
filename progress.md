@@ -21,19 +21,19 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 
 2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。既定の macOS / Linux・amd64 / arm64、GitHub Releases / dist / Homebrew を前提に、配布詳細の具体化から順に進める。個別実装と初回公開は未着手である。
 
-[#30](https://github.com/kiyohara/bizdate/issues/30) は Dependabot の更新 PR 待ちの単発 Issue として継続する。索引には載せず、配布準備の依存にしない。Copilot 指示の現況更新（Issue #34 / PR #35）も完了済みである。
+[#30](https://github.com/kiyohara/bizdate/issues/30) は Dependabot の更新 PR 待ちの単発 Issue として継続する。索引には載せず、配布準備の依存にしない。
 
 ## 進行中タスク
 
-配布準備を次の順で直列に消化する。依存欄の Issue に対応する PR の merge を確認してから着手する。詳細な作業内容・検証・スコープ外は各 Issue を正とする。
+配布準備を次の順で直列に消化する。依存欄は直前の必須依存だけを記載し、その Issue に対応する PR の merge を確認してから着手する。推移的な依存は先行 Issue の完了を通じて満たす。詳細な作業内容・検証・スコープ外は各 Issue を正とする。
 
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | todo | なし | 配布対象・成果物・公開手順の詳細を具体化する | - |
 | DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | todo | #36 | 対象環境での CLI 検証を CI に追加する | - |
-| DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #36, #37 | dist の成果物と Releases workflow を整備する | - |
-| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #36, #38 | Homebrew Formula 生成と更新連携を整備する | - |
-| DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #37, #38, #39 | リリース手順・skill・インストール案内を整備する | - |
+| DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #37 | dist の成果物と Releases workflow を整備する | - |
+| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #38 | Homebrew Formula 生成と更新連携を整備する | - |
+| DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
 
 ## 次にやること
 
@@ -49,5 +49,5 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | プロダクト仕様の方針決定 | done | 0002–0009 を `decided`。`business-day.md` / `cli-interface.md` を正本化 |
 | 開発体制の方針決定 | done | 0010–0013 を `decided`。ホスティング、agent 体制、開発ループ、ライセンス |
 | 開発環境整備 | done | PR #1〜#4。agent 入口と作業記録の基盤、開発ループの正本、GitHub MCP 連携、開発ループ skill。ループ整備そのものは Issue を作らずフェーズ単位の PR で記録した（0012） |
-| v1 実装 | done | Issue #7〜#15 / PR #19、#20、#22〜#28。Cargo と Compose の実行環境（0014）、CI（`fmt` / `clippy` / `test` / `build`）、日付とタイムゾーンの解決、祝日データの読み取り、業務日判定、`first` / `last` と `fetch-holidays` の CLI、統合テスト、README の利用方法（0001 追記） |
+| v1 実装 | done | Issue #7〜#15 / PR #19、#20、#22〜#28。Cargo と Compose の実行環境（0014）、CI（`fmt` / `clippy` / `test` / `build`）、日付とタイムゾーンの解決、祝日データの読み取り、業務日判定、`first` / `last` と `fetch-holidays` の CLI、統合テスト、README の利用方法（0001 追記）。後続で Copilot 指示の現況更新（Issue #34 / PR #35）も完了 |
 | Dependabot による action 更新の運用 | done | Issue #21 / PR #29、Issue #31 / PR #32（0015）。設定と運用境界を導入し、実動確認の残項目は #30 で追跡 |
