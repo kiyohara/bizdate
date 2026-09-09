@@ -29,6 +29,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - コンセプトの正本: `doc/design/concept.md`
 - 業務日・日付・祝日の仕様: `doc/design/business-day.md`
 - CLI 仕様: `doc/design/cli-interface.md`
+- 配布仕様: `doc/design/distribution.md`
 - 進捗管理表: `progress.md`
 - 方針決定ログ index: `doc/design/decision-log/index.md`
 - 方針決定ログ template: `doc/design/decision-log/_template.md`

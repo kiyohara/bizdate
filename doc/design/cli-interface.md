@@ -104,6 +104,7 @@ subcommand は `first` / `last` / `fetch-holidays` だけとし、CLI パーサ�
 - CLI と統合テストから共有する内部用 library target は置く。`publish = false` を維持し、Rust の `pub` な入口も外部利用向けの互換性保証対象にはしない。path / git 依存による参照を技術的に禁止する設定ではない
 - 依存は pure Rust に寄せ、HTTP の TLS は rustls を使う
 - ビルドとテストの再現は Docker（または Compose）を正とする
+- 配布物の対象環境・成果物・実行時前提は [`distribution.md`](distribution.md) を正本とする
 - 詳細は [0008](decision-log/0008-language-and-distribution.md)
 
 ## v1 で扱わないこと
@@ -113,4 +114,3 @@ subcommand は `first` / `last` / `fetch-holidays` だけとし、CLI パーサ�
 - 業務日 / 休日判定の公開 mode
 - コンフィグファイルによる option 既定上書き
 - Windows 向けの動作保証
-- GitHub Releases / Homebrew の具体手順（動作確認後の後続）
