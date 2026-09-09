@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `define-distribution-contract`
-- PR: 未採番
+- PR: #42
 - 最終更新: 2026-09-09
 
 ## 目的
