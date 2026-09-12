@@ -10,7 +10,7 @@ Issue #47 に従い、Claude Code on the web の cloud session で Compose 経�
 
 ## 現在の状況
 
-PR #48 の review（inline comment 3 件）に対応し、修正を push した。verify の結果待ち。merge はユーザーが行う。
+PR #48 の review と verify を完了し、startup 経路の実環境確認も済んだ。merge 待ち。merge はユーザーが行う。
 
 ## 決定事項
 
@@ -23,7 +23,7 @@ PR #48 の review（inline comment 3 件）に対応し、修正を push した�
 
 ## 次にやること
 
-- verify-comments の結果を確認し、未対応があれば対応する。
+- ユーザーによる inline thread の resolve と merge。
 - merge 前にユーザーが本ブランチで新 session を開き、hook の出力と `docker compose run --rm dev cargo fmt --check` を確認する。任意で `--print-stub` の出力を environment の setup script に貼り、再構築を確認する。
 
 ## 検証
@@ -61,7 +61,7 @@ daemon の停止直後に hook を実行すると、終了処理中の旧 proces
 - base image の取得元は gcr.io の Docker Hub mirror に固定した。ECR Public は proxy 経由なら使えるが、proxy の無い setup script の文脈では blob の配信元が許可リストに無く pull できなかった。mirror が使えなくなった場合は環境の許可 host 追加（ユーザー操作）か `BASE_REGISTRY` の変更で対処する。
 - setup script は 5 分以内に終わる必要がある。cache 無しの `--provision` は約 35 秒で、余裕は大きい。
 - setup script の文脈では agent proxy が無く container の network が通らないため、`--provision` では image の最終層を build しない。session 開始時に hook が build する（約 6 秒）。
-- SessionStart hook の実発火は、本 session の resume 時に確認できた（daemon 起動、image あり、cache 一致）。新 session の startup 経路は merge 前にユーザーが確認する。
+- SessionStart hook の実発火は、resume 経路（本 session）と startup 経路（stub を登録した environment の新 session）の両方で確認した。
 
 ### review 対応（PR #48）
 
@@ -83,6 +83,20 @@ inline comment 3 件（`[imo]` 2 件、`[nits]` 1 件）をすべて採用した
 | `--provision`（daemon 起動中） | build を試みず、daemon を止めずに state を書いて exit 0 |
 | session の resume 時の SessionStart hook | 実発火を確認。daemon 起動（2 秒）、image あり、cache 一致 |
 
+### startup 経路の実環境確認（別 session）
+
+stub を environment の setup script に登録した状態で、本ブランチを base に新しい cloud session を作って確認した。repo は変更していない。
+
+| 項目 | 結果 |
+|---|---|
+| setup script（stub → `--provision`） | daemon 起動から base image の pull、state file の記録、daemon 停止まで約 20 秒。build は行わない |
+| SessionStart hook（startup） | 6 行の出力。`COMPOSE_FILE` 設定、daemon 起動 1 秒、image が無いため build して完了（約 3 秒）、environment cache は repo と一致。`WARNING` なし |
+| `COMPOSE_FILE` の伝播 | Bash tool の shell で設定済み。`CLAUDE_ENV_FILE` 経由の受け渡しが有効 |
+| `--doctor` | daemon 起動済み、image あり、cache 一致で exit 0 |
+| `docker compose run --rm dev cargo fmt --check` | 成功（1 秒未満） |
+| `docker compose run --rm dev cargo test --locked` | 成功。81 件（unit 69、E2E 12）。named volume の作成と全 crate の build を含めて約 14 秒 |
+| `./target/debug/bizdate --version` | `bizdate 0.1.0` |
+
 ## セッションログ
 
 - 2026-09-12: 環境調査（daemon 未起動、toolchain が MSRV 未満、egress の TLS 再終端、組み込み GitHub tool）。プランを作成し承認を得た。
@@ -90,3 +104,4 @@ inline comment 3 件（`[imo]` 2 件、`[nits]` 1 件）をすべて採用した
 - 2026-09-12: script・`.claude/settings.json`・`compose.cloud.yaml`・新 guideline・各 guideline の節・0018 を作成。検証で daemon 停止直後の再起動の競合と、setup script 文脈で container の network が通らない点を見つけ、script の設計を修正した。
 - 2026-09-12: 3 commit に分けて push し、PR #48 を組み込み GitHub tool で作成。note を PR 番号で採番した。
 - 2026-09-12: PR #48 の review 3 件に対応して push。resume 時の hook 実発火を確認した。
+- 2026-09-12: 別 session で startup 経路を確認し、所要時間と文言を文書に反映した。

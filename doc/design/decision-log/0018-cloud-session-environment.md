@@ -48,7 +48,7 @@ Claude Code on the web（Anthropic が host する cloud session）でこのリ�
 
 ## 検討内容
 
-- A は開発コマンドの形も報告の扱いも変わらない。spike で daemon の起動、mirror からの base image 取得、override 込みの build、container からの `cargo fetch --locked`、`fmt` / `clippy` / `test` / `build` がすべて通ることを確認した（daemon 起動 1〜3 秒、base image 取得約 35 秒、build 数秒、fetch 数秒、clippy 11 秒、test 15 秒。cache 無しの `--provision` は約 35 秒、その直後の hook は約 6 秒）。
+- A は開発コマンドの形も報告の扱いも変わらない。spike で daemon の起動、mirror からの base image 取得、override 込みの build、container からの `cargo fetch --locked`、`fmt` / `clippy` / `test` / `build` がすべて通ることを確認した（daemon 起動 1〜3 秒、base image 取得約 35 秒、build 数秒、fetch 数秒、clippy 11 秒、test 15 秒。cache 無しの `--provision` は約 35 秒、その直後の hook は約 6 秒）。stub を登録した environment で作った新 session では、setup script の文脈で provision が約 20 秒、続く hook の build が約 3 秒で、stub → provision → snapshot → hook の順に通ることを確認した。
 - B は daemon に依存しないが、toolchain が 2 系統になり、「host の toolchain の結果を検証として報告しない」原則に恒久的な例外を作る。MSRV の記載箇所も増える。
 - C は 2 経路の保守になるうえ、Compose が動く場面でも生の `cargo` を使う誘因になる。daemon が起動できない事例が出ていない段階で例外を用意するのは「先回りで仮想シナリオに備えない」に反する。
 - D は手順が守られる保証がなく、resume 後に daemon が落ちていることに気づかず sandbox の `cargo` に流れやすい。hook は 1 ファイルの登録で済む。
@@ -61,7 +61,7 @@ Claude Code on the web（Anthropic が host する cloud session）でこのリ�
 - setup script の文脈では agent proxy が無く、container 内から外へ出られない。build 層（`rustup component add`）と `cargo fetch` は proxy を前提にするため、`--provision` では daemon の直接 pull で取れる base image（重い部分）と state file の記録に絞り、薄い最終層の build は hook に任せる。build 時に gateway の CA を image に渡せば setup script で完結するが、`Dockerfile` への変更が増えるため見送った。
 - setup script が非 0 で終わると session が起動しないため、`--doctor` と引数の誤り以外は失敗しても exit 0 とし、状況を stdout に短く出す。hook の stdout は agent の context に入る。environment は repository と branch をまたいで共有されるため、stub は script が無ければ何もせず exit 0 する。
 - hook は local の Claude Code でも起動する。`CLAUDE_CODE_REMOTE=true` の guard に加えて、`dockerd` の存在を positive check とし、想定外の環境では何もしない。
-- `/run` は root filesystem の一部であり、daemon 起動中の snapshot には pid file と socket が残る。script は生きていない pid の file を消し、`--provision` は自分で起動した daemon を最後に止める。
+- `/run` は root filesystem の一部であり、daemon 起動中の snapshot には pid file と socket が残る。script は dockerd / containerd でない pid の file を消し、socket は dockerd process が無いときだけ消す。`--provision` は自分で起動した daemon を最後に止める。
 - GitHub 操作: 組み込み tool は `github-op-integrated` の allowlist に無い write（merge / resolve / workflow 実行 / file push）も露出する。tool の可視性ではなく guideline の境界で禁止を維持する。
 - ブランチ: 「Issue 記載のブランチ名」は cloud session では満たせない。1 Issue = 1 ブランチ = 1 PR の本質はブランチ名ではなく対応関係にあり、session のブランチをそのまま使えば成立する。
 - 別プロジェクトの方式から取り込んだ要点は、正本を repo に置いて UI は stub にすること、入力 digest を stub に埋めて cache の再構築を誘発すること、hook で drift を検出して警告すること、setup script を非 0 で終わらせないこと、cloud 判定を 2 段の guard にすること、所要時間を実測して 5 分予算との余裕を文書化することである。処理本体を tool 固有ディレクトリに置く点と、rule shim を作らない点は本リポジトリの配置規約に合わないため採らなかった。

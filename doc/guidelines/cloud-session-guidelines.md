@@ -99,12 +99,13 @@ sandbox での実測（2026-09-12、4 vCPU）。
 | 処理 | 所要時間 |
 |---|---|
 | daemon の起動 | 1〜3 秒 |
-| base image の pull（mirror、約 590 MB） | 約 35 秒 |
+| base image の pull（mirror、約 590 MB） | 20〜35 秒 |
 | 開発用 image の build（`rustup component add`、base image あり） | 数秒 |
 | `cargo fetch --locked` | 数秒 |
-| `--provision` 全体（cache 無しの setup script） | 約 35 秒 |
-| hook（base image が snapshot にあり、image 無し） | 約 6 秒 |
+| `--provision` 全体（cache 無しの setup script） | 20〜35 秒（実環境の setup script で約 20 秒） |
+| hook（base image が snapshot にあり、image 無し） | 3〜6 秒（実環境で約 3 秒） |
 | hook（image あり） | 1 秒未満 |
+| 初回の `cargo test --locked`（named volume の作成と全 crate の build を含む） | 約 15 秒 |
 
 setup script は 5 分以内に終わる必要がある。`--provision` は 1 分以内に収まる。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
 
@@ -124,7 +125,7 @@ setup script は 5 分以内に終わる必要がある。`--provision` は 1 �
 ## 落とし穴
 
 - `service docker start` は sandbox では失敗する。init script が `ulimit` の変更を要求し、sandbox がそれを許さないためである。script は `dockerd` を直接起動する。
-- `/run` は root filesystem の一部であり、daemon 起動中に snapshot されると pid file と socket が残る。script は生きていない pid の file を消し、`--provision` は自分で起動した daemon を最後に止める。
+- `/run` は root filesystem の一部であり、daemon 起動中に snapshot されると pid file と socket が残る。script は dockerd / containerd でない pid の file を消し、socket は dockerd process が無いときだけ消す。`--provision` は自分で起動した daemon を最後に止める。
 - container に `NO_PROXY` を渡さない。渡すと `index.crates.io` への接続が直接接続になり、container 内の CA で検証できず失敗する。
 - hook は local の Claude Code でも起動する。`CLAUDE_CODE_REMOTE` が `true` でなければ無出力で終わるため、local の開発には影響しない。
 - `.mcp.json` の `github-op-integrated` は cloud session で常に起動に失敗する。想定どおりであり、対処しない。
