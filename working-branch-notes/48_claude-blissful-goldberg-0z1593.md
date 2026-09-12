@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/blissful-goldberg-0z1593`（cloud session が用意したブランチ）
-- PR: 未採番
+- PR: #48
 - 最終更新: 2026-09-12
 
 ## 目的
@@ -10,7 +10,7 @@ Issue #47 に従い、Claude Code on the web の cloud session で Compose 経�
 
 ## 現在の状況
 
-spike と実装、検証を完了した。PR を作成する。
+spike と実装、検証を完了し、PR #48 を作成した。レビュー待ち。merge はユーザーが行う。
 
 ## 決定事項
 
@@ -23,7 +23,7 @@ spike と実装、検証を完了した。PR を作成する。
 
 ## 次にやること
 
-- PR を作成し、note を採番する。
+- PR #48 のレビュー対応。
 - merge 前にユーザーが本ブランチで新 session を開き、hook の出力と `docker compose run --rm dev cargo fmt --check` を確認する。任意で `--print-stub` の出力を environment の setup script に貼り、再構築を確認する。
 
 ## 検証
@@ -68,3 +68,4 @@ daemon の停止直後に hook を実行すると、終了処理中の旧 proces
 - 2026-09-12: 環境調査（daemon 未起動、toolchain が MSRV 未満、egress の TLS 再終端、組み込み GitHub tool）。プランを作成し承認を得た。
 - 2026-09-12: Issue #47 を組み込み GitHub tool で作成。note を作成。spike S1〜S4 を実施し、base image の取得元を mirror に切り替えた。
 - 2026-09-12: script・`.claude/settings.json`・`compose.cloud.yaml`・新 guideline・各 guideline の節・0018 を作成。検証で daemon 停止直後の再起動の競合と、setup script 文脈で container の network が通らない点を見つけ、script の設計を修正した。
+- 2026-09-12: 3 commit に分けて push し、PR #48 を組み込み GitHub tool で作成。note を PR 番号で採番した。
