@@ -16,14 +16,15 @@
 #   - environment の setup script (claude.ai/code の UI 設定): `--provision`。
 #     `--print-stub` が生成した stub を UI に貼る。setup script は agent proxy が立つ前に
 #     走るため container 内から外へは出られない。そこで base image の pull (重い部分) と
-#     state file の記録だけを行い、薄い最終層の build は hook に任せる。
+#     state file の記録だけを行い、image の build は試みず hook に任せる。environment は
+#     repository や branch をまたいで共有されるため、stub は script が無ければ何もせず exit 0 する。
 #
 # 安全策:
 #   - 冪等。何度実行しても同じ状態に収束する。
 #   - 非対話。secret を扱わない。環境変数の値や log 全文を stdout に出さない。
-#   - `--doctor` 以外は失敗しても exit 0 とする。setup script が非 0 で終わると session が
-#     起動せず、SessionStart hook の stdout は agent の context に入るため、状況は短く
-#     stdout に出す。
+#   - `--doctor` と引数の誤り以外は、失敗しても exit 0 とする。setup script が非 0 で終わると
+#     session が起動せず、SessionStart hook の stdout は agent の context に入るため、状況は
+#     短く stdout に出す。
 #   - `set -e` は使わない。外部コマンドの失敗は個別に扱う。
 #
 # 使い方:
@@ -45,8 +46,8 @@ Claude Code on the web の cloud session で Docker daemon を起動し、開発
 
 options:
   --force       CLAUDE_CODE_REMOTE=true でなくても hook と同じ動作を行う
-  --provision   environment の setup script 用。base image を pull し、image の build を試み、
-                state file を書き、自分で起動した daemon を止める
+  --provision   environment の setup script 用。base image を pull し、state file を書き、
+                自分で起動した daemon を止める。image の build は hook に任せる
   --doctor      daemon / image / environment cache の状態を表示し、cache が古ければ exit 1
   --print-stub  environment の setup script に貼る stub を生成する
   -h, --help    この help を表示する
@@ -116,18 +117,30 @@ recorded_digest() {
 
 daemon_ready() { docker info >/dev/null 2>&1; }
 
+# pid file の pid が期待する daemon 本体かを見る。VM の作り直しで pid 番号が別 process に
+# 再利用されることがあるため、process の存在だけで判断しない。
+pid_is_process() {
+  local pid="$1" name="$2" comm
+  [ -n "$pid" ] || return 1
+  comm="$(cat "/proc/$pid/comm" 2>/dev/null || true)"
+  [ "$comm" = "$name" ]
+}
+
 # /run は root filesystem 上にあり、daemon 起動中に snapshot されると pid file と socket が
-# 残る。生きていない pid の file だけを消す。
+# 残る。pid file はその pid が dockerd / containerd でなければ消す。socket は dockerd process が
+# 1 つも無いときだけ消し、起動中や応答待ちの daemon の socket には触らない。
 remove_stale_runtime_files() {
   local f pid
-  for f in /var/run/docker.pid /var/run/docker-ssd.pid /run/containerd/containerd.pid; do
+  for f in /var/run/docker.pid /var/run/docker-ssd.pid; do
     [ -f "$f" ] || continue
     pid="$(cat "$f" 2>/dev/null || true)"
-    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
-      rm -f "$f"
-    fi
+    pid_is_process "$pid" dockerd || rm -f "$f"
   done
-  if [ -S /var/run/docker.sock ] && ! daemon_ready; then
+  if [ -f /run/containerd/containerd.pid ]; then
+    pid="$(cat /run/containerd/containerd.pid 2>/dev/null || true)"
+    pid_is_process "$pid" containerd || rm -f /run/containerd/containerd.pid
+  fi
+  if [ -S /var/run/docker.sock ] && ! pgrep -x dockerd >/dev/null 2>&1; then
     rm -f /var/run/docker.sock
   fi
   return 0
@@ -138,10 +151,10 @@ remove_stale_runtime_files() {
 wait_daemon_transition() {
   local i pid
   pid="$(cat /var/run/docker.pid 2>/dev/null || true)"
-  { [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; } || return 0
+  pid_is_process "$pid" dockerd || return 0
   for i in $(seq 1 20); do
     daemon_ready && return 0
-    kill -0 "$pid" 2>/dev/null || return 0
+    pid_is_process "$pid" dockerd || return 0
     sleep 1
   done
   return 0
@@ -187,7 +200,7 @@ stop_daemon() {
   # API が閉じた後も process の終了処理が続く。process が消えるまで待ち、pid file を残さない。
   for i in $(seq 1 30); do
     if [ -n "$pid" ]; then
-      kill -0 "$pid" 2>/dev/null || break
+      pid_is_process "$pid" dockerd || break
     else
       pgrep -x dockerd >/dev/null 2>&1 || break
     fi
@@ -235,7 +248,7 @@ pull_base_image() {
 }
 
 # 開発用 image (Dockerfile の最終層まで) を用意する。build 層の network は agent proxy を
-# 経由するため、proxy の無い setup script の文脈では失敗し得る。その場合は hook に任せる。
+# 経由するため、proxy の無い setup script の文脈では通らない。provision では呼ばず hook に任せる。
 ensure_image() {
   local image
   image="$(image_name)"
@@ -250,10 +263,6 @@ ensure_image() {
   say "image: $image が無いため build する"
   if compose build dev >>"$log_file" 2>&1 </dev/null; then
     say "image: build 完了"
-    return 0
-  fi
-  if [ "$mode" = "provision" ]; then
-    say "image: build は skip した (setup script の文脈では agent proxy が無く、build 層の network が通らない)。session 開始時に hook が build する"
     return 0
   fi
   say "image: build に失敗した"
@@ -292,12 +301,19 @@ print_stub() {
 # bizdate: cloud session の環境構築。正本は repository 側にある。
 #   .agents/scripts/cloud-session-setup.sh
 # この stub は薄いままにする。中身を変えるときは repository を直す。
+# environment は repository や branch をまたいで共有される。script が無ければ何もせず exit 0 する
+# (setup script が非 0 で終わると session が起動しない)。
 # CLOUD_SETUP_INPUTS_SHA256=$(inputs_digest)
 #   ↑ script と Dockerfile / compose.yaml / compose.cloud.yaml の digest。
 #     environment cache は setup script のテキストが変わったときだけ再構築されるため、
 #     digest を埋めてテキストが自然に変わるようにしている。
 #     貼り直す内容は \`.agents/scripts/cloud-session-setup.sh --print-stub\` で生成する。
-exec "\${CLAUDE_PROJECT_DIR:-$default_clone_dir}/.agents/scripts/cloud-session-setup.sh" --provision
+script="\${CLAUDE_PROJECT_DIR:-$default_clone_dir}/.agents/scripts/cloud-session-setup.sh"
+if [ ! -f "\$script" ]; then
+  echo "bizdate cloud-session-setup: この repository / branch に script が無いため provision を skip する"
+  exit 0
+fi
+exec bash "\$script" --provision
 STUB
 }
 
@@ -372,7 +388,7 @@ fi
 
 if [ "$mode" = "provision" ]; then
   pull_base_image || true
-  ensure_image || true
+  say "image: build は行わない (setup script の文脈では agent proxy が無く、build 層の network が通らない)。session 開始時に hook が build する"
   write_state || say "state: 書けなかった"
   stop_daemon
   say "provision 完了"

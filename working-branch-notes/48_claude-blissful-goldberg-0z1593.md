@@ -10,7 +10,7 @@ Issue #47 に従い、Claude Code on the web の cloud session で Compose 経�
 
 ## 現在の状況
 
-spike と実装、検証を完了し、PR #48 を作成した。レビュー待ち。merge はユーザーが行う。
+PR #48 の review（inline comment 3 件）に対応し、修正を push した。verify の結果待ち。merge はユーザーが行う。
 
 ## 決定事項
 
@@ -23,7 +23,7 @@ spike と実装、検証を完了し、PR #48 を作成した。レビュー待�
 
 ## 次にやること
 
-- PR #48 のレビュー対応。
+- verify-comments の結果を確認し、未対応があれば対応する。
 - merge 前にユーザーが本ブランチで新 session を開き、hook の出力と `docker compose run --rm dev cargo fmt --check` を確認する。任意で `--print-stub` の出力を environment の setup script に貼り、再構築を確認する。
 
 ## 検証
@@ -61,7 +61,27 @@ daemon の停止直後に hook を実行すると、終了処理中の旧 proces
 - base image の取得元は gcr.io の Docker Hub mirror に固定した。ECR Public は proxy 経由なら使えるが、proxy の無い setup script の文脈では blob の配信元が許可リストに無く pull できなかった。mirror が使えなくなった場合は環境の許可 host 追加（ユーザー操作）か `BASE_REGISTRY` の変更で対処する。
 - setup script は 5 分以内に終わる必要がある。cache 無しの `--provision` は約 35 秒で、余裕は大きい。
 - setup script の文脈では agent proxy が無く container の network が通らないため、`--provision` では image の最終層を build しない。session 開始時に hook が build する（約 6 秒）。
-- SessionStart hook の実発火は本 session では再現できない。merge 前にユーザーが新 session で確認する。
+- SessionStart hook の実発火は、本 session の resume 時に確認できた（daemon 起動、image あり、cache 一致）。新 session の startup 経路は merge 前にユーザーが確認する。
+
+### review 対応（PR #48）
+
+inline comment 3 件（`[imo]` 2 件、`[nits]` 1 件）をすべて採用した。
+
+- stub の `exec` は script が無いと exit 127 になり、setup script の非 0 終了は session の起動失敗になる。environment は repository と branch をまたいで共有されるため、stub に存在確認を入れ、無ければ exit 0 で skip するようにした。
+- pid file の生存判定を `kill -0` から `/proc/<pid>/comm` の照合に変え、socket は dockerd process が無いときだけ消すようにした。pid 番号の再利用や起動遅延で、生きている daemon を壊す経路を塞ぐ。
+- `--provision` は image の build を試みず、base image の pull と state の記録に絞った。guideline の記述と揃え、`--help` と冒頭コメントも直した。
+
+投稿されなかった軽微点も同じ commit で直した。0018 の「使い分け表」が `agent-configuration-management.md` のものだと分かる表現にし、guideline の所要時間の不一致（「十数秒」と「数秒」）を揃え、exit code の記述を「`--doctor` と引数の誤り以外は exit 0」にした。
+
+追加の検証。
+
+| 項目 | 結果 |
+|---|---|
+| stub を script の無い path で実行 | skip の 1 行を出して exit 0 |
+| stub を既定 clone 先で実行 | `--provision` が走り exit 0 |
+| daemon を止め、別 process の pid を pid file に書いてから `--force` | pid file を stale として消し、数秒で daemon を起動 |
+| `--provision`（daemon 起動中） | build を試みず、daemon を止めずに state を書いて exit 0 |
+| session の resume 時の SessionStart hook | 実発火を確認。daemon 起動（2 秒）、image あり、cache 一致 |
 
 ## セッションログ
 
@@ -69,3 +89,4 @@ daemon の停止直後に hook を実行すると、終了処理中の旧 proces
 - 2026-09-12: Issue #47 を組み込み GitHub tool で作成。note を作成。spike S1〜S4 を実施し、base image の取得元を mirror に切り替えた。
 - 2026-09-12: script・`.claude/settings.json`・`compose.cloud.yaml`・新 guideline・各 guideline の節・0018 を作成。検証で daemon 停止直後の再起動の競合と、setup script 文脈で container の network が通らない点を見つけ、script の設計を修正した。
 - 2026-09-12: 3 commit に分けて push し、PR #48 を組み込み GitHub tool で作成。note を PR 番号で採番した。
+- 2026-09-12: PR #48 の review 3 件に対応して push。resume 時の hook 実発火を確認した。

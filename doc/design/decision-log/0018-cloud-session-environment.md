@@ -59,7 +59,7 @@ Claude Code on the web（Anthropic が host する cloud session）でこのリ�
 - W1 と W2: cloud session の内容は開発コマンド、GitHub 操作、git 操作、ブランチ、agent 設定の 5 領域にまたがる。W2 は各 guideline が長くなり、環境の使い始めや cache の扱いなど、どの guideline にも属さない手順の置き場が無い。W1 は shim 2 本と index 行が増えるが、1 テーマ 1 ファイルの原則に沿い、cloud session を使う人が読む入口が 1 つになる。
 - setup script と hook の分担: setup script の実行結果は snapshot として cache され、後続 session はそこから始まる。cache が作り直されるのは setup script のテキスト変更、許可 host の変更、約 7 日の期限だけである。script や `Dockerfile` を直しても stub のテキストが変わらなければ cache は古いまま残るため、入力（script、`Dockerfile`、`compose.yaml`、`compose.cloud.yaml`）の digest を stub のコメントに埋め、`--print-stub` で貼り直し用の stub を生成する。hook は毎回、cache に記録した digest と repo の digest を比べ、ずれていれば警告して stub を出す。platform は setup script を API で更新する手段を提供しないため、貼り直しは人手に残す。
 - setup script の文脈では agent proxy が無く、container 内から外へ出られない。build 層（`rustup component add`）と `cargo fetch` は proxy を前提にするため、`--provision` では daemon の直接 pull で取れる base image（重い部分）と state file の記録に絞り、薄い最終層の build は hook に任せる。build 時に gateway の CA を image に渡せば setup script で完結するが、`Dockerfile` への変更が増えるため見送った。
-- setup script が非 0 で終わると session が起動しないため、`--doctor` 以外の mode は失敗しても exit 0 とし、状況を stdout に短く出す。hook の stdout は agent の context に入る。
+- setup script が非 0 で終わると session が起動しないため、`--doctor` と引数の誤り以外は失敗しても exit 0 とし、状況を stdout に短く出す。hook の stdout は agent の context に入る。environment は repository と branch をまたいで共有されるため、stub は script が無ければ何もせず exit 0 する。
 - hook は local の Claude Code でも起動する。`CLAUDE_CODE_REMOTE=true` の guard に加えて、`dockerd` の存在を positive check とし、想定外の環境では何もしない。
 - `/run` は root filesystem の一部であり、daemon 起動中の snapshot には pid file と socket が残る。script は生きていない pid の file を消し、`--provision` は自分で起動した daemon を最後に止める。
 - GitHub 操作: 組み込み tool は `github-op-integrated` の allowlist に無い write（merge / resolve / workflow 実行 / file push）も露出する。tool の可視性ではなく guideline の境界で禁止を維持する。
@@ -69,14 +69,14 @@ Claude Code on the web（Anthropic が host する cloud session）でこのリ�
 ## 決定
 
 - cloud session でも開発コマンドは Compose 経由とする（候補 A）。B と C は採らず、daemon が起動しない session では sandbox の `cargo` で代替せず未実施として報告する。
-- 処理本体は `.agents/scripts/cloud-session-setup.sh`（P1）、登録は `.claude/settings.json` の SessionStart hook（`startup|resume`）。script は hook / `--force` / `--provision` / `--doctor` / `--print-stub` の mode を持ち、`CLAUDE_CODE_REMOTE=true` のときだけ hook として動く。冪等・非対話で、`--doctor` 以外は失敗しても exit 0。
+- 処理本体は `.agents/scripts/cloud-session-setup.sh`（P1）、登録は `.claude/settings.json` の SessionStart hook（`startup|resume`）。script は hook / `--force` / `--provision` / `--doctor` / `--print-stub` の mode を持ち、`CLAUDE_CODE_REMOTE=true` のときだけ hook として動く。冪等・非対話で、`--doctor` と引数の誤り以外は失敗しても exit 0。
 - cloud 固有の差分は `compose.cloud.yaml` に置き、hook が `COMPOSE_FILE=compose.yaml:compose.cloud.yaml` を session に設定する。container は host network で agent proxy を経由し、`NO_PROXY` は渡さない。
 - base image は `Dockerfile` の `ARG BASE_REGISTRY`（I1）で取得元を差し替え、cloud では許可リスト内の mirror（gcr.io の Docker Hub mirror）を使う。local は既定の Docker Hub のまま。
 - environment の setup script は任意とし、登録する場合は `--print-stub` が生成する stub に限る。`--provision` は daemon 起動、base image の pull、state file の記録、daemon の停止を行う。
 - 文書は新 guideline `doc/guidelines/cloud-session-guidelines.md` を正本とし（W1）、shim 2 本と `AGENTS.md`、`doc/guidelines/README.md` を揃える。既存 guideline には例外と誘導だけを足す。
 - GitHub 操作は cloud session では組み込み GitHub tool を第一選択とし、write の境界は `doc/guidelines/github-mcp-guidelines.md` のまま適用する。
 - 作業ブランチは session が用意したものを使い、commit 署名は platform に委ねる。
-- 0011 の配置規約は維持し、「使い分け」表に実行環境 setup script の行を足す。0011 は superseded にしない。
+- 0011 の配置規約は維持し、`doc/guidelines/agent-configuration-management.md` の「使い分け」表に実行環境 setup script の行を足す。0011 は superseded にしない。
 
 ## 理由
 

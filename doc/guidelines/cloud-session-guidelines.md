@@ -25,14 +25,14 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 | `.claude/settings.json` | yes | SessionStart hook（`startup` と `resume`）で上記 script を呼ぶ登録だけを持つ。処理や恒久ルールを書かない。個人の設定は gitignored な `.claude/settings.local.json` に置く |
 | `compose.cloud.yaml` | yes | cloud session 専用の override。container を host network にして agent proxy を通し、base image の取得元を mirror にする。image tag は書かない |
 | `Dockerfile` の `ARG BASE_REGISTRY` | yes | base image の取得元の差し替え口。local では既定の `docker.io/library` を使う |
-| environment の setup script | no（claude.ai/code の UI 設定） | `--print-stub` が生成する数行の stub。上記 script を `--provision` で呼ぶだけにし、処理を UI 側に書かない |
+| environment の setup script | no（claude.ai/code の UI 設定） | `--print-stub` が生成する数行の stub。上記 script を `--provision` で呼ぶだけにし、処理を UI 側に書かない。script が無い repository や branch では何もせず exit 0 する（environment は repository と branch をまたいで共有される） |
 | state file（VM 内 `/opt/bizdate-cloud/state`） | no | `--provision` が snapshot の出自（入力の digest、作成時刻、base image と image の名前）を記録する。hook が drift 検出に使う |
 
 ## 実行順序
 
 1. platform がリポジトリを clone する。
 2. environment cache が無ければ setup script（stub → `--provision`）が実行され、完了後に filesystem が snapshot される。cache があればこの手順は飛ぶ。setup script は agent proxy が立つ前に走り、container の中から外へは出られない。そのため `--provision` は daemon の起動、base image の pull、state file の記録だけを行い、薄い最終層の build は hook に任せる。
-3. Claude Code が起動し、SessionStart hook が script を hook mode で実行する。`COMPOSE_FILE` を session に設定し、daemon を起動し、image が無ければ build し（base image が snapshot にあれば十数秒）、cache の drift を確認する。hook の stdout は agent の context に入る。
+3. Claude Code が起動し、SessionStart hook が script を hook mode で実行する。`COMPOSE_FILE` を session に設定し、daemon を起動し、image が無ければ build し（base image が snapshot にあれば数秒）、cache の drift を確認する。hook の stdout は agent の context に入る。
 4. 以後の作業は通常どおり。
 
 hook は `resume` でも実行される。VM が作り直された後の再開でも daemon が起動する。
@@ -75,7 +75,7 @@ setup script の実行結果は filesystem snapshot として cache され、後
 
 - hook は毎回、cache に記録された digest と repo の digest を比べる。一致しなければ「environment cache が repo に追いついていない」と警告し、貼り直し用の stub を出力する。state file が無い（setup script 未登録）場合は登録を促す 1 行だけを出す。
 - 対処は人手で行う。`--print-stub` の出力を environment の setup script に貼り直す。platform は setup script を API で更新する手段を提供しないため、自動化しない。
-- 警告があっても作業は続けられる。image が無い session では hook が build する。base image が snapshot にあれば十数秒、無ければ 1 分程度、session の開始が遅れる。
+- 警告があっても作業は続けられる。image が無い session では hook が build する。base image が snapshot にあれば数秒、無ければ 1 分程度、session の開始が遅れる。
 - snapshot は branch をまたいで共有される。feature branch で `Dockerfile` を変えても、stub を貼り直すまで cache は前の状態のままである。
 
 ## Network access
@@ -130,6 +130,7 @@ setup script は 5 分以内に終わる必要がある。`--provision` は 1 �
 - `.mcp.json` の `github-op-integrated` は cloud session で常に起動に失敗する。想定どおりであり、対処しない。
 - hook は同期実行である。image が無い session では build が終わるまで session の開始が遅れる（base image が snapshot に無ければ 1 分程度）。
 - environment の setup script は agent proxy が立つ前に走る。container の中から外へ出る処理（image の build、`cargo fetch`）は setup script では通らないため、`--provision` に足さない。
+- environment の setup script は repository と branch をまたいで共有される。stub は script が無ければ skip して exit 0 するため、他の repository や script を含まない branch で session を開いても起動を妨げない。stub を `exec` だけの形に書き換えない。
 
 ## 関連ルール
 
