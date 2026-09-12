@@ -25,7 +25,7 @@ bizdate の Issue 1 件を、実装から「レビュー済み PR」まで 1 つ
 | 入力 | 開始フェーズ |
 | --- | --- |
 | Issue 番号 / Issue URL | P1（実装と PR 作成） |
-| `--from-pr <PR 番号>` | P2（review）。未収束の review cycle が残る場合は P4（対応）から再開する。PR が既にあり、review 以降だけを回す場合 |
+| `--from-pr <PR 番号>` | P2（review）。未収束の review cycle が残る場合は P4（対応）から再開する |
 
 `--from-pr` から始める場合は、PR の state と head SHA、既存 review cycle の有無を確認する。未収束の review cycle が残っている場合は、新しい cycle を作らず、その cycle の P4 から再開する。どちらの cycle を追うべきか判断がつかない場合はユーザーに確認する。
 
@@ -135,7 +135,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 
 「対応すべきものがあるか」は、`.agents/skills/review-pull-request/references/address-comments.md` が定める処置の分類で判定する。分類の定義を本 skill に複製しない。
 
-- 指摘が 1 件以上あれば必ず P4 を実施し、P5 へ進む。全件が非採用（スコープ外、既存実装で充足、再現しない、guideline と競合、outdated / duplicate）でも返信は必要であり、push の有無は問わない。
+- 指摘が 1 件以上あれば必ず P4 を実施し、P5 へ進む（P5 を行わない場合は「subagent が使えない環境」に従う）。全件が非採用（スコープ外、既存実装で充足、再現しない、guideline と競合、outdated / duplicate）でも返信は必要であり、push の有無は問わない。
 - 「追加情報が必要」が残る場合は、その件をユーザーへ上げてから続行の可否を判断する。
 
 指摘の正しさは推論で決めず、確認して判断する（`.agents/skills/review-pull-request/references/address-comments.md` の手順 4）。
