@@ -23,6 +23,7 @@
 | `working-branch-notes-security.md` | 作業メモの情報統制（秘密情報・個人情報の禁則） |
 | `decision-log-guidelines.md` | 方針決定ログの作成・更新・index 管理 |
 | `document-style-guidelines.md` | 日本語ドキュメントの文末・トーン・用語表記 |
+| `cloud-session-guidelines.md` | Claude Code on the web の cloud session での開発コマンド、environment cache、設定変更 |
 
 ## 置かないもの
 

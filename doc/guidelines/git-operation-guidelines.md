@@ -61,6 +61,12 @@ commit 後に署名が付いたことを確認する。`G` が返れば good sig
 git log -1 --format="%G? %GS"
 ```
 
+## cloud session（Claude Code on the web）
+
+- commit 署名と author は platform が管理する（`gpg.ssh.program` は platform の signer を指す）。1Password は関与せず、「commit 署名」の切り分けは適用しない。allowed signers が無いため `git log --format=%G?` は `G` を返さないので、署名の確認は省略する。
+- 作業ブランチは session 作成時に platform が決めたもの（`claude/<slug>` の形）に固定され、push はそのブランチにだけ許可される。別名のブランチを作らない。
+- remote は HTTPS のまま platform の proxy が認証する。`main` への直接 push 禁止と PR 経由の原則は変わらない。
+
 ## 通常の実行環境でよい操作
 
 次のようなローカル参照・差分確認は、原則として通常の実行環境で実行してよい。

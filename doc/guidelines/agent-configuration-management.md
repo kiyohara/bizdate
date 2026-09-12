@@ -29,6 +29,7 @@
 - **`.agents/skills/` を直接読める tool には固有ディレクトリへの symlink を作らない**。Cursor と Codex は `.agents/skills/` を直読するため symlink 不要。Claude Code は `.claude/skills/` しか読まないため symlink を作る。
 - Codex は **AGENTS.md に書かれていない情報には自力で到達できない**（skill は除く: `.agents/skills/` は自動走査される）。新しい rule や正本を作ったら、Codex がそこへ辿り着けるよう **AGENTS.md からのリンクは必須** とする。
 - Claude Code は `.claude/rules/` と CLAUDE.md（`@AGENTS.md` 経由）の両方を読む。役割分担は後述の「正本と入口の整理」を参照。
+- Claude Code は `.claude/settings.json` の hooks も読み、Claude Code on the web の cloud session でも repo の `.claude/settings.json` は有効である（user 設定の hooks は cloud では効かない）。hook から呼ぶ処理本体は tool 中立な `.agents/scripts/` に置き、`.claude/settings.json` には登録だけを書く（「cloud session の実行環境 script」）。
 - GitHub Copilot code review は、GitHub.com 上のレビューでは AGENTS.md を読む。ただし **そこからリンクされた `doc/guidelines/` の正本まで辿る保証はない**。よって repo 全体のレビュー方針は `.github/copilot-instructions.md` に、path 別の詳細レビュー観点は `.github/instructions/*.instructions.md`（`applyTo:`）に **直接** 書く。正本へのリンクは人間 / 他 tool 向けポインタとして併記し、Copilot がそれを辿ることは当てにしない。instruction file にはかつて先頭 4,000 文字までという制限があったが、2026-06-12 に撤廃された。長さの制約は無くなったので、分量ではなくシグナルの濃さで絞る。
 
 ## 使い分け
@@ -38,6 +39,7 @@
 | Agent skill | `.agents/skills/<skill-name>/` | `.agents/skills/` を直接読む（symlink 不要） | `.claude/skills/<skill-name>` symlink | `.agents/skills/` を直接読む |
 | AI 向け rule | `doc/guidelines/<rule-name>.md` | `.cursor/rules/<rule-name>.mdc` 入口 | `.claude/rules/<rule-name>.md` 入口 | `AGENTS.md` から共通正本へ誘導 |
 | MCP server 共通資材 | `.agents/mcp/<server-name>/` | `.cursor/mcp.json`（project 設定） | repo root の `.mcp.json`（project scope） | `.codex/config.toml`（trusted project） |
+| 実行環境 setup script | `.agents/scripts/<script-name>.sh`（解説は `doc/guidelines/cloud-session-guidelines.md`） | 対象外 | `.claude/settings.json`（SessionStart hook で呼ぶ。commit する） | 対象外 |
 | Copilot review 指示 | `.github/copilot-instructions.md` | 対象外 | 対象外 | 対象外 |
 
 迷ったら、まずこの表で対象を決めてから該当セクションだけ読む。
@@ -45,6 +47,7 @@
 - skill の場合: `<skill-name>` は **正本ディレクトリ名と `.claude/skills/` symlink 名で揃える**。
 - rule の場合: `<rule-name>` は **3 箇所（共通正本・Cursor 入口・Claude Code 入口）で basename を揃える**。
 - MCP server の場合: `<server-name>` は **正本ディレクトリ名、起動 script 名、各 tool の MCP 設定ファイル内の server 名で揃える**。
+- 実行環境 setup script の場合: 入口は現時点で Claude Code の cloud session だけ。他 tool の cloud 環境で必要になったら、同じ script を呼ぶ入口を足し、script を複製しない。
 
 ## 共通原則
 
@@ -272,3 +275,14 @@ tracked な MCP 起動定義（`.mcp.json` / `.cursor/mcp.json` / `.codex/config
 3. MCP host を起動 / 再起動し、対象 server の tool が使えることを確認する。
 
 新しい allowlist 対象を足すときは `.worktreeinclude` に path を 1 行追加する。raw secret を含むファイルは足さない。
+
+## cloud session の実行環境 script
+
+Claude Code on the web の cloud session は Docker daemon が停止した状態で始まる（`doc/guidelines/cloud-session-guidelines.md`）。これを versioned な script と Claude Code の SessionStart hook で補う。
+
+- `.agents/scripts/cloud-session-setup.sh`（commit / 実行権限）: cloud session の実行環境を整える処理本体。`CLAUDE_CODE_REMOTE=true` のときだけ動き、それ以外は何も出力せず exit 0 する。冪等で、非対話で、secret を扱わない。動作の詳細は script 冒頭のコメントを正とする。
+- `.claude/settings.json`（commit）: 上記 script を `SessionStart`（`startup|resume`）で呼ぶ登録だけを持つ。処理や恒久ルールを書かない。個人の設定は gitignored な `.claude/settings.local.json` に置く。
+- `compose.cloud.yaml`（commit）: cloud session 専用の compose override。local の `compose.yaml` は変えない。
+- environment 側の setup script（claude.ai/code の UI 設定、repo 外）: 同じ script を `--provision` で呼ぶ stub（`--print-stub` で生成）に留め、手順や処理を UI 側に書かない。
+
+cloud 向けの処理を足すときは、この script に足すか `.agents/scripts/` に別 script を置き、`.claude/settings.json` は呼び出しの追加だけにする。

@@ -23,6 +23,10 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 
 原則は変えない。ローカルで行う検証は Compose 経由を正とする。上記を実行した結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
 
+## cloud session（Claude Code on the web）
+
+Claude Code on the web の cloud session では Docker daemon が起動していないが、Compose 経由の原則は変えない。`.claude/settings.json` に登録した SessionStart hook が `.agents/scripts/cloud-session-setup.sh` で daemon を起動し、開発用 image を用意し、cloud 専用の override（`compose.cloud.yaml`）を `COMPOSE_FILE` で重ねる。開発コマンドの形は変わらず、検証結果は Compose 経由として扱う（報告には「cloud session で実行」と添える）。daemon が起動しない場合も sandbox の `cargo` で代替しない。詳細は `doc/guidelines/cloud-session-guidelines.md` を参照する。
+
 ## 基本形
 
 ```sh
@@ -76,7 +80,7 @@ MSRV の値は 4 箇所に現れる。上げるときは 4 つを同時に更新
 | 箇所 | 値 | 役割 |
 |---|---|---|
 | `Cargo.toml` | `rust-version` | crate が要求する最小 Rust version |
-| `Dockerfile` | `FROM rust:<MSRV>-trixie` | container の toolchain を実際に決める |
+| `Dockerfile` | `FROM ${BASE_REGISTRY}/rust:<MSRV>-trixie` | container の toolchain を実際に決める。`BASE_REGISTRY` は base image の取得元の差し替え口で、MSRV とは無関係 |
 | `compose.yaml` | `image: bizdate-dev:<MSRV>` | build した image に付ける local tag 名 |
 | `.github/workflows/ci.yml` | `toolchain: "<MSRV>"` | CI の toolchain を決める |
 
@@ -87,6 +91,8 @@ MSRV の値は 4 箇所に現れる。上げるときは 4 つを同時に更新
 ```sh
 docker compose build dev
 ```
+
+cloud session の environment cache は `Dockerfile` の変更を自動では追わない。MSRV を上げたら `.agents/scripts/cloud-session-setup.sh --print-stub` の出力を environment に貼り直す（`doc/guidelines/cloud-session-guidelines.md`）。
 
 ## タイムゾーン
 

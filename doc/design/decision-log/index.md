@@ -29,6 +29,7 @@
 | 0015 | decided | Dependabot 更新 | GitHub Actions を週次・グループ化・open PR 上限 1 本で更新。bot PR は Issue 起点の対象外、レビューは直列、merge は人間。末尾は tag のみ、Cargo は今回対象外 | [0015-dependabot-updates.md](0015-dependabot-updates.md) |
 | 0016 | decided | 初回配布の契約 | macOS / Linux の arm64 / amd64 を native ビルドで 4 target。Linux は gnu のみで最低 glibc は実測。tzdb はシステム依存、TLS trust は埋め込み。`.tar.gz` + `sha256`、third-party 表記を同梱。初回は `0.1.0` / tag `v0.1.0`、macOS 署名なし | [0016-distribution-contract.md](0016-distribution-contract.md) |
 | 0017 | decided | PR での tool 名記載範囲 | 禁止は PR title の tool 名・tool 由来 prefix のみ。description と PR コメントは制限せず、`Co-Authored-By` / `🤖 Generated with ...` のような trailer を明示的に許可する。commit message は無規定のまま | [0017-pr-tool-name-restriction.md](0017-pr-tool-name-restriction.md) |
+| 0018 | decided | cloud session の実行環境 | Claude Code on the web でも Compose 経由を維持。SessionStart hook（`.claude/settings.json`）から `.agents/scripts/cloud-session-setup.sh` が Docker daemon を起動し dev image を用意する。cloud 差分は `compose.cloud.yaml`、base image は許可リスト内の mirror。environment の setup script は stub のみ。GitHub 操作は組み込み tool、ブランチは session 固定 | [0018-cloud-session-environment.md](0018-cloud-session-environment.md) |
 
 ## 未決事項
 
