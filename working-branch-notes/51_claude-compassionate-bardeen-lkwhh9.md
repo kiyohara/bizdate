@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/compassionate-bardeen-lkwhh9`（cloud session が用意したブランチ）
-- PR: 未採番
+- PR: #51
 - 最終更新: 2026-09-12
 
 ## 目的
