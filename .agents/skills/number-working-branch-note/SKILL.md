@@ -41,7 +41,7 @@ PR を作成した直後に `working-branch-notes/` 配下の `draft_...md` を 
 
 ## stale 表現の定型置換
 
-Step 5 と Step 10 で、次の定型のみ置換する。
+Step 5 と Step 10 で機械的に置換してよいのは、次の定型に限る。判断を要する完了タスク行の扱いは Step 5 に従う。
 
 | 置換前 | 置換後 |
 | --- | --- |
@@ -91,6 +91,8 @@ suffix 付きがあれば同様に処理する。
 - 先頭メタ行の `- PR:` 欄に `#<PR-number>` を入れる。既に正しい値があれば変更しない。
 - 本文中の `draft_<escaped-branch>` 表記を `<PR-number>_<escaped-branch>` に置換する。置換対象は **具体的な escape branch 名を含む参照** に限る。`draft_...md` のような汎用 placeholder は対象外。
 - 「stale 表現の定型置換」の表に当てはまる表現だけを書き換える。曖昧な表現は触らず報告する。
+- `## 次にやること` など未完タスクを列挙するセクションに、**本 skill の実行で完了するタスク行**（「PR を作成し、note を採番する」「PR 作成後、note を採番する」など）があれば、置換候補を提示し、ユーザー合意を得てから書き換える。機械的に書き換えない。`draft_` を含まない書き方でも対象とする。書き換え形式は note の既存記法に合わせ、checkbox（`- [ ]`）なら `- [x]` にし、checkbox でなければ行を削除するか末尾に `（完了）` を付ける。
+- 前項のファイル名置換だけを行うと、「これから採番する」という文意の行が新名のまま残って自己矛盾する。置換した行が完了タスク行に該当しないかを確認する。
 
 編集後、対象 note を `git add <path>` で再 stage する。Step 4 の `git mv` は rename 時点の内容しか index に載せないため、本文編集分を改めて stage しないと commit に含まれない。
 
@@ -127,8 +129,9 @@ git push
 
 - description 内の `draft_<escaped-branch>` 表記を `<PR-number>_<escaped-branch>` に置換する。具体的な escape branch 名を含む参照のみが対象。
 - 「stale 表現の定型置換」の表に当てはまる表現を書き換える。
+- 本 skill の実行で完了するタスク行が description にもあれば、Step 5 と同じく置換候補を提示し、ユーザー合意を得てから書き換える。
 - title は通常触らない。
-- `doc/guidelines/pull-request-guidelines.md` に従い、日本語維持・tool 名なし・既存表現の置換に留める。新規セクションを追加しない。
+- `doc/guidelines/pull-request-guidelines.md` に従い、日本語維持・既存表現の置換に留める。新規セクションを追加しない。
 
 `update_pull_request` で反映する。`gh` へ fallback する場合は body をファイル経由で渡し、shell エスケープの取りこぼしを避ける。
 
@@ -147,5 +150,5 @@ git push
 - `最終更新:` 欄の自動更新。
 - `<PR-number>_...md` が既に存在するときの自動上書き・自動削除。
 - 関連しない作業ツリー変更の commit への巻き込み。
-- 定型に当てはまらない stale 表現や title の推測による書き換え。
+- 定型に当てはまらない stale 表現、完了タスク行、title を、ユーザー合意なしに書き換えること。
 - PR description への新規セクション追加。
