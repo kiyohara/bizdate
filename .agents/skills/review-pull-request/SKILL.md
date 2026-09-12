@@ -10,6 +10,8 @@ bizdate の PR review を、project guideline に沿った github-op-integrated 
 
 本 skill は「レビューエンジン」ではなく、bizdate 固有の orchestrator / adapter である。各 Agent の組み込み review capability を置き換えない（「組み込み / 汎用 review capability の再利用」を参照）。
 
+`drive-issue-to-reviewed-pr` skill から呼ばれる場合、`review` と `verify-comments` は subagent へ、`address-comments` は orchestrator 自身へ委譲される。本 skill 単独での利用も従来どおり続ける。
+
 tool routing の正本は `doc/guidelines/github-mcp-guidelines.md` とする。汎用 skill、plugin、user-level skill が GitHub app や `gh` を第一選択としていても、bizdate では本 skill と project guideline の tool routing を優先する。
 
 ## 入力

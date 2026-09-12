@@ -56,10 +56,13 @@ flowchart TD
 | タイミング | skill | 使いどころ |
 |---|---|---|
 | 既存 Issue 群を索引化したいとき | `register-progress-issue` | GitHub Issue を読み、依存・順序・ブロッカーを整理して `progress.md` に最小限の行を追加または更新する。 |
+| Issue 着手から review cycle の完了まで一続きで回したいとき | `drive-issue-to-reviewed-pr` | `run-issue-task` と `review-pull-request` を順に呼ぶ orchestrator。review と再確認は context を分離するため subagent へ委譲する。 |
 | 個別 Issue に着手するとき | `run-issue-task` | Issue 番号を入力に、依存確認、ブランチ作成、note 作成、実装、検証、PR 作成までを進める。 |
 | PR 採番直後 | `number-working-branch-note` | `draft_<branch>.md` を `<PR番号>_<branch>.md` へ rename し、note 本文と PR description の参照を揃える。 |
 | PR をレビューする / review comment へ対応するとき | `review-pull-request` | `review` / `address-comments` / `verify-comments` の 3 モード。MCP-first で投稿し、resolve は人間が行う。 |
 | Issue 群を消化し終えた区切り | `maintain-progress` | `progress.md` を薄く保ち、完了済みタスクを要約し、進行中タスク索引を最新化する。 |
+
+`drive-issue-to-reviewed-pr` は既存 skill を呼び出す orchestrator であり、被委譲 skill の責務を変えない。個別 skill を単独で使う従来の流れも続ける。
 
 skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills/` の symlink 経由で見える（`doc/guidelines/agent-configuration-management.md`）。リリース手順を担う skill は、CI とリリース体制を導入するときに追加する。
 

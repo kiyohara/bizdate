@@ -9,6 +9,8 @@ GitHub Issue を 1 件選び、Issue 駆動タスクとして実行するため�
 
 この skill は `doc/guidelines/issue-driven-task-execution.md` を正本として扱う。ここに書いた手順と guideline が食い違う場合は、guideline を優先する。
 
+Issue 着手から review cycle の完了までを一続きで回す場合、本 skill は `drive-issue-to-reviewed-pr` skill の P1（実装と PR 作成）として委譲される。本 skill 単独での利用も従来どおり続ける。
+
 ## 入力
 
 - 入力は GitHub Issue 番号、またはこのリポジトリの Issue URL とする。
