@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: refine-pr-and-note-numbering-rules
-- PR: 未作成
+- PR: #44
 - 最終更新: 2026-09-12
 
 ## 目的
