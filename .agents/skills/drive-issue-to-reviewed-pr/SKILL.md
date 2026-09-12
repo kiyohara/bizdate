@@ -25,7 +25,7 @@ bizdate の Issue 1 件を、実装から「レビュー済み PR」まで 1 つ
 | 入力 | 開始フェーズ |
 | --- | --- |
 | Issue 番号 / Issue URL | P1（実装と PR 作成） |
-| `--from-pr <PR 番号>` | P2（review）。PR が既にあり、review 以降だけを回す場合 |
+| `--from-pr <PR 番号>` | P2（review）。未収束の review cycle が残る場合は P4（対応）から再開する。PR が既にあり、review 以降だけを回す場合 |
 
 `--from-pr` から始める場合は、PR の state と head SHA、既存 review cycle の有無を確認する。未収束の review cycle が残っている場合は、新しい cycle を作らず、その cycle の P4 から再開する。どちらの cycle を追うべきか判断がつかない場合はユーザーに確認する。
 
@@ -60,7 +60,7 @@ P1 から始める場合、着手前に次を確認する。Issue 依存の確�
 - P2 の指摘が 1 件も無ければ、P4 以降へ進まずフローを終了する。
 - P6 で追加対応が必要なら P4 へ戻る。上限は「反復上限」に従う。
 - P4 と P5 で担当を分けるのは、`review-pull-request` が前提とする役割分担（修正担当 Agent は自分で resolve せず、元の Review 担当 Agent が再確認する）を満たすためである。
-- `review-pull-request` の担当一致は Agent **種別**で判定されるため、orchestrator が P5 を自分で実行しても可視 metadata 上は成立してしまう。分担を実際に担保しているのはこの表だけである。P5 を orchestrator 自身で実行しない。
+- `review-pull-request` の担当一致は Agent **種別**で判定されるため、orchestrator が P5 を自分で実行しても可視 metadata 上は成立してしまう。分担を実際に担保しているのはこの表だけである。subagent 機構がある環境では、P5 を orchestrator 自身で実行しない。機構が無い環境の扱いは「subagent が使えない環境」に従う。
 
 ## subagent への委譲
 
@@ -75,7 +75,7 @@ P1 から始める場合、着手前に次を確認する。Issue 依存の確�
 | mode | `review` または `verify-comments` |
 | 対象 head SHA | 委譲時点の PR head SHA（full） |
 | review cycle ID | P2 では「新規に作る」と指示する。P5 では P2 が返した ID をそのまま渡す（再利用時は省略してよい） |
-| 読むべき path | `.agents/skills/review-pull-request/SKILL.md` と該当モードの reference の repo 相対 path |
+| 読むべき path | `.agents/skills/review-pull-request/SKILL.md` と該当モードの reference の repo 相対 path（再利用時は省略してよい） |
 | 追加の review 観点 | 対象 Issue 番号と、その回で特に確認してほしい点。Issue 番号は `--from-pr` から始めた場合は PR description の `Closes #<番号>` から取る。索引登録や進捗整理のように起点 Issue を持たない PR では `なし` と明記する。判別できない場合はユーザーに確認する |
 
 **skill は名前ではなく path で渡す。** subagent の skill 一覧に載っている保証は無く、同じ session で追加・変更した skill は特に載らない。brief には「この path を読んでから始めること」と明示する。
@@ -129,7 +129,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 - P2 を別 session として開始する。この場合 P5 も同じ経路で実行する。
 - P2 をユーザーまたは別 Agent 種別に委ねる。
 
-3 番目を取る場合、P5 は P2 と同じ Agent 種別が実行する。`review-pull-request` の「verify-comments の担当一致」は Agent 種別の一致を要求し、異なる Agent による代理確認にはユーザーの明示指示が必要なためである。P2 を別 Agent 種別へ委ねたまま P5 を自分で実行しない。
+3 番目のうち別 Agent 種別へ委ねる場合、P5 は P2 と同じ Agent 種別が実行する。`review-pull-request` の「verify-comments の担当一致」は Agent 種別の一致を要求し、異なる Agent による代理確認にはユーザーの明示指示が必要なためである。P2 を別 Agent 種別へ委ねたまま P5 を自分で実行しない。ユーザーへ委ねる場合、その review は agent の review cycle を作らないため P5 を行わない。thread への対応は P4 で行い、resolve はユーザーの判断に従う。
 
 ## 判断基準（P3 / P6）
 
@@ -201,7 +201,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 - inline thread の resolve。
 - `APPROVE` / `REQUEST_CHANGES` の投稿。
 - 複数 Issue の並行実行。
-- P5 を orchestrator 自身で実行する。
+- P5 を orchestrator 自身で実行する（「subagent が使えない環境」を除く）。
 - P2 / P5 の委譲中に push する。
 - 反復上限を超える自動反復。
 - subagent の出力を検証せずに採用する。

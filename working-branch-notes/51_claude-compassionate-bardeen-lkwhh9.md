@@ -14,7 +14,7 @@ Issue #50 に従い、Issue 着手から「レビュー済み PR」までを 1 �
 
 ## 現在の状況
 
-PR #51 を作成し、review を subagent へ委譲した。指摘 11 件（must 6 / ask 1 / imo 3 / nits 1）と fyi 2 件を受け、全件を妥当と判断して対応した。対応結果の再確認（P5）へ進む。
+review cycle `claude-code-deeb92c-20260912122405` の 1 周目を終えた。P5 で 10 thread が resolve 可、1 thread が未対応（1 周目の修正が作った新たな矛盾）となったため、2 周目の P4 で対応した。2 周目の P5 へ進む。
 
 ## 決定事項
 
@@ -30,7 +30,8 @@ PR #51 を作成し、review を subagent へ委譲した。指摘 11 件（must
 - PR を作成し、note を採番する。（完了）
 - SKILL.md の手順に従って review を subagent へ委譲する。SKILL.md の自己完結性も review 観点に含める。（完了）
 - 指摘へ対応し、各 thread へ処置を返信する。（完了）
-- 対応結果の再確認（P5）を subagent へ委譲し、収束を確認する。
+- 対応結果の再確認（P5）を subagent へ委譲し、収束を確認する。（1 周目完了）
+- 2 周目の P5 で収束を確認する。
 
 ## 検証
 
@@ -55,7 +56,9 @@ review 以降の結果。
 | P2 review cycle | `claude-code-deeb92c-20260912122405`、対象 head `deeb92c` |
 | P2 の指摘 | inline 11 件（must 6 / ask 1 / imo 3 / nits 1）+ review body 内 fyi 2 件 |
 | P3 の判断 | 全 11 件を妥当と判断し採用。非採用・スコープ外とした指摘は無い |
-| P4 の対応 | SKILL.md を修正し、各 thread へ処置を返信した。PR description の未検証事項に `--from-pr` 入口の未実行を追記した |
+| P4 の対応（1 周目） | SKILL.md を修正し、各 thread へ処置を返信した。PR description の未検証事項に `--from-pr` 入口の未実行を追記した |
+| P5 の再確認（1 周目） | 10 thread が resolve 可。1 thread が未対応。依頼した整合確認（反復上限の 4 箇所一致、P3 分岐条件と判断基準、P5 の subagent 節と周辺）はいずれも通った。委譲中の push 禁止も既存記述と衝突しないと確認された |
+| P4 の対応（2 周目） | 未対応 1 件（L63 / L204 の無条件禁止が L126 の許可と衝突）を修正。任意指摘 3 件（入口の表に P4 再開を載せる、再利用時に省略可の表記を 2 項目で揃える、ユーザーへ委ねる場合の P5 を定義する）も採用。任意指摘のうち 1 件は事実誤認のため非採用 |
 | subagent 側の検証（委譲分） | `doc/guidelines/agent-configuration-management.md` の作成 checklist と禁止事項、backtick 付き repo 相対 path の実在、index リンク、文体（5 ファイル）、`git diff --check main..HEAD`、0019 の template 準拠、被委譲 2 skill の追記が 1 文であること、Issue #50 の記述要求項目の網羅 |
 
 ## 自己適用で得た所見
@@ -71,6 +74,10 @@ fresh context の subagent へ review を委譲した狙いは機能した。指
 | 入口の欠落 | `--from-pr` 入口に前提確認が掛からず、Issue 番号の取得元も無かった。未収束 cycle がある PR で cycle が二重になる | 前提確認、Issue 番号の取得元、未収束 cycle 時の P4 再開を追加した |
 | 扱いの欠落 | CI が pending のときの進め方が無く、failure 時に先に直すのかも読めなかった | pending / 自 PR 起因の failure / 外部起因の failure の 3 分岐を書いた |
 | fallback の範囲 | subagent 不在時の fallback が P2 だけを対象にしており、P5 と担当一致要件の関係が未定義だった | P2 / P5 の両方を対象にし、別 Agent 種別へ委ねた場合の担当一致を明記した |
+
+**修正が新たな矛盾を作ることがある**、という所見も得た。1 周目で [ask] に応えて「P5 を orchestrator 自身で実行しない」を 2 箇所へ無条件の禁止として書いたところ、「subagent が使えない環境」節の「同一 agent が P2 と P5 を実行してよい」と衝突した。subagent 機構が無い環境では実行主体が orchestrator ただ 1 つであるため、一方が許すものを他方が禁じる形になっていた。2 周目で例外の相互参照を入れて閉じた。1 周で終わらせず P5 を回す設計が効いた例である。
+
+非採用とした指摘も 1 件ある。「`development-loop.md` の引用箇所が『各資材の役割』ではなく『基本方針』である」という任意指摘だが、当該規定（索引登録と進捗整理は起点 Issue を持たない独立 PR となるため `Closes` を付けない）は同ファイル 48 行目の「各資材の役割」表の Pull Request 行にある。引用は正しく、修正は不要と判断した。
 
 フロー運用そのものについて、この session で 2 件気づいた。
 
@@ -91,3 +98,4 @@ fyi として、委譲先の fresh subagent 側でも新規 skill が skill 一�
 - 2026-09-12: skill 本体・symlink・`doc/guidelines/development-loop.md`・被委譲 2 skill の参照・decision log 0019 と index を作成した。session 途中の skill 検出を実測し、SKILL.md の記述を実測に合わせて調整した。
 - 2026-09-12: PR #51 を作成し、note を採番した。CI success を確認し、review cycle `claude-code-deeb92c-20260912122405` を subagent へ委譲した（対象 head `deeb92c`）。
 - 2026-09-12: 指摘 11 件を実物で確認し、全件を採用して SKILL.md を修正した。採番の合意ゲートを Issue #52 として登録した。委譲中の push 禁止を SKILL.md に追加した。
+- 2026-09-12: P5（1 周目）を review 担当の subagent 再利用で実行した。10 thread が resolve 可、1 thread が未対応。未対応 1 件と任意指摘 3 件を 2 周目の P4 で修正し、事実誤認の 1 件は非採用とした。
