@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: exclude-non-skill-tasks-from-note-numbering
-- PR: 未作成
+- PR: #46
 - 最終更新: 2026-09-12
 
 ## 目的
