@@ -1,0 +1,70 @@
+# 作業ブランチメモ
+
+- ブランチ: `claude/blissful-goldberg-0z1593`（cloud session が用意したブランチ）
+- PR: 未採番
+- 最終更新: 2026-09-12
+
+## 目的
+
+Issue #47 に従い、Claude Code on the web の cloud session で Compose 経由の開発コマンドと GitHub 操作が成立するように、実行環境 script（`.agents/scripts/cloud-session-setup.sh`）、SessionStart hook（`.claude/settings.json`）、cloud 専用 override（`compose.cloud.yaml`）、新 guideline（`doc/guidelines/cloud-session-guidelines.md`）、各 guideline の cloud session 節、decision log 0018 を整える。
+
+## 現在の状況
+
+spike と実装、検証を完了した。PR を作成する。
+
+## 決定事項
+
+- 開発コマンドは cloud session でも Compose 経由を維持する（候補 A）。rustup 固定 toolchain（B）と自動 fallback（C）は採らない。理由は 0018 に書く。
+- 処理本体は tool 中立な `.agents/scripts/` に置き、`.claude/settings.json` は hook 登録だけにする。環境 UI の setup script は script が生成する stub（数行）に留める。
+- cloud 固有の差分（container を agent proxy 経由にする host network と proxy 変数）は `compose.cloud.yaml` に閉じ込め、hook が `COMPOSE_FILE` を export する。開発コマンドの形は変えない。
+- Docker daemon は `service docker start` ではなく `dockerd` を直接起動する。init script が `ulimit` の変更で失敗するため（sandbox は rlimit の変更を許さない）。
+- 参考にした別プロジェクト（非公開）の cloud session 対応方式から、環境構築の正本を repo に置いて UI は stub にする点、入力 digest を stub に埋めて cache の再構築を誘発する点、hook で drift を検出して警告する点、setup script を非 0 で終わらせない点を取り込んだ。参照プロジェクトの識別情報はこの repo に書かない。
+- GitHub 操作は cloud session では組み込みの GitHub tool を第一選択にする。本 Issue と PR の作成がその先行適用になる。
+
+## 次にやること
+
+- PR を作成し、note を採番する。
+- merge 前にユーザーが本ブランチで新 session を開き、hook の出力と `docker compose run --rm dev cargo fmt --check` を確認する。任意で `--print-stub` の出力を environment の setup script に貼り、再構築を確認する。
+
+## 検証
+
+spike の記録。
+
+| 項目 | 結果 |
+|---|---|
+| S1: `service docker start` | 失敗。init script が `ulimit -Hn` / `ulimit -u` で `Operation not permitted` になり中断する |
+| S1: `dockerd` を直接起動 | 成功。約 3 秒で API が応答。Server 29.3.1、storage driver overlayfs、cgroup v1、buildkit 初期化済み |
+| S2: `docker compose build dev`（override 込み） | 初回失敗。Docker Hub の blob 配信元が egress policy で拒否される。`Dockerfile` に `ARG BASE_REGISTRY` を足し、override で許可リスト内の mirror を渡して成功（build 数秒。base image の取得は約 35 秒） |
+| S3: `docker compose run --rm dev cargo fetch --locked` | 成功（数秒）。container は host network で agent proxy を経由する |
+| S4: `cargo fmt --check` / `cargo clippy --locked --all-targets -- -D warnings` / `cargo test --locked` / `cargo build --locked`（Compose 経由） | すべて成功。clippy 11 秒、test 15 秒（unit 69 件、E2E 12 件）。`./target/debug/bizdate --version` は `bizdate 0.1.0` |
+
+実装後の検証（cloud session 内。sandbox の絶対 path と host 名は省く）。
+
+| 項目 | 結果 |
+|---|---|
+| `bash -n` / `shellcheck` | 警告なし |
+| `CLAUDE_CODE_REMOTE` 未設定で hook mode | 無出力、exit 0 |
+| `--print-stub` を 2 回、および repo を別ディレクトリへ複製して実行 | 出力が同一。digest は clone 先の path に依存しない |
+| setup script 文脈の再現（proxy 変数と `CLAUDE_*` を外し、image・build cache・state を消してから `--provision`） | exit 0、約 35 秒。daemon 起動、base image の pull、build は設計どおり skip、state file 作成、daemon 停止 |
+| 直後に hook mode（stdin に SessionStart の JSON、`CLAUDE_PROJECT_DIR`、`CLAUDE_ENV_FILE`） | exit 0、約 6 秒。daemon 起動、image build、`COMPOSE_FILE` を env file に 1 行追記、cache は repo と一致 |
+| hook mode を再実行 | exit 0、1 秒未満。「起動済み」「image あり」。env file の追記は増えない |
+| `--doctor` | 一致で exit 0。`compose.cloud.yaml` を変えると exit 1 で stub を出力。戻すと exit 0 |
+| `--force`（`CLAUDE_CODE_REMOTE` 未設定） | hook と同じ動作 |
+| env file の `COMPOSE_FILE` で `docker compose run --rm dev cargo fmt --check` / `cargo test --locked` | 成功 |
+| `jq . .claude/settings.json`、override 込みの `docker compose config -q` | 成功 |
+| markdown link と repo 相対 path、rule basename の一致、`git diff --check`、文体、情報統制 | 下記「機械的確認」のとおり |
+
+daemon の停止直後に hook を実行すると、終了処理中の旧 process が pid file を持っていて新しい daemon が起動できない競合を検証で見つけた。script は process の終了を待ってから pid file を扱うように直した。
+
+## リスク・ブロッカー
+
+- base image の取得元は gcr.io の Docker Hub mirror に固定した。ECR Public は proxy 経由なら使えるが、proxy の無い setup script の文脈では blob の配信元が許可リストに無く pull できなかった。mirror が使えなくなった場合は環境の許可 host 追加（ユーザー操作）か `BASE_REGISTRY` の変更で対処する。
+- setup script は 5 分以内に終わる必要がある。cache 無しの `--provision` は約 35 秒で、余裕は大きい。
+- setup script の文脈では agent proxy が無く container の network が通らないため、`--provision` では image の最終層を build しない。session 開始時に hook が build する（約 6 秒）。
+- SessionStart hook の実発火は本 session では再現できない。merge 前にユーザーが新 session で確認する。
+
+## セッションログ
+
+- 2026-09-12: 環境調査（daemon 未起動、toolchain が MSRV 未満、egress の TLS 再終端、組み込み GitHub tool）。プランを作成し承認を得た。
+- 2026-09-12: Issue #47 を組み込み GitHub tool で作成。note を作成。spike S1〜S4 を実施し、base image の取得元を mirror に切り替えた。
+- 2026-09-12: script・`.claude/settings.json`・`compose.cloud.yaml`・新 guideline・各 guideline の節・0018 を作成。検証で daemon 停止直後の再起動の競合と、setup script 文脈で container の network が通らない点を見つけ、script の設計を修正した。
