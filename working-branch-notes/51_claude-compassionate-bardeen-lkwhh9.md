@@ -14,7 +14,7 @@ Issue #50 に従い、Issue 着手から「レビュー済み PR」までを 1 �
 
 ## 現在の状況
 
-skill 本体、symlink、`doc/guidelines/development-loop.md` の skill 表、被委譲 2 skill の相互参照、decision log 0019 と index 行を作成した。文書検証を実施し、PR 作成へ進む。
+PR #51 を作成し、review を subagent へ委譲した。指摘 11 件（must 6 / ask 1 / imo 3 / nits 1）と fyi 2 件を受け、全件を妥当と判断して対応した。対応結果の再確認（P5）へ進む。
 
 ## 決定事項
 
@@ -27,9 +27,10 @@ skill 本体、symlink、`doc/guidelines/development-loop.md` の skill 表、�
 
 ## 次にやること
 
-- PR を作成し、note を採番する。
-- SKILL.md の手順に従って review を subagent へ委譲する。SKILL.md の自己完結性も review 観点に含める。
-- 指摘の採否を判断し、必要なら対応と再確認を回す（上限 2 周）。
+- PR を作成し、note を採番する。（完了）
+- SKILL.md の手順に従って review を subagent へ委譲する。SKILL.md の自己完結性も review 観点に含める。（完了）
+- 指摘へ対応し、各 thread へ処置を返信する。（完了）
+- 対応結果の再確認（P5）を subagent へ委譲し、収束を確認する。
 
 ## 検証
 
@@ -46,7 +47,37 @@ skill 本体、symlink、`doc/guidelines/development-loop.md` の skill 表、�
 
 Rust のコードに変更が無いため、`cargo` による再検証は省略した。
 
-review 以降の検証結果は、PR 採番後に本セクションへ追記する。
+review 以降の結果。
+
+| 項目 | 結果 |
+|---|---|
+| CI（head `cb48e89` / `deeb92c`） | `fmt / clippy / test / build` success |
+| P2 review cycle | `claude-code-deeb92c-20260912122405`、対象 head `deeb92c` |
+| P2 の指摘 | inline 11 件（must 6 / ask 1 / imo 3 / nits 1）+ review body 内 fyi 2 件 |
+| P3 の判断 | 全 11 件を妥当と判断し採用。非採用・スコープ外とした指摘は無い |
+| P4 の対応 | SKILL.md を修正し、各 thread へ処置を返信した。PR description の未検証事項に `--from-pr` 入口の未実行を追記した |
+| subagent 側の検証（委譲分） | `doc/guidelines/agent-configuration-management.md` の作成 checklist と禁止事項、backtick 付き repo 相対 path の実在、index リンク、文体（5 ファイル）、`git diff --check main..HEAD`、0019 の template 準拠、被委譲 2 skill の追記が 1 文であること、Issue #50 の記述要求項目の網羅 |
+
+## 自己適用で得た所見
+
+fresh context の subagent へ review を委譲した狙いは機能した。指摘 11 件のうち `[must]` 6 件は、いずれも設計意図を持つ側が context で補完して見落としていた自己矛盾・欠落である。
+
+| 種別 | 内容 | 対応 |
+|---|---|---|
+| SKILL.md の自己矛盾 | 反復上限を「委ねる」と書きながら `2 周` の値を複製していた。0019 が却下した案の失敗形そのもの | 値を削り、単位の対応づけだけを残した |
+| SKILL.md の自己矛盾 | P3 の分岐条件（処置すべき指摘が無ければ終了）が判断基準（全件非採用でも P4 を実施）と衝突 | 分岐条件を「指摘 0 件」に限定し、判断基準の 2 行を 1 行へ縮めた |
+| 決定の落ち漏れ | 0019 の「再確認 subagent は再利用を第一選択」が SKILL.md に無く、本文は新規 subagent 前提に読めた | 「P5 の subagent」節を追加した |
+| 経路の欠落 | subagent はユーザーへ直接問えないが、`review-pull-request` には「ユーザーに確認する」指示がある。中継経路が未定義だった | 確認事項を `未収束事項` として返し orchestrator が中継する扱いを明記し、停止表に行を足した |
+| 入口の欠落 | `--from-pr` 入口に前提確認が掛からず、Issue 番号の取得元も無かった。未収束 cycle がある PR で cycle が二重になる | 前提確認、Issue 番号の取得元、未収束 cycle 時の P4 再開を追加した |
+| 扱いの欠落 | CI が pending のときの進め方が無く、failure 時に先に直すのかも読めなかった | pending / 自 PR 起因の failure / 外部起因の failure の 3 分岐を書いた |
+| fallback の範囲 | subagent 不在時の fallback が P2 だけを対象にしており、P5 と担当一致要件の関係が未定義だった | P2 / P5 の両方を対象にし、別 Agent 種別へ委ねた場合の担当一致を明記した |
+
+フロー運用そのものについて、この session で 2 件気づいた。
+
+1. **`number-working-branch-note` にユーザー合意ゲートがある。** 採番は PR 作成直後に必ず通る経路であり、完全自律のフローにならない。現状の運用に合っていないため Issue #52 として登録した。orchestrator 側に記載すべきかは #52 の結論に従う。
+2. **orchestrator は委譲中に push できない。** push すると head SHA が動き、review 中の subagent が context の取り直しを強いられる。SKILL.md の「head SHA と CI」と「やらないこと」に明記した。
+
+fyi として、委譲先の fresh subagent 側でも新規 skill が skill 一覧に載っていた。session 途中の検出は subagent の起動時にも効いている。ただし SKILL.md は引き続き path 直読を既定とする。
 
 ## リスク・ブロッカー
 
@@ -58,3 +89,5 @@ review 以降の検証結果は、PR 採番後に本セクションへ追記す�
 
 - 2026-09-12: 常用 prompt の洗練点（委譲 interface、判断基準、head SHA の受け渡し、CI の確認点、反復上限の一元化、停止条件、途中再開、note 更新点、終了報告、agent 中立性）を整理し、Issue #50 として起票した。
 - 2026-09-12: skill 本体・symlink・`doc/guidelines/development-loop.md`・被委譲 2 skill の参照・decision log 0019 と index を作成した。session 途中の skill 検出を実測し、SKILL.md の記述を実測に合わせて調整した。
+- 2026-09-12: PR #51 を作成し、note を採番した。CI success を確認し、review cycle `claude-code-deeb92c-20260912122405` を subagent へ委譲した（対象 head `deeb92c`）。
+- 2026-09-12: 指摘 11 件を実物で確認し、全件を採用して SKILL.md を修正した。採番の合意ゲートを Issue #52 として登録した。委譲中の push 禁止を SKILL.md に追加した。
