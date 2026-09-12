@@ -43,6 +43,7 @@ I want to review in Japanese.
 - 入口に恒久ルールが直接書かれていたら指摘する。
 - rule の追加・削除・rename では、共通正本・Cursor 入口・Claude Code 入口の basename が揃っているか、`AGENTS.md` にリンクがあるかを確認する。**Codex は `AGENTS.md` からしか正本に到達できないため、リンク漏れは `[must]` で指摘する。**
 - 存在しないファイルへの参照とリンク切れは指摘する。
+- `.claude/settings.json` は SessionStart hook の登録だけを持つ。処理本体や恒久ルールが書かれていたら指摘する。処理本体は `.agents/scripts/` に置く（`doc/guidelines/cloud-session-guidelines.md`）。
 - `doc/design/` 直下の spec（`concept.md` / `business-day.md` / `cli-interface.md` / `distribution.md`）が仕様の正本である。spec 間の矛盾や decision log の決定との食い違いを指摘する。decision log を仕様の正本として扱う記述も指摘する。
 - `distribution.md` は配布物の仕様だけを扱う。公開の作業手順（誰がいつ何を実行するか）が spec 側に混ざっていたら指摘する。手順の正本は `doc/guidelines/` のリリース guideline である。
 - `doc/design/decision-log/*.md` は 1 テーマ 1 ファイル。背景・候補・検討内容・決定・理由・影響・見直し条件のうち判断に必要なものが欠けていれば指摘する。`index.md` は入口であり、詳細議論の詰め込み、参照漏れ、有効な方針と未決事項の混同を指摘する。

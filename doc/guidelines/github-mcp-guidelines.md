@@ -35,6 +35,14 @@
 
 汎用 skill の分類、妥当性判断、修正、検証などの手順は再利用してよい。ただし、GitHub app / `gh` を先に使う tool routing と `gh` preflight は採用しない。
 
+### cloud session（Claude Code on the web）
+
+cloud session の sandbox には `op` と `gh` が無く、Docker daemon 前提の `github-op-integrated` は起動できない（MCP host に出る起動失敗の表示は想定どおりで、対処しない）。代わりに session が組み込みの GitHub MCP tool を提供する。
+
+- 組み込み GitHub tool を第一選択とする。「操作別の第一選択」の tool 名はそのまま読み替え、skill 内の `github-op-integrated` の記載も組み込み tool に読み替える。
+- `gh` fallback は無い。write が失敗したら read 系 tool で反映を確認し、未反映なら同じ tool で再試行するか、ユーザーに報告する。
+- 組み込み tool には allowlist 外の write（merge、review thread の resolve、workflow の実行・再実行・cancel、API 経由の file push、auto-merge の変更など）も見える。見えていても実行しない。「CI 操作の境界」と「Review event と resolve の制約」はそのまま適用する。
+
 ## 操作別の第一選択
 
 | 操作 | 第一選択 | 補足 |

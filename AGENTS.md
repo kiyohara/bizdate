@@ -20,6 +20,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - Working branch notes 情報統制ルール（`working-branch-notes/**/*.md` のセキュリティ禁則）: `doc/guidelines/working-branch-notes-security.md`
 - Decision log 記録ルール（方針決定ログの作成・更新・index 管理）: `doc/guidelines/decision-log-guidelines.md`
 - ドキュメント文体ガイドライン（読者層別の文末・トーン・用語表記）: `doc/guidelines/document-style-guidelines.md`
+- Cloud session 実行ルール（Claude Code on the web の cloud session での開発コマンド・environment cache・設定変更）: `doc/guidelines/cloud-session-guidelines.md`
 
 ## ドキュメント配置
 
@@ -44,7 +45,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 対象 agent と配置規約は `doc/design/decision-log/0011-ai-agent-lineup.md` を参照する。
 
 - AI 向け共通入口は **`AGENTS.md`**（本ファイル）。
-- **Claude Code**: `CLAUDE.md`（`@AGENTS.md` で本ファイルを取り込む）と `.claude/rules/*.md` を読む。
+- **Claude Code**: `CLAUDE.md`（`@AGENTS.md` で本ファイルを取り込む）と `.claude/rules/*.md` を読む。`.claude/settings.json` は SessionStart hook の登録だけを持ち、処理本体は `.agents/scripts/cloud-session-setup.sh` に置く（`doc/guidelines/cloud-session-guidelines.md`）。
 - **Cursor**: `.cursor/rules/*.mdc` を frontmatter に従ってロードする。
 - **Codex**: `AGENTS.md` から `doc/guidelines/` の正本へ移動して読む。
 - **GitHub Copilot code review**: `.github/copilot-instructions.md` をレビュー時に読む。GitHub.com では `AGENTS.md` も読むが、リンク先の正本まで辿る保証はないため、効かせたい要点は Copilot 用ファイル内に直接書く。
@@ -55,6 +56,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - 新しい作業の始め方、Issue 登録、Issue 実行、進捗整理の流れを確認するときは `doc/guidelines/development-loop.md` を読む。
 - GitHub Issue を指定されてタスクを消化するときは `doc/guidelines/issue-driven-task-execution.md` に従う。
 - `cargo` などの開発コマンドを実行するときは `doc/guidelines/development-command-guidelines.md` に従い、Compose 経由で実行する。
+- Claude Code on the web の cloud session で作業するとき、または cloud session 向けの設定（`.agents/scripts/cloud-session-setup.sh`、`.claude/settings.json`、`compose.cloud.yaml`、environment の setup script）を変更するときは `doc/guidelines/cloud-session-guidelines.md` に従う。
 - commit、tag、push、merge など git 操作を行う前に `doc/guidelines/git-operation-guidelines.md` に従う。`main` へ直接 push しない。
 - GitHub の PR / issue / レビューコメントを操作するときは `doc/guidelines/github-mcp-guidelines.md` に従い、MCP を優先する。
 - `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。

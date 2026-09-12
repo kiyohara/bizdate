@@ -5,3 +5,4 @@
 - allowlist 外の操作（merge / release / workflow dispatch / settings）は `gh` で行う。
 - `APPROVE` / `REQUEST_CHANGES` / thread resolve / merge は自動実行しない。
 - write が失敗したら、read-back してから再実行を判断する。
+- cloud session（Claude Code on the web）では組み込みの GitHub tool を第一選択にする。allowlist 外の write（merge / resolve / workflow 実行 / file push）は見えていても実行しない。
