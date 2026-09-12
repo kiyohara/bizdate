@@ -28,6 +28,7 @@
 | 0014 | decided | 依存クレートと toolchain | edition 2024、MSRV 1.98。`clap` / `jiff` / `csv` / `ureq`(rustls) / `encoding_rs`。XDG パス解決は自前実装 | [0014-dependency-crates-and-toolchain.md](0014-dependency-crates-and-toolchain.md) |
 | 0015 | decided | Dependabot 更新 | GitHub Actions を週次・グループ化・open PR 上限 1 本で更新。bot PR は Issue 起点の対象外、レビューは直列、merge は人間。末尾は tag のみ、Cargo は今回対象外 | [0015-dependabot-updates.md](0015-dependabot-updates.md) |
 | 0016 | decided | 初回配布の契約 | macOS / Linux の arm64 / amd64 を native ビルドで 4 target。Linux は gnu のみで最低 glibc は実測。tzdb はシステム依存、TLS trust は埋め込み。`.tar.gz` + `sha256`、third-party 表記を同梱。初回は `0.1.0` / tag `v0.1.0`、macOS 署名なし | [0016-distribution-contract.md](0016-distribution-contract.md) |
+| 0017 | decided | PR での tool 名記載範囲 | 禁止は PR title の tool 名・tool 由来 prefix のみ。description と PR コメントは制限せず、`Co-Authored-By` / `🤖 Generated with ...` のような trailer を明示的に許可する。commit message は無規定のまま | [0017-pr-tool-name-restriction.md](0017-pr-tool-name-restriction.md) |
 
 ## 未決事項
 

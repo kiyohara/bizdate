@@ -5,7 +5,7 @@
 ## 基本方針
 
 - PR description は日本語で書く。
-- PR title / description には、作成に使った tool 名やそれを示す prefix を含めない。
+- PR title には、作成に使った tool 名やそれを示す prefix を含めない。
 - description はレビュアーが変更意図と確認観点を把握できる粒度で書く。
 - 変更内容、背景、レビュアーに特に見てほしい点、検証内容、未検証事項を分けて書く。
 - 既存ルール、設定、配置、責務分担を整理した場合は、何をどの正本へ移し、どの入口をどう変更したかを具体的に書く。
@@ -14,10 +14,8 @@
 
 ## Tool 名の扱い
 
-- `claude`、`codex`、`cursor` など、「どの tool を使って作った情報か」を示す名称は PR title / description に書かない。
-- `[codex]` のような tool 由来の prefix も使わない。
-- レビュアーにとって重要なのは、どの tool で作ったかではなく、プロジェクトにどういう変更を入れるかである。
-- 変更対象の実ファイルパスとして `.cursor/rules/` や `.claude/rules/` などを書く必要がある場合は、その範囲に限って記載してよい。
+- PR title には `claude`、`codex`、`cursor` などの tool 名や、`[codex]` のような tool 由来の prefix を含めない。title はレビュアーが変更内容を把握するためのものである。
+- PR description と PR コメントでは制限しない。`Co-Authored-By` や `🤖 Generated with ...` のような trailer も記載してよい。
 
 ## 推奨構成
 
