@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/blissful-goldberg-0z1593`（cloud session が用意したブランチ。PR #48 の merge 後に `main` から作り直して再利用）
-- PR: 未採番
+- PR: #49
 - 最終更新: 2026-09-12
 
 ## 目的
@@ -10,7 +10,7 @@ PR #48（Issue #47、cloud session 対応）の merge を受けて、`maintain-p
 
 ## 現在の状況
 
-点検と編集を終え、PR を作成する。
+点検と編集を終え、PR #49 を作成した。レビュー待ち。merge はユーザーが行う。
 
 ## 決定事項
 
@@ -42,3 +42,4 @@ PR #48（Issue #47、cloud session 対応）の merge を受けて、`maintain-p
 ## セッションログ
 
 - 2026-09-12: PR #48 の merge を確認し、session ブランチを `main` から作り直した。note を作成し、`progress.md` を整理した。
+- 2026-09-12: PR #49 を作成し、note を採番した。
