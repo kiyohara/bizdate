@@ -51,7 +51,7 @@ MCP server の起動失敗について:
 
 正本に定めた要点は次のとおり。
 
-- 1Password 連携の有無を事前に判定せず、前段にゲートや preflight を置かない。skill や guideline に `op` の有無による分岐を持ち込まない。
+- 1Password 連携の有無を事前に判定せず、前段にゲートや preflight を置かない。skill や guideline に、承認が通るかどうかを理由に挙動を変える分岐や事前チェックを持ち込まない。`gh` の実行形式の選択（`.op/plugins/gh.json` の有無）は環境の宣言に従う静的な選択であり、これに当たらない。
 - 1Password や承認に関する文言を伴う失敗、または原因を判断できない失敗を検知したら中断し、失敗した操作、エラー出力の要旨、未反映の変更を報告して 4 つの選択肢（応答できる状態にして再実行 / ユーザーが手動実行 / 明示指示による別経路 / 保留）を提示する。
 - 別の 1Password 連携経路への自動切り替え、署名の無効化、鍵・`gpg.ssh.program`・`SSH_AUTH_SOCK`・credential helper・remote URL・連携設定の変更、1Password app の操作を禁止する。
 - 再実行前に read-back と commit 未作成の確認を行う。subagent は選択肢を選ばず呼び出し元へ返す。

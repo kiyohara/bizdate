@@ -35,7 +35,7 @@ PR を作成した直後に `working-branch-notes/` 配下の `draft_...md` を 
 ## GitHub 操作形式
 
 - PR の read / update は、必ず最初に `github-op-integrated` MCP tool を試す。
-- 必要な MCP tool が現在の tools に見えていない場合は、`gh` へ進む前に利用中 agent の tool discovery 機構で `github-op-integrated` を検索する。
+- 必要な MCP tool が現在の tools に見えていない場合は、利用中 agent の tool discovery 機構で `github-op-integrated` を検索する。見つからない場合の扱いは `doc/guidelines/github-mcp-guidelines.md` の優先順位に従う。
 - `gh pr view` / `gh auth status` などの `gh` preflight を MCP tool の試行より先に実行しない。
 - `gh` へ fallback する場合の実行形式は `doc/guidelines/github-cli-guidelines.md` に従う。
 - write 系を `gh` に fallback する場合は、再実行前に read 系 tool で未反映かどうかを確認してから実行する。

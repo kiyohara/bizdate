@@ -26,6 +26,7 @@ Issue #53 に従い、1Password 連携操作が承認待ちで失敗したとき
 - git 操作ルールの署名経路の切り分け（`op-ssh-sign` / `ssh-keygen` + SSH agent）は新正本へ移し、git 操作ルールには失敗時の参照先だけを残す（ユーザー確認済み）。
 - remote の HTTPS 断定は撤回し、scheme と認証経路は環境依存とする。
 - decision log の番号は 0021 とする。PR #56 と衝突するが、両 PR は択一であり同時に merge されない。
+- review 指摘を受けて再検討した `gh` の実行形式について。Claude Code の Bash は `zsh -c` と shell snapshot で動き、`op plugin init gh` の alias（対話 shell の rc から source）は効かないため、素の `gh` は実バイナリであり gh 自身の keyring 認証で動く。「`op plugin run -- gh` を試し、失敗したら素の `gh` へ fallback する」案は、承認待ちの失敗でも credential が黙って入れ替わるため採らない。`.op/plugins/gh.json` の有無による選択は、メンバーが環境で宣言した設定に従う静的な選択として維持し、正本の原則文をその旨に限定した。
 
 ## 次にやること
 
@@ -46,3 +47,4 @@ Issue #53 に従い、1Password 連携操作が承認待ちで失敗したとき
 ## セッションログ
 
 - 2026-09-13: Issue #53、PR #56、追試レポート、既存 guideline を読み、構成案をユーザーに確認した。`origin/main` から本ブランチを作成し、新正本と入口、既存整理、decision log を書いた。PR #58 を作成し、note を採番した。
+- 2026-09-13: review（Codex 指摘なし、Claude Code `[imo]` 3 件 / `[nits]` 1 件、cycle `claude-code-a7c7ec5-20260913103203`）の 4 件をすべて採用した。正本の原則文の限定、cloud session 節の除外明示、CLI guideline の適用条件、skill の検索後の扱い。

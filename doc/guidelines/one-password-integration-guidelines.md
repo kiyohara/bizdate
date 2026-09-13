@@ -18,7 +18,7 @@
 
 - 操作の前段にゲートを置かない。「これから 1Password の承認が必要な操作を行う」という事前の確認や合意取りをしない。
 - 承認が通るかを確かめる preflight（`op whoami`、`op account list`、`ssh-add -l`、`gh auth status` など）を先に実行しない。
-- skill や guideline に、`op` の有無や `.op/` の存在で挙動を変える 1Password 固有の分岐を持ち込まない。失敗したときの扱いは本ルールを参照するだけにする。
+- skill や guideline に、承認が通るかどうかを理由に挙動を変える 1Password 固有の分岐や事前チェックを持ち込まない。`gh` の実行形式の選択（`.op/plugins/gh.json` があれば `op plugin run -- gh`。`doc/guidelines/github-cli-guidelines.md`）は、メンバーがその環境で宣言した設定に従う静的な選択であり、承認可否の判定ではないためこれに当たらない。失敗したときの扱いは本ルールを参照するだけにする。
 - 影響の大きさや取り消しにくさを理由とする承認（`doc/guidelines/github-cli-guidelines.md` の「ユーザーの確認を得てから実行する操作」、PR の merge や review thread の resolve を agent が行わない規定など）は別の主題であり、本ルールは変えない。
 
 ## 1Password 起因の失敗の見分け方
@@ -87,4 +87,4 @@ git config --get gpg.ssh.program
 
 ## 1Password が無い環境
 
-cloud session のように 1Password が関与しない環境では、上記の失敗は起きず、本ルールは発動しない。環境の判定や、本ルールのための追加手順は要らない。
+cloud session のように 1Password が関与しない環境では、本ルールは発動しない。cloud session で `github-op-integrated` の起動失敗（`Connection closed` など）が表示されるのは 1Password と無関係な想定どおりの挙動であり、`doc/guidelines/github-mcp-guidelines.md` の cloud session 節に従って組み込み tool を使う。環境の判定や、本ルールのための追加手順は要らない。
