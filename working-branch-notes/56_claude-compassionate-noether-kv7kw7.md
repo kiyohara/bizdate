@@ -128,11 +128,11 @@ cloud session では `op` が無く再現できなかったため、1Password �
 
 追試の後、レビュー指摘を受けて再確認したところ、**Claude Code は server ごとの接続ログへ wrapper の stderr を書き出している**ことが分かった。`--debug` は不要で、1Password に触れずに読める。
 
-cloud session 自身のログ（`~/.cache/claude-cli-nodejs/-home-user-bizdate/mcp-logs-github-op-integrated/*.jsonl`）で次を確認した。
+cloud session 自身のログ（`~/.cache/claude-cli-nodejs/<cwd を escape した名前>/mcp-logs-github-op-integrated/*.jsonl`）で次を確認した。引用は本 PR で定めた範囲（診断メッセージ本文と接続結果の分類）に揃え、JSON レコードは貼らない。
 
-- `"error":"Server stderr: mcp-github-op-integrated: '1Password CLI (op)' が PATH に見つからない\n"`
-- `"debug":"Starting connection with timeout of 30000ms"`（追試が報告した 30 秒の裏取りにもなる）
-- `"debug":"Connection failed after 53ms (CONNECTION_CLOSED): Connection closed"`
+- wrapper の診断: `mcp-github-op-integrated: '1Password CLI (op)' が PATH に見つからない`
+- 接続の開始: 接続 timeout が 30000ms であること（追試が報告した 30 秒の裏取りにもなる）
+- 接続の結果: `CONNECTION_CLOSED`（数十 ms で失敗）
 
 したがって読み分けは、間接的な確認ではなく**接続ログの直読**で行える。これを第一手段に据え、承認を要求しない確認は接続ログが読めない場合と host が別の場合（Cursor / Codex）の副手段へ降格した。
 
