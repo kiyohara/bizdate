@@ -5,7 +5,7 @@
 - 状態: decided
 - 作成日: 2026-09-13
 - 最終更新日: 2026-09-13
-- 関連: `.agents/skills/number-working-branch-note/SKILL.md`, `doc/guidelines/working-branch-notes-handling.md`, [0019-issue-review-cycle-orchestration.md](0019-issue-review-cycle-orchestration.md), Issue #52, PR #44 / PR #46 / PR #51
+- 関連: `.agents/skills/number-working-branch-note/SKILL.md`, `.agents/skills/run-issue-task/SKILL.md`, `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md`, `doc/guidelines/working-branch-notes-handling.md`, [0019-issue-review-cycle-orchestration.md](0019-issue-review-cycle-orchestration.md), Issue #52 / Issue #55, PR #44 / PR #46 / PR #51
 
 ## 背景
 
@@ -57,12 +57,49 @@ PR #51 で orchestrator skill `drive-issue-to-reviewed-pr`（0019）を追加し
 - `doc/guidelines/` に変更は無い。ゲートは skill の手順にのみ存在していた。
 - 他 skill の手順に変更は無い。
 - 誤検出の可視化は本 skill の「終了時の報告」に依存する。報告を省いた実行は、この決定の前提を欠く。
-- ただし上位 skill の報告項目には、書き換えた行の一覧を引き上げる規定が無い。`run-issue-task` の step 10 と「終了条件」は PR の URL・検証結果・未解決事項を、`drive-issue-to-reviewed-pr` の「終了時の報告」は PR と review cycle の状態を報告項目としており、いずれも本 skill の報告内容を上げない。ゲート撤回の動機である orchestrated flow でこそ報告が落ち得る。上位 skill の手順変更は本決定の対象外とし、制約として記録する。
-- 第 2 の可視化経路として、書き換えは必ず commit として PR diff に現れる。merge 前のレビューで確認できるため、報告 1 箇所だけに依存しているわけではない。
+- 決定時点では、上位 skill の報告項目に書き換えた行の一覧を引き上げる規定が無く、ゲート撤回の動機である orchestrated flow でこそ報告が落ち得た。上位 skill の手順変更は本決定の対象外とし、制約として記録した。この制約は Issue #55 で規定により閉じた（「追記: 上位 skill への報告の引き上げ」）。
+- 第 2 の可視化経路として、書き換えは必ず commit として PR diff に現れる。merge 前のレビューで確認できるため、報告 1 箇所だけに依存しているわけではない。ただし正規の確認経路は報告であり、PR diff は報告が落ちたときの補助である。
 
 ## 後から見直す条件
 
 - 誤検出の書き換えが実運用で繰り返し発生し、報告経由の事後修正では収まらなくなったとき。
 - 判定基準を緩めて、書き換え対象を「本 skill の終了時点で未完のまま残るか」より広い範囲へ拡張するとき。判定の確実性が下がるため、ゲートまたは別の安全弁の要否を再検討する。
 - 書き換え形式に、行の削除や文意の再構成のような不可逆な操作を含めるとき。
-- 上位 skill（`run-issue-task` / `drive-issue-to-reviewed-pr`）の報告項目へ、書き換えた行の一覧を引き上げる規定を入れるとき。本決定が制約として記録した可視化の前提を、規定として担保する変更にあたる。この判断は Issue #55 で行う。
+- 上位 skill（`run-issue-task` / `drive-issue-to-reviewed-pr`）の引き上げ規定を外す、または `number-working-branch-note` の「終了時の報告」から書き換えた行の一覧を外すとき。可視化の前提が規定で担保されなくなるため、ゲートまたは別の安全弁の要否を再検討する。
+
+## 追記: 上位 skill への報告の引き上げ（2026-09-13、Issue #55）
+
+「影響」に制約として記録した引き上げ規定の欠如を、Issue #55 で判断した。
+
+### 候補
+
+- **A**: 被委譲 skill が報告した項目のうち、ユーザーの確認を要するものを引き上げる一般規定を上位 2 skill へ置く。
+- **B**: 「完了として書き換えたタスク行の一覧」を名指しで上位 2 skill の報告項目へ足す。
+- **C**: 引き上げ規定は置かず、PR diff を正規の可視化経路と位置づけ、本ログの記述をそちらへ寄せる。
+
+### 検討
+
+- C は、本ログの「報告を省いた実行は、この決定の前提を欠く」と正面から衝突する。PR diff を正規経路とするなら、この前提と「終了時の報告」の位置づけを書き直すことになり、ゲート撤回の代替として報告を置いた判断そのものを変える。PR diff での気づきは、採番 commit が本体の変更に埋もれる PR ほど期待しにくい。
+- B は、何を上げるかが一意に決まるが、後続の被委譲 skill が同種の項目を持ったときに効かない。
+- A は後続にも効くが、「ユーザーの確認を要するもの」を上位 skill が判断すると、要約の段階で落とすかどうかがまた判断に依存する。そこで判定の根拠を上位 skill 側の判断ではなく、被委譲 skill 側の記述（その項目をユーザーの確認や判断の起点と位置づけているか）に置く。
+- 名指しを併せないと、どの項目が該当するかを上位 skill の読み手が被委譲 skill の本文から探す必要がある。現時点の該当項目を一覧として併記し、被委譲 skill の報告項目を変えるときに揃える対象にする。
+- 該当が 0 件の場合に項目ごと省くと、書き換えが無かったのか報告が落ちたのかを区別できない。0 件でもその旨を報告する。
+- `drive-issue-to-reviewed-pr` では P1 の終了からフロー終了までに P2 以降が挟まり、P1 で受け取った報告が context から落ち得る。note の `セッションログ` に残してから終了時の報告へ含める。
+
+### 決定
+
+A を採用し、現時点の該当項目を名指しで併記する。
+
+- `run-issue-task` に「被委譲 skill の報告の引き上げ」を置き、step 10 と「終了条件」から参照する。被委譲 skill がユーザーの確認や判断の起点と位置づける報告項目は、要約で落とさず含め、0 件でもその旨を報告する。現時点の該当は `number-working-branch-note` の「完了として書き換えたタスク行の一覧」とする。同 skill が触らなかった行の一覧は未解決事項として報告する。
+- `drive-issue-to-reviewed-pr` の「終了時の報告」に、P1 で `run-issue-task` が引き上げた項目を加え、同じ一般規定を置く。
+
+これにより、`run-issue-task` 単独実行では step 9 → step 10、`drive-issue-to-reviewed-pr` 経由では P1（step 9 → step 10）→ note の `セッションログ` → 終了時の報告の経路で、書き換えた行がユーザーへ届く。
+
+新しい方針の導入ではなく、本ログが制約として記録した前提を規定で担保する変更であるため、新規ログは作らず本ログへの追記に留める。
+
+### 他の被委譲 skill
+
+- `review-pull-request`: `verify-comments` の完了要約が人間の手動 resolve の起点である。`drive-issue-to-reviewed-pr` は、resolve 可マーカーを付けた thread の一覧と人間に残る作業を既に終了時の報告へ含めており、引き上げは閉じている。未収束事項も「返させるもの」と停止条件で中継される。
+- `maintain-progress` / `register-progress-issue`: 他 skill から委譲される経路が無く、引き上げの対象にならない。
+
+別 Issue へは切らない。

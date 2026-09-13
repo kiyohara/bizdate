@@ -194,7 +194,10 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 - resolve 可マーカーを付けた thread の一覧。
 - 未収束の指摘と、その見解の相違点。
 - 未検証事項（skill を追加・変更した場合は discoverability を含む）。
+- P1 で `run-issue-task` が引き上げた報告項目。範囲は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」に従い、現時点では `number-working-branch-note` が完了として書き換えたタスク行の一覧（0 件ならその旨）である。P1 の終了からフロー終了までの間に P2 以降が挟まるため、P1 の時点で受け取った内容を note の `セッションログ` に残し、終了時の報告で落とさない。
 - 人間に残る作業: inline thread の resolve と PR の merge。
+
+被委譲 skill が、ユーザーの確認や判断の起点として位置づけている報告項目は、要約で落とさず上記へ含める。`review-pull-request` については、`verify-comments` の完了要約が人間の手動 resolve の起点であるため、resolve 可マーカーを付けた thread の一覧と人間に残る作業として既に含めている。被委譲 skill の報告項目が変わった場合は、この節と「返させるもの」を揃える。
 
 ## やらないこと
 
