@@ -12,7 +12,7 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-P1（実装と PR 作成）と review cycle 1 周目（P2 〜 P6）を終えた。2 周目の P4 で `[fyi]` 2 件を反映し、P5（再確認）待ち。
+P1（実装と PR 作成）から review cycle の収束まで終えた。2 周で収束し、未収束の指摘は無い。残るのは人間による inline thread 5 本の resolve と merge 判断である。
 
 ## 決定事項
 
@@ -69,6 +69,9 @@ P1（実装と PR 作成）と review cycle 1 周目（P2 〜 P6）を終えた�
 - [x] decision log を記録し、入口を登録する
 - [x] Issue の検証項目を実行する
 - [x] PR を作成し、note を採番する
+- [x] review cycle を収束させる（2 周）
+- [ ] 人間が inline thread 5 本を resolve する（agent は行わない）
+- [ ] 人間が merge を判断する（agent は行わない）
 
 ## 検証
 
@@ -96,7 +99,8 @@ P1（実装と PR 作成）と review cycle 1 周目（P2 〜 P6）を終えた�
 ## リスク・ブロッカー
 
 - 上記「未検証事項」の 2 件が残る。いずれも本 session の実行環境では再現できない。
-- review cycle 1 周目の指摘 5 件は全件採用・修正済みで、P5 は 5 件すべて resolve 可と判定した。未収束の指摘は無い。2 周目は `[fyi]` 2 件の反映のみで、P5 の再確認待ち。
+- review cycle は 2 周で収束した。指摘 5 件は全件採用・修正済みで、2 周目の P5 も 5 件すべて resolve 可と判定した。未収束の指摘は無い。
+- 2 周目の P5 で挙がった `[fyi]` 1 件（`mcp-github-op-integrated.sh` の 48 行目だけが `mcp-github-op-integrated:` prefix を持たない）は、本 PR では対処しないと判断した。48 行目は 47 行目の config file 診断の 2 行目として同じ `if` ブロックで直後に出力され、単独では現れない。guideline の本文は「診断の先頭が prefix」と書いており行単位の網羅を主張していない。log が末尾 1 行に切れた場合は prefix 無しと見え「原因不明 → 中断」へ倒れるため安全側である。対処は wrapper script の変更になり、本 Issue のスコープ外。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
 
 ## セッションログ
@@ -109,3 +113,4 @@ P1（実装と PR 作成）と review cycle 1 周目（P2 〜 P6）を終えた�
 - 2026-09-13: P4 で 5 件へ対応した。MCP 起動失敗の読み分け基準を `github-mcp-guidelines.md` に新設し、新正本の適用範囲へプロンプト未到達を追加、`.op/` 確認が preflight でないことを明示、cloud session 節の文言を言い切り、見直し表へ未変更 guideline の行を追加した。
 - 2026-09-13: P5（再確認）を同じ subagent が実行した。head `69e1c70`、5 thread すべて resolve 可、未対応 0 件。新規のブロッキング指摘は無く、非ブロッキングの `[fyi]` 2 件のみ。
 - 2026-09-13: P6 で `[fyi]` 2 件を採用し、2 周目の P4 として反映した。wrapper の診断は 5 件すべて `mcp-github-op-integrated:` を prefix に持つことを script で確認し、3 件の列挙を prefix による網羅的な判定へ置き換えた。あわせて優先順位 2 から新設節への前方参照を足した。
+- 2026-09-13: 2 周目の P5 が完了した。head `d7d7303`、5 thread すべて resolve 可、未収束 0 件。review cycle は 2 周で収束した（上限 2 周）。
