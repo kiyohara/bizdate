@@ -154,7 +154,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 
 各フェーズの終わりに note を更新する。
 
-- `セッションログ`: そのフェーズで何をしたか（review cycle ID、head SHA、指摘件数）を 1〜2 行で残す。P1 では、`run-issue-task` の「被委譲 skill の報告の引き上げ」に当たる項目（確認経路の項目と残された事項。0 件または呼ばなかった場合はその旨）も残す。P1 の終了からフロー終了までに P2 以降が挟まり、context から落ち得るためである。この note 更新は P2 の委譲前に push する（「head SHA と CI」の委譲中 push 禁止に当たらないようにするため）。
+- `セッションログ`: そのフェーズで何をしたか（review cycle ID、head SHA、指摘件数）を 1〜2 行で残す。P1 では、`run-issue-task` の「被委譲 skill の報告の引き上げ」に当たる項目（確認経路の項目と残された事項。停止した場合は停止理由と未反映の変更。0 件または呼ばなかった場合はその旨）も残す。P1 の終了からフロー終了までに P2 以降が挟まり、context から落ち得るためである。この note 更新は P2 の委譲前に push する（「head SHA と CI」の委譲中 push 禁止に当たらないようにするため）。
 - `検証`: 実行した検証と結果を残す。未実施は理由とともに残す。
 - `リスク・ブロッカー`: 未収束の指摘と未検証事項を残す。
 
@@ -194,7 +194,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 - resolve 可マーカーを付けた thread の一覧。
 - 未収束の指摘と、その見解の相違点。
 - 未検証事項（skill を追加・変更した場合は discoverability を含む）。
-- P1 で `run-issue-task` が引き上げた報告項目。範囲は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」に従い、現時点では `number-working-branch-note` が完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧（後者は未解決事項として扱う）である。0 件または採番 skill を呼ばなかった場合はその旨を書く。P1 で note の `セッションログ` に残した内容から報告する。
+- P1 で `run-issue-task` が引き上げた報告項目。範囲は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」に従い、現時点では `number-working-branch-note` が完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧（後者は未解決事項として扱う）である。採番 skill が途中で停止した場合は、停止理由とその時点で未反映の変更も未解決事項として含める。0 件または採番 skill を呼ばなかった場合はその旨を書く。P1 で note の `セッションログ` に残した内容から報告する。
 - 人間に残る作業: inline thread の resolve と PR の merge。
 
 被委譲 skill の報告項目は、`run-issue-task` の「被委譲 skill の報告の引き上げ」と同じ 3 種の扱いで上記へ含める。`review-pull-request` については、`verify-comments` の完了要約が人間の手動 resolve の起点であるため、resolve 可マーカーを付けた thread の一覧と人間に残る作業として既に含めている。被委譲 skill の報告項目が変わった場合は、この節と「返させるもの」を揃える。

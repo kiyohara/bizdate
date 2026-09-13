@@ -89,7 +89,7 @@ Issue 着手から review cycle の完了までを一続きで回す場合、本
 
 | 被委譲 skill | 呼び出し元 | 1. 確認経路の項目 | 2. 残された事項 |
 | --- | --- | --- | --- |
-| `number-working-branch-note` | step 9 | 完了として書き換えたタスク行の一覧（note 本文 / PR description）。同 skill の「終了時の報告」が、合意を待たずに書き換える代わりのユーザーの確認経路と位置づけている | 触らなかった stale 表現・タスク行の一覧。同 skill の Step 5 / Step 10 と「やらないこと」が、触らず終了時に報告するとしている |
+| `number-working-branch-note` | step 9 | 完了として書き換えたタスク行の一覧（note 本文 / PR description）。同 skill の「終了時の報告」が、合意を待たずに書き換える代わりのユーザーの確認経路と位置づけている | 触らなかった stale 表現・タスク行の一覧。同 skill の Step 5 / Step 10 と「やらないこと」が、触らず終了時に報告するとしている。途中で停止した場合（「適用範囲」の対象外、Step 3 の衝突、各ステップの失敗など）は、停止理由とその時点で未反映の変更 |
 
 `number-working-branch-note` は `maintain-progress` と `register-progress-issue` からも呼ばれる。これらの skill も本節と同じ扱いで報告へ含める。
 

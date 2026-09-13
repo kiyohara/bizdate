@@ -86,4 +86,4 @@ description: bizdate の既存 GitHub Issue を `progress.md` の進行中タス
 - 変更した `progress.md` のセクション。
 - 作成した PR の URL。変更が無く PR を作らなかった場合はその旨。
 - 登録しなかった Issue があれば、その理由。
-- `number-working-branch-note` から引き上げた項目（完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧。0 件または呼ばなかった場合はその旨）。
+- `number-working-branch-note` から引き上げた項目（完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧。途中で停止した場合は停止理由と未反映の変更。0 件または呼ばなかった場合はその旨）。
