@@ -99,7 +99,7 @@ description: bizdate の `progress.md` を定期的に整理し、進行中タ�
 4. 変更を PR として出す。
    - `main` は保護されている。**専用ブランチを切り、独立した PR** として出す。他の作業 PR へ同梱しない。
    - **進捗整理そのものには起点 Issue を作らない。PR に `Closes` を付けない。** 「進捗整理を行うための Issue」は、索引登録と同様に指示書として意味を持たないためである（`doc/guidelines/development-loop.md`）。
-   - `doc/guidelines/working-branch-notes-handling.md` に従い working branch note を作る。PR 採番後は `number-working-branch-note` skill で採番する。
+   - `doc/guidelines/working-branch-notes-handling.md` に従い working branch note を作る。PR 採番後は `number-working-branch-note` skill で採番する。採番 skill の報告は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」と同じ扱いで、本 skill の終了時の報告へ含める。
    - **PR 本文に、圧縮した完了フェーズと、要約に残した decision log / Issue / PR 参照を書く。** 索引の行は最小情報に絞る方針のため、何をどこへ送ったかは PR 側で辿れるようにする。判断に迷ってユーザーへ確認した点があれば、その結論も書く。
    - commit / push は `doc/guidelines/git-operation-guidelines.md`、PR title / description は `doc/guidelines/pull-request-guidelines.md` に従う。
    - **PR の merge は行わない。** レビューと merge 判断はユーザーが行う。
@@ -120,3 +120,4 @@ description: bizdate の `progress.md` を定期的に整理し、進行中タ�
 - 参照側ドキュメント（観点 6）の前提を壊していない。
 - 変更は status board として最小限で、検討経緯や引き継ぎメモを持ち込んでいない。
 - 変更を専用ブランチの独立 PR として出し、`Closes` を付けていない。変更が無かった場合は PR を作らず、その旨を報告している。
+- PR を出した場合、`number-working-branch-note` から引き上げた項目（完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧。0 件または呼ばなかった場合はその旨）を報告している。
