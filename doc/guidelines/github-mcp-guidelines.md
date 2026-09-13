@@ -45,12 +45,14 @@ Claude Code は server ごとの接続ログへ wrapper の stderr を書き出�
 | ログの内容 | 判定 |
 | --- | --- |
 | `Server stderr: mcp-github-op-integrated: ...` | 機能としての失敗。文言が原因を名指しする（`op` / `docker` が PATH に無い、config file が無い、引数エラー）。優先順位 2 に従って `gh` へ fallback してよい |
-| `op` 由来の文言（`authorization timeout`、`couldn't connect to the 1Password desktop app`、secret reference の解決エラーなど） | 1Password 起因。承認待ちかどうかも文言で分かる。`doc/guidelines/one-password-approval-failure.md` に従う |
+| `op` 由来の文言（`authorization timeout`、`couldn't connect to the 1Password desktop app`、secret reference の解決エラーなど） | 1Password 起因。承認待ちかどうかも文言で分かるので `doc/guidelines/one-password-approval-failure.md` に従う。**`op` 自身の出力がこのログに記録されるかは未実測である**（確認できているのは wrapper の診断まで）。記録されていなければ次の行として扱う |
 | stderr が無く、接続 timeout だけ | 承認待ちの可能性が高い。同ルールに従って中断する |
 
-ログからは必要な行（`Server stderr:` の診断と接続結果）だけを引用する。wrapper は `op run --no-masking` で起動するため secret が現れ得る。ログ全文を note や PR へ貼らない（`doc/guidelines/working-branch-notes-security.md`）。
+引用できるのは wrapper の診断メッセージの本文（`mcp-github-op-integrated: ...`）と、接続結果の分類（`CONNECTION_CLOSED` など）だけである。**JSON レコードをそのまま貼らない。** 各レコードは `sessionId` と `cwd`（開発機の絶対 path）を含み、wrapper は `op run --no-masking` で起動するため secret や `op://` の vault / item 名も現れ得る。いずれも note・PR・コメントへ書かない（`doc/guidelines/working-branch-notes-security.md`）。
 
-接続ログが無い場合、または host が別の場合（Cursor / Codex など）は、1Password に触れない次の確認で切り分ける。
+image の有無は、どちらの手段でも判定材料にしない。`op run` の承認が済むまで `docker run` は起動せず、承認が通れば既定の `--pull=missing` で pull される。image が未取得のときは初回 pull が host の接続 timeout を超えた可能性が残るので、その旨を報告へ添える。
+
+接続ログが読めない場合、または host が別の場合（Cursor / Codex など）は、承認を要求しない次の確認で切り分ける。
 
 - `docker info` が通るか（daemon が動いているか）
 - `.config/github-op-integrated.conf` が存在するか
@@ -59,9 +61,7 @@ Claude Code は server ごとの接続ログへ wrapper の stderr を書き出�
 
 `op` と `docker` の PATH も見てよいが、**確認しているのは agent の shell の PATH であり、host が wrapper に渡す PATH とは異なりうる。agent 側で見つからないことを原因と確定しない。** 報告に含める参考情報として扱う。
 
-image の有無は確認しない。`op run` の承認が済むまで `docker run` は起動せず、承認が通れば既定の `--pull=missing` で pull される。image が未取得のときは初回 pull が host の接続 timeout を超えた可能性が残るので、その旨を報告へ添える。
-
-原因が見つかれば機能としての失敗である。見つからなければ承認待ちと断定せず、`doc/guidelines/one-password-approval-failure.md` に従って中断する。報告には確認した項目と、接続ログで原因を確定できることを書く。
+いずれの手段でも、原因が見つかれば機能としての失敗である。見つからなければ承認待ちと断定せず、`doc/guidelines/one-password-approval-failure.md` に従って中断する。報告には確認した項目を書く。接続ログを読めなかった場合は、読める環境ならそれで原因を確定できることも添える。
 
 接続中の表示が出ている間は失敗ではない。tool 一覧の再取得を 1 回だけ行う。それでも接続中なら、待たずに中断する。報告には `op run` の承認ダイアログが出ている可能性と、承認した後も host 側での再接続が必要なことを含める。
 

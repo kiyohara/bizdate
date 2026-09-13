@@ -94,7 +94,7 @@ cloud session には `op` が無く、承認待ちの失敗を再現できなか
 - **host の画面と tool 検索の結果には起動失敗の原因が出ない。** 当初の読み分け基準は「wrapper 自身の診断が見えるか」を観測点にしていたが、その観測点はそこには存在しない。
   - 追試の時点では「診断は host の debug log にしか残らない」と結論し、`docker info` や config file の有無など 1Password に触れない確認で切り分ける形へ改めた。
   - その後の指摘と確認で、この結論が誤りだと判明した。**Claude Code は server ごとの接続ログ（`~/.cache/claude-cli-nodejs/<cwd>/mcp-logs-<server>/*.jsonl`、macOS は `~/Library/Caches/...`）へ wrapper の stderr を書き出しており、`--debug` は不要である。** cloud session 自身のログでも `Server stderr: mcp-github-op-integrated: '1Password CLI (op)' が PATH に見つからない` と `Starting connection with timeout of 30000ms` を確認した。
-  - そこで読み分けの第一手段を接続ログに置いた。`Server stderr:` の診断があれば機能失敗、`op` 由来の文言があれば 1Password 起因、stderr が無く接続 timeout だけなら承認待ちの可能性が高い、と直接判定できる。1Password に触れない確認は、接続ログが無い場合と host が別の場合（Cursor / Codex）の副手段へ降格した。
+  - そこで読み分けの第一手段を接続ログに置いた。`Server stderr:` の診断があれば機能失敗、stderr が無く接続 timeout だけなら承認待ちの可能性が高い、と判定できる。`op` 自身の出力がこのログに記録されるかは未実測で、記録されていれば 1Password 起因の判定にも使えるという位置づけに留めた。承認を要求しない確認は、接続ログが読めない場合と host が別の場合（Cursor / Codex）の副手段へ降格した。
   - ログは必要な行だけ引用する。wrapper は `op run --no-masking` で起動するため secret が現れ得る。
 - **承認待ちは `authorization timeout` として見えない。** host の接続 timeout（30 秒）が `op` の承認 timeout（約 60 秒）より短いため、agent に届くのは `CONNECT_TIMEOUT` / `connection timed out after 30000ms` である。当初例示した `CONNECTION_CLOSED` も実際とずれていた。
 - **承認待ちの最中は失敗ではなく「接続中」として見える。** tool の応答は再検索を促す。当初は「1 回だけ再確認してから、表示が接続 timeout へ変わった時点で切り分けへ進む」と書いたが、観測をやめた後に遷移を知る経路が無く両立しなかった。「1 回再取得して接続中なら待たずに中断し、承認ダイアログの可能性と host 側の再接続が必要なことを報告する」へ改めた。

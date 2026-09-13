@@ -134,7 +134,11 @@ cloud session 自身のログ（`~/.cache/claude-cli-nodejs/-home-user-bizdate/m
 - `"debug":"Starting connection with timeout of 30000ms"`（追試が報告した 30 秒の裏取りにもなる）
 - `"debug":"Connection failed after 53ms (CONNECTION_CLOSED): Connection closed"`
 
-したがって読み分けは、1Password 非依存の間接的な確認ではなく**接続ログの直読**で行える。これを第一手段に据え、間接的な確認は接続ログが無い場合と host が別の場合（Cursor / Codex）の副手段へ降格した。ログは `op run --no-masking` 下の stderr を含むため、必要な行だけを引用する。
+したがって読み分けは、間接的な確認ではなく**接続ログの直読**で行える。これを第一手段に据え、承認を要求しない確認は接続ログが読めない場合と host が別の場合（Cursor / Codex）の副手段へ降格した。
+
+確認できたのは **wrapper の診断（`Server stderr:`）と接続結果まで**である。`op` 自身の出力（`authorization timeout` など）がこのログに記録されるかは未実測で、cloud session には `op` が無いため再現できない。guideline にもその旨を明記した。
+
+引用の範囲も規定した。各レコードは `sessionId` と `cwd`（開発機の絶対 path）を含み、`op run --no-masking` 下の stderr は secret や `op://` の vault / item 名を含み得る。引用できるのは wrapper の診断メッセージ本文と接続結果の分類だけで、JSON レコードは貼らない。
 
 ### 未検証事項
 
@@ -142,7 +146,10 @@ cloud session 自身のログ（`~/.cache/claude-cli-nodejs/-home-user-bizdate/m
 - **承認プロンプトが実行環境へ届かないケース**: 追試環境では再現しなかった（agent から実行したコマンドでもダイアログはユーザーの画面に届いた）。sandbox / TTY 制約のある構成でのみ起きる。
 - **host の接続 timeout 後にダイアログを承認した場合の実測**: 復旧しないという判断は、host が先に失敗を確定させる事実からの推論であり、承認して回復しないことの実測ではない。
 - **staged 変更がある状態での署名失敗時の index 保持**: 追試は `--allow-empty` に限ったため未観測。
-- **Codex を host にした場合の MCP 起動失敗の見え方**: 未実施。
+- **host 経由で app 未起動や承認拒否が即時の切断として現れるか**: 未実測。`op` 単体が 0〜3 秒で失敗することは実測。所要時間を読み分けの根拠にはしない。
+- **MCP server の config と `op plugin` が同じ PAT item を指すか**: 未確認。環境依存として条件付きで記述した。
+- **Codex を host にした場合の MCP 起動失敗の見え方**: 未実施。Cursor / Codex で MCP 接続ログに相当するものが得られるかも未確認で、副手段を残している理由である。
+- **`op` 自身の出力が MCP 接続ログに記録されるか**: 未実測。確認できたのは wrapper の診断までである。cloud session には `op` が無いため再現できない。確認手段は、1Password を lock した状態でローカルの host を起動し、接続ログに `authorization timeout` が現れるかを見ること。
 
 ## リスク・ブロッカー
 
@@ -170,3 +177,9 @@ cloud session 自身のログ（`~/.cache/claude-cli-nodejs/-home-user-bizdate/m
 - 2026-09-13: 2 cycle 目の指摘 5 件へ対応した。読み分けの確認項目を 6 項目へ広げ、「いずれも正常なら承認待ち」という断定をやめた（wrapper は `exec op run -- docker run` まで進むため、image や secret reference の解決失敗が一覧の外に残る）。SSH 経路の調査禁止が `git-operation-guidelines.md` の署名経路確定手順と衝突していたため目的で切り分け、`SSH_AUTH_SOCK` の禁止範囲を永続的な付け替えに限定した。`command -v op` と `op` の実行の区別、接続中の再確認の回数、decision log の 影響 節の取りこぼしも直した。
 - 2026-09-13: cycle 2 の再確認が完了した。head `a41e85f`、cycle 1 / cycle 2 の計 10 thread すべて resolve 可。非ブロッキングで 3 件が挙がった（wrapper の `--config=` 形、`command -v` の PATH の限界、socket 明示の再実行が承認を再要求する点）。
 - 2026-09-13: その 3 件を反映した。`--config=<path>` も受理すると直し、`command -v` で見えるのは agent の shell の PATH であり host が wrapper へ渡す PATH と一致しないことを注記し、socket 明示の再実行は承認に応答できる状態に限る条件を付けた（`ssh-add -l` に鍵が出ないことは lock でも起きるため、lock が原因のときに進むと timeout を 1 回消費する）。`git-operation-guidelines.md` 側にも lock で同じ見え方になる旨を書いた。PR description の「4 項目」も 6 項目へ直した。
+- 2026-09-13: ユーザー自身の review round（9 thread）へ対応した。`[must]` 3 件のうち、MCP 接続ログに wrapper の stderr が残るという指摘を cloud session 自身のログで確認し、読み分けの第一手段を接続ログの直読へ書き直した。image の有無を確認項目から外し、推論を実測として断定していた 2 箇所を書き分けた。
+- 2026-09-13: 新 cycle `claude-code-3344971-20260913072843` の指摘 4 件（`[must]` 3 / `[imo]` 1）へ対応した。読み分け節を書き直したのに、それを指していた正本 2 箇所と入口 shim が旧前提（原因は host に出ない）のままだった。`op` 自身の出力がログに残るかは未実測なのに判定表で断定していた。引用範囲の規定が `sessionId` / `cwd` / vault 名の混入を防げていなかった。副手段ブロックに条件が成立しない記述が残っていた。
+
+### 反省（同種の失敗が 3 度）
+
+節を書き換えるたびに「その節を指している側」と「条件が成立しない場合」が未更新のまま残り、同じ形の指摘を 3 度受けた。今回は `grep` で旧前提の文字列を機械的に洗って 4 箇所を特定した。正本の節を書き換えたときは、(1) その節を参照している全箇所、(2) 条件が成立しない場合の記述、を機械的に洗う手順を挟むべきである。`doc/guidelines/agent-configuration-management.md` は入口の参照確認だけを求めており、正本どうしの相互参照は対象外なので、規則として足す価値がある。本 Issue のスコープ外なので、別 Issue の候補として残す。

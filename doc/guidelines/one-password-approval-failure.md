@@ -24,7 +24,7 @@
 | --- | --- |
 | commit 署名（`op-ssh-sign`） | `error: 1Password: agent returned an error`（拒否。lock 中かどうかを問わない）、`error: 1Password: failed to fill whole buffer`（タイムアウト）、`error: 1Password: Could not connect to socket. Is the agent running?`（app 未起動）。いずれも `fatal: failed to write commit object` を伴う |
 | `op plugin run -- gh` / `op run` | `authorization prompt dismissed, please try again`（拒否。lock 中かどうかを問わない）、`authorization timeout`（タイムアウト）、`1Password CLI couldn't connect to the 1Password desktop app ...`（app 未起動） |
-| MCP server の起動 | host の汎用表示だけが見える。`op` の文言は届かない（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」） |
+| MCP server の起動 | host の画面と tool 検索の結果には原因が出ない。**原因は MCP の接続ログで確かめる**（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」） |
 | SSH agent 経由 | `agent refused operation` と `Permission denied (publickey)`。**1Password の語を含まないため、出力だけでは本ルールの対象と判定できない**（「1Password 起因か判断できない場合」へ落ちる） |
 
 `error: 1Password:` や `authorization ...` のように 1Password 由来と分かる文言は判定に使える。文言が無い経路は断定せず、「1Password 起因か判断できない場合」に従う。
@@ -101,7 +101,7 @@ subagent のように、ユーザーへ直接問えない実行主体が承認�
 
 一方、`op` を実際に走らせる操作（`op whoami`、`op run`、`op plugin run -- ...` など）、1Password を経由する操作の再試行、署名や認証を伴う操作は、切り分けの目的で繰り返さない。
 
-GitHub MCP server の起動失敗では、原因は MCP host に出ない。wrapper が `op run` を使う環境では、1Password に触れない確認で原因が見つからない起動失敗も、承認待ちと断定せず本ルールへ寄せて中断する（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」に確認する項目と、断定しない理由を挙げている）。
+GitHub MCP server の起動失敗では、host の画面に原因が出ない。まず MCP の接続ログで確かめる（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」）。接続ログでも原因を特定できない場合は、承認待ちと断定せず本ルールへ寄せて中断する。同節に、読めないときの副手段と、断定しない理由を挙げている。
 
 SSH agent 経由の失敗も、出力に 1Password の語が無いためここへ落ちる。**承認待ちかどうかを切り分ける目的で**、`~/.ssh/config` の `IdentityAgent` や agent の実体を調べに行かず、中断して報告する。
 
