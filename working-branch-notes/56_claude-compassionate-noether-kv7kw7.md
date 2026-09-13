@@ -12,7 +12,7 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-review cycle（2 周）の収束後、1Password 連携のあるローカル環境で追試を行い、その結果を反映した。追試で読み分けの観測点が成り立たないことが判明したため、`github-mcp-guidelines.md` の「起動失敗の読み分け」を書き直している。
+review cycle 1（2 周で収束）→ ローカル追試 → 追試の反映 → review cycle 2（`claude-code-0273fda-20260913064236`）まで終えた。cycle 2 の指摘 5 件と、再確認で挙がった非ブロッキング 3 件を反映済み。最終の再確認待ち。
 
 ## 決定事項
 
@@ -134,7 +134,7 @@ cloud session では `op` が無く再現できなかったため、1Password �
 
 - 上記「未検証事項」の 5 件が残る。追試で解消した 2 件（承認待ちの再現、`.claude/rules/` のロード）は除いた後の数である。残る 5 件は、cloud session でも追試環境でも再現できなかったものと、推論に留まるものである。
 - review cycle は 2 周で収束した。指摘 5 件は全件採用・修正済みで、2 周目の P5 も 5 件すべて resolve 可と判定した。未収束の指摘は無い。
-- 追試の反映で `github-mcp-guidelines.md` の「起動失敗の読み分け」を書き直したため、`[must]` thread の対象本文は P5 時点から再び変わっている。resolve 可否の再判定が必要である。
+- review cycle 2 までで、cycle 1 / cycle 2 の計 10 thread すべてが resolve 可と判定された。その後の非ブロッキング 3 件の反映で、読み分け節と正本の該当段落が再び変わっているため、最終の再確認が必要である。
 - 読み分けの新しい基準は、MCP host の現在の仕様（wrapper の stderr を agent へ渡さない、接続 timeout 30 秒）に依存する。host 側の仕様変更で前提が変わるため、decision log 0021 の「後から見直す条件」に加えた。
 - 2 周目の P5 で挙がった `[fyi]` 1 件（`mcp-github-op-integrated.sh` の 48 行目だけが `mcp-github-op-integrated:` prefix を持たない）は、本 PR では対処しないと判断した。48 行目は 47 行目の config file 診断の 2 行目として同じ `if` ブロックで直後に出力され、単独では現れない。guideline の本文は「診断の先頭が prefix」と書いており行単位の網羅を主張していない。log が末尾 1 行に切れた場合は prefix 無しと見え「原因不明 → 中断」へ倒れるため安全側である。対処は wrapper script の変更になり、本 Issue のスコープ外。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
@@ -154,3 +154,5 @@ cloud session では `op` が無く再現できなかったため、1Password �
 - 2026-09-13: 追試結果を反映した。`github-mcp-guidelines.md` の「起動失敗の読み分け」を、host に出ない wrapper 診断ではなく 1Password 非依存の確認（`docker info`、config の有無、PATH、実行権限）で切り分ける形へ書き直した。新正本へ経路別の実測文言、MCP の再接続と 30 秒制約、別経路の PAT scope、app 更新の禁止を追記し、入口 shim へ MCP 起動失敗を足した。decision log 0021 に「追試による補正」を記録した。
 - 2026-09-13: 追試結果の反映にあたり、新しい review cycle `claude-code-0273fda-20260913064236` を回した（指摘 5 件: `[must]` 2 / `[imo]` 2 / `[nits]` 1）。既存 5 thread は新 head でも resolve 可と再判定された。
 - 2026-09-13: 2 cycle 目の指摘 5 件へ対応した。読み分けの確認項目を 6 項目へ広げ、「いずれも正常なら承認待ち」という断定をやめた（wrapper は `exec op run -- docker run` まで進むため、image や secret reference の解決失敗が一覧の外に残る）。SSH 経路の調査禁止が `git-operation-guidelines.md` の署名経路確定手順と衝突していたため目的で切り分け、`SSH_AUTH_SOCK` の禁止範囲を永続的な付け替えに限定した。`command -v op` と `op` の実行の区別、接続中の再確認の回数、decision log の 影響 節の取りこぼしも直した。
+- 2026-09-13: cycle 2 の再確認が完了した。head `a41e85f`、cycle 1 / cycle 2 の計 10 thread すべて resolve 可。非ブロッキングで 3 件が挙がった（wrapper の `--config=` 形、`command -v` の PATH の限界、socket 明示の再実行が承認を再要求する点）。
+- 2026-09-13: その 3 件を反映した。`--config=<path>` も受理すると直し、`command -v` で見えるのは agent の shell の PATH であり host が wrapper へ渡す PATH と一致しないことを注記し、socket 明示の再実行は承認に応答できる状態に限る条件を付けた（`ssh-add -l` に鍵が出ないことは lock でも起きるため、lock が原因のときに進むと timeout を 1 回消費する）。`git-operation-guidelines.md` 側にも lock で同じ見え方になる旨を書いた。PR description の「4 項目」も 6 項目へ直した。
