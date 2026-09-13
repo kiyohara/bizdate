@@ -40,7 +40,7 @@ MCP server の起動失敗について:
 - 事前ゲート案と環境判定案は、1Password が無い環境に不要なコストを課す。環境判定案は skill へ `op` の有無による分岐を持ち込み、判定のための事前チェックを誘発する。事後中断案のコストは失敗が 1 回起きることだが、承認待ちの失敗は副作用を残さないか、残しても read-back で検出できる。
 - 失敗後に危険なのは回避行動である。署名の無効化、鍵や remote URL の無断変更、別の 1Password 連携経路への自動切り替えは「とりあえず先へ進む」挙動として出やすい。中断手順には禁止事項を明示する。
 - 置き場所は、1Password 連携ルールを 1 本にまとめる B 案を採る。あらゆる操作の場面で「こうだったらこう」と細かな分岐を定義するのは過剰であり、git / gh / MCP の各 guideline に処理フローを書くとルールが肥大化する（`doc/guidelines/agent-configuration-management.md` の「ルールをシンプルに保つ」）。導線は `AGENTS.md` の 1 行（エラーが出たら承認が間に合わなかった可能性を疑い新正本を読む）で足りる。
-- MCP server の起動失敗は、agent には host の汎用表示（`CONNECT_TIMEOUT` や `Connection closed`）しか見えず、wrapper や `op` の診断は届かない（PR #56 の追試で実測）。X 案は agent から観測できない情報に依存し、判定表と例外規定が増える。Y 案は失敗 1 回の後に人間が原因を見る形で、ルールが 1 行で済む。cloud session では組み込み tool を使うため、Y 案の中断は発動しない。
+- MCP server の起動失敗は、agent には host の汎用表示（`CONNECT_TIMEOUT` や `Connection closed`）しか見えず、`op` の承認待ちの文言は届かない（PR #56 の追試で実測。Claude Code の MCP 接続ログには wrapper の診断や、承認の拒否のように `op` が即時に返すエラーは残りうるが、host が `op` の承認 timeout より先に諦めるため、承認待ちのまま timeout した起動には `op` の文言が残らない）。切り分けられるのは 1Password と無関係な機能失敗の側だけで、承認待ちを肯定的に特定する材料は無い。X 案はそのうえで接続ログの直読と判定表、host ごとのログの所在といった手順を要する。Y 案は失敗 1 回の後に人間が原因を見る形で、ルールが 1 行で済む。cloud session では組み込み tool を使うため、Y 案の中断は発動しない。
 - `gh` の実行形式（`.op/` と `op` があれば `op plugin run -- gh`）は、承認可否の preflight ではなく、リポジトリにスコープを限定した PAT を使うための実行形式の選択である。これは `doc/guidelines/github-cli-guidelines.md` に残し、skill 側の複製は guideline 参照へ縮める。
 - git 操作ルールにあった署名経路の切り分け（`op-ssh-sign` か `ssh-keygen` + SSH agent か）は、1Password の有無で分岐する記述であるため新正本へ移す。git 操作ルールには失敗時の参照先だけを残す。
 - remote を HTTPS と断定していた記述は、scheme と認証経路がメンバーの環境に依存するため撤回する。
@@ -81,4 +81,4 @@ MCP server の起動失敗について:
 - 1Password 連携を使うメンバーがいなくなった場合。正本の適用範囲が空になるため、rule の削除を検討する。
 - 承認ダイアログを出さずに署名や認証を通す構成（service account など）を全メンバーが採る場合。
 - 中断が頻発して自律フローの実効が落ちる場合。MCP 起動失敗の切り分け（X 案）を再検討する。
-- MCP host が wrapper の診断を agent へ渡すようになった場合。X 案の前提が変わる。
+- `op` の承認待ちの文言が agent へ届くようになった場合（host の接続 timeout が `op` の承認 timeout より長くなる、など）。承認待ちを肯定的に特定できるようになり、X 案の前提が変わる。

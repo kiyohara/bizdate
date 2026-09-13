@@ -47,4 +47,5 @@ Issue #53 に従い、1Password 連携操作が承認待ちで失敗したとき
 ## セッションログ
 
 - 2026-09-13: Issue #53、PR #56、追試レポート、既存 guideline を読み、構成案をユーザーに確認した。`origin/main` から本ブランチを作成し、新正本と入口、既存整理、decision log を書いた。PR #58 を作成し、note を採番した。
-- 2026-09-13: review（Codex 指摘なし、Claude Code `[imo]` 3 件 / `[nits]` 1 件、cycle `claude-code-a7c7ec5-20260913103203`）の 4 件をすべて採用した。正本の原則文の限定、cloud session 節の除外明示、CLI guideline の適用条件、skill の検索後の扱い。
+- 2026-09-13: review（Codex 指摘なし、Claude Code `[imo]` 3 件 / `[nits]` 1 件、cycle `claude-code-a7c7ec5-20260913103203`）の 4 件をすべて採用した。正本の原則文の限定、cloud session 節の除外明示、CLI guideline の適用条件、skill の検索後の扱い。再確認で 4 件とも resolve 可。
+- 2026-09-13: 1Password 連携のあるローカル環境からの review（cycle `claude-code-13b57b4-20260913111352`、`[imo]` 1 件 / `[nits]` 1 件）の 2 件を採用した。decision log 0021 の「wrapper や `op` の診断は届かない」を、接続ログには wrapper の診断は残るが承認待ちの文言は残らない、と正確にした（本機の接続ログで、wrapper 診断付きの `Connection closed` と、stderr 0 行の `CONNECT_TIMEOUT` を確認）。見直し条件も「承認待ちの文言が届くようになった場合」へ改めた。MCP guideline 優先順位 3 の「tool が見えない」に「接続待ちが終わっても」を足した。

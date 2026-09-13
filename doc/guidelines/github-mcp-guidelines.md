@@ -27,7 +27,7 @@
 
 1. MCP server が設定済みで、操作対象が allowlist 内の MCP tool で完結する場合は MCP を使う。
 2. 操作が allowlist に無い、MCP が未設定、または起動済みの MCP が応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。
-3. MCP server が起動しない場合（tool が見えない、接続 timeout、`Connection closed` など）は、原因を切り分けず `gh` へも進まず、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。wrapper の `op run` が承認を待って失敗した可能性があり、agent からは他の原因と区別できない。cloud session は組み込み tool を使うため該当しない（後述）。
+3. MCP server が起動しない場合（接続待ちが終わっても tool が見えない、接続 timeout、`Connection closed` など）は、原因を切り分けず `gh` へも進まず、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。wrapper の `op run` が承認を待って失敗した可能性があり、agent からは他の原因と区別できない。cloud session は組み込み tool を使うため該当しない（後述）。
 4. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
 
 ### 汎用 skill / plugin と競合する場合
