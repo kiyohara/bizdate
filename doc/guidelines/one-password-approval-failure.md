@@ -18,12 +18,12 @@
 
 承認待ちに起因する失敗として扱うのは、承認のタイムアウト、承認の拒否、1Password app の lock、app の未起動、承認プロンプトが実行環境へ届かないこと（sandbox や TTY の制約）である。
 
-出力は経路ごとに違う。macOS + 1Password 8.12 での実測例を挙げる。**lock と拒否は同じ文言になるため区別できない。本ルールは同じ扱いなので支障はない。**
+出力は経路ごとに違う。macOS + 1Password 8.12 での実測例を挙げる。**承認の拒否は lock 中かどうかを問わず同じ文言になる。** lock しているだけでは失敗せず unlock を求めるダイアログが出るので、放置すればタイムアウトの文言になる。本ルールはいずれも同じ扱いなので、区別できなくても支障はない。
 
 | 経路 | 観測された出力 |
 | --- | --- |
-| commit 署名（`op-ssh-sign`） | `error: 1Password: agent returned an error`（lock / 拒否）、`error: 1Password: failed to fill whole buffer`（タイムアウト）、`error: 1Password: Could not connect to socket. Is the agent running?`（app 未起動）。いずれも `fatal: failed to write commit object` を伴う |
-| `op plugin run -- gh` / `op run` | `authorization prompt dismissed, please try again`（lock / 拒否）、`authorization timeout`（タイムアウト）、`1Password CLI couldn't connect to the 1Password desktop app ...`（app 未起動） |
+| commit 署名（`op-ssh-sign`） | `error: 1Password: agent returned an error`（拒否。lock 中かどうかを問わない）、`error: 1Password: failed to fill whole buffer`（タイムアウト）、`error: 1Password: Could not connect to socket. Is the agent running?`（app 未起動）。いずれも `fatal: failed to write commit object` を伴う |
+| `op plugin run -- gh` / `op run` | `authorization prompt dismissed, please try again`（拒否。lock 中かどうかを問わない）、`authorization timeout`（タイムアウト）、`1Password CLI couldn't connect to the 1Password desktop app ...`（app 未起動） |
 | MCP server の起動 | host の汎用表示だけが見える。`op` の文言は届かない（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」） |
 | SSH agent 経由 | `agent refused operation` と `Permission denied (publickey)`。**1Password の語を含まないため、出力だけでは本ルールの対象と判定できない**（「1Password 起因か判断できない場合」へ落ちる） |
 
@@ -53,7 +53,7 @@
 
 | 選択肢 | 補足 |
 | --- | --- |
-| ダイアログに応答できる状態にしてから再実行する | 1Password app の起動と unlock、承認できる端末の前にいること、sandbox や TTY の制約がない実行環境を使うこと。MCP server は同じ操作の再実行では復旧しない。host 側で再接続する（MCP 管理画面の reconnect、または session の作り直し）。**host の接続 timeout は `op` の承認 timeout より短く、host が諦めた後もダイアログは残る。そのダイアログを承認しても接続は回復しない** |
+| ダイアログに応答できる状態にしてから再実行する | 1Password app の起動と unlock、承認できる端末の前にいること、sandbox や TTY の制約がない実行環境を使うこと。MCP server は同じ操作の再実行では復旧しない。host 側で再接続する（MCP 管理画面の reconnect、または session の作り直し）。**host の接続 timeout は `op` の承認 timeout より短く、host が諦めた後もダイアログは残る（実測）。** host が失敗を確定させた後なので、そのダイアログを承認しても接続は回復しないと考えられる（未実測） |
 | 1Password を伴わない別経路で進める | **ユーザーが明示的に選んだ場合のみ。** 経路によって使う credential が変わる。`.op/` を介さない `gh` はリポジトリにスコープを限定した PAT を使わないため、何がどう変わるかを示してユーザーに選ばせる。agent が黙って切り替えない |
 | ユーザーが手動で実行する | agent は結果の確認から再開する |
 | 中断したまま保留する | 未反映の変更をそのまま残す |
@@ -62,7 +62,7 @@
 
 1Password 起因の失敗を契機に、別の 1Password 連携経路へ自動で切り替えない。例として、MCP server の起動が `op run` の承認待ちで失敗したことを理由に `op plugin run -- gh ...` へ fallback しない。
 
-別経路も同じ承認を要求する。実測では、直前に承認済みでも app を lock した後の `op plugin run -- gh` は再度承認を求めて失敗した（session cache では通らない）。したがってユーザーが応答できない状況のままでは、経路を変えても同じ失敗を繰り返す。応答できる状況であれば別経路は成功しうるが、その切り替えはユーザーが判断する。agent が自動で行うと、操作主体（MCP の PAT と op plugin の PAT）が黙って入れ替わる。
+別経路も同じ承認を要求する。実測では、直前に承認済みでも app を lock した後の `op plugin run -- gh` は再度承認を求めて失敗した（session cache では通らない）。したがってユーザーが応答できない状況のままでは、経路を変えても同じ失敗を繰り返す。応答できる状況であれば別経路は成功しうるが、その切り替えはユーザーが判断する。経路が変われば使う credential も変わり得る。MCP server の config（`.config/github-op-integrated.conf`）と `op plugin` が別の PAT を指す構成では、操作主体が黙って入れ替わる。同じ item を指す構成なら変わるのは経路だけである。どちらかは環境に依存するので、agent が自動で切り替えない。
 
 `doc/guidelines/github-mcp-guidelines.md` の「MCP 優先・`gh` fallback」は、MCP が未設定、操作が allowlist 外、MCP が機能として応答しない場合の経路選択を定めたものである。承認待ちの失敗はこの fallback 条件に当たらない。同 guideline の「MCP write が失敗したとき」の fallback 判断よりも本ルールの中断を優先する。
 
@@ -105,7 +105,7 @@ GitHub MCP server の起動失敗では、原因は MCP host に出ない。wrap
 
 SSH agent 経由の失敗も、出力に 1Password の語が無いためここへ落ちる。**承認待ちかどうかを切り分ける目的で**、`~/.ssh/config` の `IdentityAgent` や agent の実体を調べに行かず、中断して報告する。
 
-署名経路の確定は別目的であり、本ルールは禁じない。`gpg.ssh.program` の確認と `ssh-add -l` は 1Password に触れず、どちらの経路を使っているかを確定させる手順である（`doc/guidelines/git-operation-guidelines.md` の「commit 署名」）。経路を確定させてから、その経路の失敗が承認待ちかを本ルールで判断する。
+署名経路の確定は別目的であり、本ルールは禁じない。`gpg.ssh.program` の確認と `ssh-add -l` は承認を要求せず、どちらの経路を使っているかを確定させる手順である（`ssh-add -l` は 1Password の SSH agent へ問い合わせるが、鍵の一覧取得に承認は要らない）（`doc/guidelines/git-operation-guidelines.md` の「commit 署名」）。経路を確定させてから、その経路の失敗が承認待ちかを本ルールで判断する。
 
 ただし、同節が示す **socket を明示した再実行（`SSH_AUTH_SOCK=... git commit ...`）は署名そのものの再試行であり、承認を再要求する。** `ssh-add -l` に鍵が出ないことは「agent が違う」場合と「1Password が lock されている」場合を区別しないため、lock が原因のときにこの再実行へ進むと、ユーザー不在のまま承認待ちの timeout を 1 回消費する。承認に応答できる状態だと分かっている場合に限って実行し、そうでなければ本ルールに従って中断する。
 

@@ -80,7 +80,7 @@
 
 ## 追試による補正（2026-09-13）
 
-cloud session には `op` が無く、承認待ちの失敗を再現できなかった。1Password 連携のあるローカル環境（macOS 26.6、1Password 8.12.36、`op` 2.34.1）で追試し、次を確認した。
+cloud session には `op` が無く、承認待ちの失敗を再現できなかった。1Password 連携のあるローカル環境（macOS 26.6.2、1Password 8.12.36、`op` 2.34.1）で追試し、次を確認した。
 
 前提どおりだった点:
 
@@ -91,13 +91,19 @@ cloud session には `op` が無く、承認待ちの失敗を再現できなか
 
 前提が崩れた点と補正:
 
-- **MCP host は wrapper の診断を agent に渡さない。** 診断は host の debug log にしか残らず、host の画面にも tool 検索の結果にも出ない。当初の読み分け基準は「wrapper 自身の診断が見えるか」を観測点にしていたが、その観測点は agent から存在しない。`docker info` や config file の有無など **1Password に触れない確認**で切り分ける形へ改めた。これにより、docker 不在や config 不在のような機能失敗では `gh` fallback が従来どおり働く。
+- **host の画面と tool 検索の結果には起動失敗の原因が出ない。** 当初の読み分け基準は「wrapper 自身の診断が見えるか」を観測点にしていたが、その観測点はそこには存在しない。
+  - 追試の時点では「診断は host の debug log にしか残らない」と結論し、`docker info` や config file の有無など 1Password に触れない確認で切り分ける形へ改めた。
+  - その後の指摘と確認で、この結論が誤りだと判明した。**Claude Code は server ごとの接続ログ（`~/.cache/claude-cli-nodejs/<cwd>/mcp-logs-<server>/*.jsonl`、macOS は `~/Library/Caches/...`）へ wrapper の stderr を書き出しており、`--debug` は不要である。** cloud session 自身のログでも `Server stderr: mcp-github-op-integrated: '1Password CLI (op)' が PATH に見つからない` と `Starting connection with timeout of 30000ms` を確認した。
+  - そこで読み分けの第一手段を接続ログに置いた。`Server stderr:` の診断があれば機能失敗、`op` 由来の文言があれば 1Password 起因、stderr が無く接続 timeout だけなら承認待ちの可能性が高い、と直接判定できる。1Password に触れない確認は、接続ログが無い場合と host が別の場合（Cursor / Codex）の副手段へ降格した。
+  - ログは必要な行だけ引用する。wrapper は `op run --no-masking` で起動するため secret が現れ得る。
 - **承認待ちは `authorization timeout` として見えない。** host の接続 timeout（30 秒）が `op` の承認 timeout（約 60 秒）より短いため、agent に届くのは `CONNECT_TIMEOUT` / `connection timed out after 30000ms` である。当初例示した `CONNECTION_CLOSED` も実際とずれていた。
-- **承認待ちの最中は失敗ではなく「接続中」として見える。** tool の応答は再検索を促す。待ち続けないよう、1 回だけ再確認してから切り分けへ進む規定を足した。
-- **即時の切断も非 1Password の証拠にならない。** app 未起動や承認の拒否でも `op` は 0〜3 秒で失敗するため、所要時間では読み分けられない。
-- **host が諦めた後もダイアログは残る。** そのダイアログを承認しても接続は回復せず、host 側の再接続が必要である。選択肢の補足に加えた。
+- **承認待ちの最中は失敗ではなく「接続中」として見える。** tool の応答は再検索を促す。当初は「1 回だけ再確認してから、表示が接続 timeout へ変わった時点で切り分けへ進む」と書いたが、観測をやめた後に遷移を知る経路が無く両立しなかった。「1 回再取得して接続中なら待たずに中断し、承認ダイアログの可能性と host 側の再接続が必要なことを報告する」へ改めた。
+- **所要時間では読み分けられない。** `op` 単体では app 未起動や承認の拒否でも 0〜3 秒で失敗する（実測）。host 経由で即時の切断として現れるかは未実測だが、所要時間を読み分けの根拠にはしない。
+- **host が諦めた後もダイアログは残る（実測）。** host が失敗を確定させた後なので、そのダイアログを承認しても接続は回復しないと考えられる（未実測）。いずれにせよ host 側の再接続が必要である。選択肢の補足に加えた。
 - **SSH agent 経路の出力に 1Password の語が無い。** `agent refused operation` / `Permission denied (publickey)` は鍵未登録の場合と区別できない。「判断できない場合」へ落ちることを明記した。
 - **app 未起動時の `op` のエラーは app の更新を促す。** agent が更新へ進まないよう、禁止する回避策に app の更新・再インストール・再起動を加えた。
+- **image の有無は読み分けの材料にならない。** 一時的に確認項目へ入れたが撤回した。wrapper は `exec op run ... -- docker run ... "$IMAGE"` なので承認が済むまで `docker run` は起動せず、承認待ちの時点で image の有無は失敗に関与しない。`docker run` の既定は `--pull=missing` なので image 未取得自体も失敗にならない。確認項目に残すと、承認待ちを機能失敗と誤認して fallback へ進む経路を作る。
+- **`command -v` で見えるのは agent の shell の PATH である。** host が wrapper へ渡す PATH とは異なりうる。agent 側で見つからないことを原因と確定すると、機能失敗と誤判定して素の `gh` へ黙って切り替わる経路ができる。参考情報に留める形へ改めた。
 - 「切り分けのための調査コマンドを重ねない」と、上記の 1Password 非依存の確認が衝突しないよう、例外として許す範囲を明示した。
 
 補正後も決定そのもの（事後中断案、新規 guideline という配置）は変えていない。変えたのは読み分けの観測点と、実測の文言である。

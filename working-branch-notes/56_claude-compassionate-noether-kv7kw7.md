@@ -12,7 +12,9 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-review cycle 1（2 周で収束）→ ローカル追試 → 追試の反映 → review cycle 2（`claude-code-0273fda-20260913064236`）まで終えた。cycle 2 の指摘 5 件と、再確認で挙がった非ブロッキング 3 件を反映済み。最終の再確認待ち。
+review cycle 1（2 周で収束）→ ローカル追試 → 追試の反映 → review cycle 2（`claude-code-0273fda-20260913064236`、指摘 5 件 + 非ブロッキング 3 件を反映）→ ユーザー自身の review round（9 thread）まで来た。
+
+現在はユーザーの review round への対応中である。`[must]` 3 件のうち 1 件（MCP 接続ログに wrapper の stderr が残る）は読み分けの前提を覆すため、「起動失敗の読み分け」節を接続ログ基準へ書き直した。残る作業は、対応後の再確認、人間による thread の resolve、merge 判断である。
 
 ## 決定事項
 
@@ -91,7 +93,7 @@ review cycle 1（2 周で収束）→ ローカル追試 → 追試の反映 →
 | `cargo` 再検証 | 省略。Rust コードと `Cargo.toml` / `Cargo.lock` に変更が無いことを `git diff --cached --name-only` で確認した（Issue の指示どおり） |
 | review 指摘の現物確認（P3） | 5 件すべて確認済み。`[must]` は wrapper の診断メッセージ（`op` / `docker` / config の 3 種）と MCP host の表示を突き合わせ、原因不明の起動失敗が実在することを確認。`[imo]` は参照元 2 箇所が「プロンプト未到達」を新正本へ送っていることを確認。`[nits]` 2 件は該当行と未変更 guideline の grep（該当は `agent-configuration-management.md` の secret reference 2 件のみ）で確認 |
 | P4 修正後の `git diff --check` | 通った |
-| ローカル追試（1Password 実環境） | 実施。macOS 26.6 / 1Password 8.12.36 / `op` 2.34.1 の環境で、Q1 〜 Q8 と Q10 を実施した。結果は下記「ローカル追試の結果」 |
+| ローカル追試（1Password 実環境） | 実施。macOS 26.6.2 / 1Password 8.12.36 / `op` 2.34.1 の環境で、Q1 〜 Q8 と Q10 を実施した。結果は下記「ローカル追試の結果」 |
 
 ### ローカル追試の結果
 
@@ -112,7 +114,7 @@ cloud session では `op` が無く再現できなかったため、1Password �
 
 | 確認項目 | 結果 |
 | --- | --- |
-| MCP host は wrapper の診断を agent に渡すか | **渡さない。** 診断は host の debug log にしか残らず、host の画面（起動時警告 / MCP 一覧 / doctor）にも tool 検索の結果にも出ない。当初の読み分け基準の第 1 bullet は観測点として存在しなかった |
+| MCP host は wrapper の診断を agent に渡すか | host の画面（起動時警告 / MCP 一覧 / doctor）と tool 検索の結果には**出ない**。当初の読み分け基準の第 1 bullet は、そこには観測点が無かった。**ただし「debug log にしか残らない」という追試時の結論は誤りで、後に訂正した**（下記「接続ログの発見」） |
 | 承認待ちは `authorization timeout` として見えるか | **見えない。** host の接続 timeout（30 秒）が `op` の承認 timeout（約 60 秒）より短く、agent に届くのは `CONNECT_TIMEOUT` / `connection timed out after 30000ms`。当初例示した `CONNECTION_CLOSED` も実際とずれていた |
 | 承認待ちの最中はどう見えるか | 失敗ではなく「接続中（再検索を促す）」として見える。規定が無かった |
 | 即時の切断は非 1Password の証拠になるか | ならない。app 未起動や承認の拒否でも `op` は 0〜3 秒で失敗する |
@@ -121,6 +123,18 @@ cloud session では `op` が無く再現できなかったため、1Password �
 | app 未起動時の `op` のエラー文言 | app の更新を促す。agent が更新へ進む余地があった |
 
 反映内容は「セッションログ」と `doc/design/decision-log/0021-one-password-approval-failure.md` の「追試による補正」に記録した。
+
+### 接続ログの発見（追試の結論の訂正）
+
+追試の後、レビュー指摘を受けて再確認したところ、**Claude Code は server ごとの接続ログへ wrapper の stderr を書き出している**ことが分かった。`--debug` は不要で、1Password に触れずに読める。
+
+cloud session 自身のログ（`~/.cache/claude-cli-nodejs/-home-user-bizdate/mcp-logs-github-op-integrated/*.jsonl`）で次を確認した。
+
+- `"error":"Server stderr: mcp-github-op-integrated: '1Password CLI (op)' が PATH に見つからない\n"`
+- `"debug":"Starting connection with timeout of 30000ms"`（追試が報告した 30 秒の裏取りにもなる）
+- `"debug":"Connection failed after 53ms (CONNECTION_CLOSED): Connection closed"`
+
+したがって読み分けは、1Password 非依存の間接的な確認ではなく**接続ログの直読**で行える。これを第一手段に据え、間接的な確認は接続ログが無い場合と host が別の場合（Cursor / Codex）の副手段へ降格した。ログは `op run --no-masking` 下の stderr を含むため、必要な行だけを引用する。
 
 ### 未検証事項
 
@@ -133,9 +147,9 @@ cloud session では `op` が無く再現できなかったため、1Password �
 ## リスク・ブロッカー
 
 - 上記「未検証事項」の 5 件が残る。追試で解消した 2 件（承認待ちの再現、`.claude/rules/` のロード）は除いた後の数である。残る 5 件は、cloud session でも追試環境でも再現できなかったものと、推論に留まるものである。
-- review cycle は 2 周で収束した。指摘 5 件は全件採用・修正済みで、2 周目の P5 も 5 件すべて resolve 可と判定した。未収束の指摘は無い。
-- review cycle 2 までで、cycle 1 / cycle 2 の計 10 thread すべてが resolve 可と判定された。その後の非ブロッキング 3 件の反映で、読み分け節と正本の該当段落が再び変わっているため、最終の再確認が必要である。
-- 読み分けの新しい基準は、MCP host の現在の仕様（wrapper の stderr を agent へ渡さない、接続 timeout 30 秒）に依存する。host 側の仕様変更で前提が変わるため、decision log 0021 の「後から見直す条件」に加えた。
+- review cycle 1（5 thread）と cycle 2（5 thread）は、いずれも agent review として収束した。cycle 2 の `[imo]`（接続中の再確認）は、後にレビュー側が resolve 可を取り下げたため対応済みに改めた。
+- ユーザーの review round（9 thread）への対応で、読み分け節と正本の複数箇所が変わっている。再確認が必要である。
+- 読み分けの新しい基準は、MCP host の現在の仕様（接続ログへ server の stderr を書き出す、接続 timeout 30 秒、ログの置き場所）に依存する。host や OS の仕様変更で前提が変わるため、decision log 0021 の「後から見直す条件」に加えた。Cursor / Codex で同じログが得られるかは未確認で、副手段を残している理由でもある。
 - 2 周目の P5 で挙がった `[fyi]` 1 件（`mcp-github-op-integrated.sh` の 48 行目だけが `mcp-github-op-integrated:` prefix を持たない）は、本 PR では対処しないと判断した。48 行目は 47 行目の config file 診断の 2 行目として同じ `if` ブロックで直後に出力され、単独では現れない。guideline の本文は「診断の先頭が prefix」と書いており行単位の網羅を主張していない。log が末尾 1 行に切れた場合は prefix 無しと見え「原因不明 → 中断」へ倒れるため安全側である。対処は wrapper script の変更になり、本 Issue のスコープ外。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
 
