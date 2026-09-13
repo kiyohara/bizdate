@@ -16,7 +16,7 @@
 | `op plugin run -- gh ...` | `doc/guidelines/github-cli-guidelines.md` |
 | GitHub MCP server の wrapper が起動時に実行する `op run` | `.agents/mcp/github-op-integrated/README.md` |
 
-承認待ちに起因する失敗として扱うのは、承認のタイムアウト（`authorization timeout` など）、承認の拒否、1Password app の lock、app の未起動である。
+承認待ちに起因する失敗として扱うのは、承認のタイムアウト（`authorization timeout` など）、承認の拒否、1Password app の lock、app の未起動、承認プロンプトが実行環境へ届かないこと（sandbox や TTY の制約）である。
 
 1Password が関与しない実行環境では、このルールは発動しない。cloud session（`doc/guidelines/cloud-session-guidelines.md`）の sandbox には `op` が無く、commit 署名も platform が行うため対象外である。
 
@@ -82,5 +82,7 @@ subagent のように、ユーザーへ直接問えない実行主体が承認�
 ## 1Password 起因か判断できない場合
 
 エラー出力から 1Password 起因か切り分けられない場合は、原因を断定せず本ルールに従って中断する。切り分けのための調査コマンドを重ねない。報告には、切り分けできなかったことと判断に使った出力を含める。
+
+GitHub MCP server の起動失敗は、原因が MCP host に出ないことが多い。wrapper が `op run` を使う環境では、原因を特定できない起動失敗も本ルールへ寄せて中断する（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」）。
 
 安全側に倒す理由は、1Password 起因でない失敗に本ルールを適用しても中断と報告にしかならない一方、1Password 起因の失敗を別の原因と誤認すると、禁止している回避策や自動 fallback へ進みやすいためである。

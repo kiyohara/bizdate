@@ -26,6 +26,8 @@ op plugin run -- gh ...
 
 この経路では、このリポジトリにスコープを限定した fine-grained PAT が使われる。`.op/` が無い、または `op` が使えない場合は通常の `gh ...` を使ってよい。
 
+この確認は、承認が通るかを確かめる preflight ではなく、`gh` の実行形式（リポジトリにスコープを限定した PAT を使う経路かどうか）の選択である。`doc/guidelines/one-password-approval-failure.md` が禁じる preflight には当たらないため、そのまま維持する。
+
 `op plugin run -- gh ...` は 1Password app との連携を必要とする。承認プロンプトが届かない、または承認待ちでタイムアウトする場合の扱いは `doc/guidelines/one-password-approval-failure.md` に従う。承認が通るかを確かめる preflight は実行せず、通常どおり実行して失敗した時点で中断する。
 
 ## 認証

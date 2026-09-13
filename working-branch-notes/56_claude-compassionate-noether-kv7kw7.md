@@ -12,7 +12,7 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-P1（実装と PR 作成）の実装と検証を終えた。
+P1（実装と PR 作成）と review cycle 1 周目の P2 〜 P4 を終えた。P5（再確認）待ち。
 
 ## 決定事項
 
@@ -52,6 +52,7 @@ P1（実装と PR 作成）の実装と検証を終えた。
 | `.agents/skills/maintain-progress/SKILL.md` | なし | 確認はすべて成果物の内容判断に由来する |
 | `.agents/skills/register-progress-issue/SKILL.md` | なし | 確認は入力の曖昧性に由来する |
 | `.claude/rules/` / `.cursor/rules/` のその他 | なし | 要約行に 1Password 由来のゲートは無い。`github-cli-guidelines` の「承認を得てから実行する」は影響の大きさ由来でスコープ外 |
+| `doc/guidelines/` のその他（`issue-driven-task-execution` / `development-loop` / `pull-request-guidelines` / `working-branch-notes-handling` / `working-branch-notes-security` / `agent-configuration-management` / `decision-log-guidelines` / `document-style-guidelines` / `development-command-guidelines`） | なし | `1Password` / `op plugin` / `.op/` / `制約のない実行環境` を grep して棚卸しした。該当は `agent-configuration-management.md` の 2 件のみで、いずれも secret reference の置き方（`.config/` の config template、`.worktreeinclude` の allowlist）であり承認ゲートではない。処置不要 |
 | `.github/copilot-instructions.md` | なし | レビュー観点は「入口に恒久ルールを直接書かない」「リンク切れ」「basename 揃いと `AGENTS.md` リンク」で本 PR の変更をすでにカバーする。1Password 固有の観点を足すと指摘ノイズになるため変更しない |
 | `CLAUDE.md` | なし | `@AGENTS.md` の取り込み shim のまま。追記不要 |
 
@@ -84,6 +85,8 @@ P1（実装と PR 作成）の実装と検証を終えた。
 | 文末の常体統一 | 変更ファイルをですます調の語尾で grep。検出は `AGENTS.md` の既存行 1 件（文体ルール自体を説明する「利用者向けはですます調」という引用）のみ |
 | `git diff --check` | 通った（空白エラーなし） |
 | `cargo` 再検証 | 省略。Rust コードと `Cargo.toml` / `Cargo.lock` に変更が無いことを `git diff --cached --name-only` で確認した（Issue の指示どおり） |
+| review 指摘の現物確認（P3） | 5 件すべて確認済み。`[must]` は wrapper の診断メッセージ（`op` / `docker` / config の 3 種）と MCP host の表示を突き合わせ、原因不明の起動失敗が実在することを確認。`[imo]` は参照元 2 箇所が「プロンプト未到達」を新正本へ送っていることを確認。`[nits]` 2 件は該当行と未変更 guideline の grep（該当は `agent-configuration-management.md` の secret reference 2 件のみ）で確認 |
+| P4 修正後の `git diff --check` | 通った |
 
 ### 未検証事項
 
@@ -93,6 +96,7 @@ P1（実装と PR 作成）の実装と検証を終えた。
 ## リスク・ブロッカー
 
 - 上記「未検証事項」の 2 件が残る。いずれも本 session の実行環境では再現できない。
+- review cycle 1 周目の指摘 5 件は全件採用・修正済み。未収束の指摘は無い。P5（再確認）の結果待ち。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
 
 ## セッションログ
@@ -100,3 +104,6 @@ P1（実装と PR 作成）の実装と検証を終えた。
 - 2026-09-13: Issue #53 に着手。依存なしを確認し、open PR が無いこと（直列消化）を確認した。`op plugin` / `.op/` / `1Password` / `承認` / `合意` / `HTTPS` / `制約のない実行環境` の git grep で対象箇所を洗い出した。
 - 2026-09-13: 新 guideline `doc/guidelines/one-password-approval-failure.md` を作成し、入口 2 件と `AGENTS.md` / `doc/guidelines/README.md` へ登録した。既存 guideline 4 件、MCP README、skill 2 件、入口 shim 2 件を見直した。decision log 0021 を作成し index を更新した。
 - 2026-09-13: Issue の検証項目を実行した。path / link 240 件の機械検査、文体 grep、`git diff --check` は通った。承認待ちの再現と Cursor での発火は未検証事項として記録した。
+- 2026-09-13: P2（review）を fresh context の subagent へ委譲した。review cycle `claude-code-6f0df98-20260913031849`、head `6f0df98`、指摘 5 件（`[must]` 1 / `[ask]` 1 / `[imo]` 1 / `[nits]` 2）。
+- 2026-09-13: P3 で 5 件すべてを現物確認した。wrapper の診断メッセージ、参照元 2 箇所の文言、cloud session 節、未変更 guideline の grep を確認し、全件を妥当と判断して採用した。
+- 2026-09-13: P4 で 5 件へ対応した。MCP 起動失敗の読み分け基準を `github-mcp-guidelines.md` に新設し、新正本の適用範囲へプロンプト未到達を追加、`.op/` 確認が preflight でないことを明示、cloud session 節の文言を言い切り、見直し表へ未変更 guideline の行を追加した。
