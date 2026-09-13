@@ -39,7 +39,7 @@ Issue #55。`number-working-branch-note` が報告する「完了として書き
 
 ## リスク・ブロッカー
 
-- review cycle `claude-code-2b35bca-20260913114225` の 2 周目 P5（再確認）待ち。
+- 6 thread の resolve と merge は人間の作業として残る。
 - 引き上げ規定が実際の orchestrated flow で落ちずに機能するかは、次に採番で書き換えが発生する実行まで確認できない（未検証）。
 
 ## セッションログ
@@ -49,3 +49,4 @@ Issue #55。`number-working-branch-note` が報告する「完了として書き
 - 2026-09-13: PR #59 を作成し、note を採番。P1 の引き上げ項目: 完了として書き換えたタスク行 1 件（note の「PR を作成し、note を採番する」）。触らなかった行は無し。
 - 2026-09-13: P2 review（cycle `claude-code-2b35bca-20260913114225`、head `2b35bca`）で指摘 6 件（must 2 / imo 2 / nits 2）。P3 で全件を実物確認し採用。P4 で SKILL.md 4 件と 0020 / index を修正。
 - 2026-09-13: P5 再確認（head `9406ef9`）で resolve 可 5 / 未対応 1（採番 skill 停止時の扱いが列 2 に無い）/ 新規 nits 1（index の「本 skill」）。P6 で両方を実物確認し採用。2 周目 P4 で 4 skill・0020・index を修正。
+- 2026-09-13: 2 周目 P5（head `4c9f915`）で 6 thread すべて resolve 可、未対応 0、新規指摘 0（PR description への [fyi] 1 件）。反復上限 2 周以内で収束。P6 で追加対応不要と判断し、PR description を最終化。
