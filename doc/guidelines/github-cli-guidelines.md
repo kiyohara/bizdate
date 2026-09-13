@@ -16,7 +16,7 @@ PR / issue / レビューコメントの操作は、原則 `doc/guidelines/githu
 
 ## 1Password op plugin 連携
 
-`gh` を実行する前に、リポジトリ直下の `.op/` の有無と `op` コマンドの利用可否を確認する。
+`gh` を実行する前に、リポジトリ直下の `.op/` の有無と `op` コマンドの利用可否を確認する。これは実行形式の選択であり、承認が通るかを確かめる preflight ではない（`doc/guidelines/one-password-integration-guidelines.md`）。
 
 `.op/` が存在し、かつ `op` が実行可能な場合、`gh ...` を直接実行せず次の形式を使う。shell alias には依存しない。
 
@@ -26,11 +26,11 @@ op plugin run -- gh ...
 
 この経路では、このリポジトリにスコープを限定した fine-grained PAT が使われる。`.op/` が無い、または `op` が使えない場合は通常の `gh ...` を使ってよい。
 
-`op plugin run -- gh ...` は 1Password app との連携を必要とする。AI agent の実行環境、sandbox、TTY 設定により承認プロンプトが届かない場合は、制約のない実行環境で再実行する。
+`op plugin run -- gh ...` は 1Password の承認ダイアログを伴う。承認待ちで失敗した場合は `doc/guidelines/one-password-integration-guidelines.md` に従って中断する。
 
 ## 認証
 
-認証状態は次で確認する。
+認証エラーが出たときは次で状態を確認する。preflight としては実行しない。
 
 ```sh
 op plugin run -- gh auth status

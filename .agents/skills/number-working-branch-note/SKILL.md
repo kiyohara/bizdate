@@ -28,7 +28,8 @@ PR を作成した直後に `working-branch-notes/` 配下の `draft_...md` を 
 - `doc/guidelines/working-branch-notes-security.md` — push 前の情報統制チェック観点。
 - `doc/guidelines/github-mcp-guidelines.md` — GitHub 操作は MCP 優先。
 - `doc/guidelines/github-cli-guidelines.md` — MCP fallback として `gh` を使う場合の形式。
-- `doc/guidelines/git-operation-guidelines.md` — `git commit` / `git push` の署名と実行環境制約。
+- `doc/guidelines/git-operation-guidelines.md` — `git commit` / `git push` の署名と remote の取り扱い。
+- `doc/guidelines/one-password-integration-guidelines.md` — commit / push / `gh` が 1Password の承認待ちで失敗したときの扱い。
 - `doc/guidelines/pull-request-guidelines.md` — PR title / description の書式。
 
 ## GitHub 操作形式
@@ -36,7 +37,7 @@ PR を作成した直後に `working-branch-notes/` 配下の `draft_...md` を 
 - PR の read / update は、必ず最初に `github-op-integrated` MCP tool を試す。
 - 必要な MCP tool が現在の tools に見えていない場合は、`gh` へ進む前に利用中 agent の tool discovery 機構で `github-op-integrated` を検索する。
 - `gh pr view` / `gh auth status` などの `gh` preflight を MCP tool の試行より先に実行しない。
-- `gh` へ fallback する場合は `doc/guidelines/github-cli-guidelines.md` に従い、`.op/` と `op` が使えるなら `op plugin run -- gh ...` を使う。
+- `gh` へ fallback する場合の実行形式は `doc/guidelines/github-cli-guidelines.md` に従う。
 - write 系を `gh` に fallback する場合は、再実行前に read 系 tool で未反映かどうかを確認してから実行する。
 
 ## stale 表現の定型置換
@@ -119,7 +120,7 @@ staged 変更が `working-branch-notes/` 配下の rename と本文更新だけ�
 git commit -m "docs: working branch note を PR #<number> で採番する"
 ```
 
-署名は `doc/guidelines/git-operation-guidelines.md` に従う。失敗した場合は同ガイドラインの切り分け手順（まず `gpg.ssh.program` を確認する）に従う。
+署名は `doc/guidelines/git-operation-guidelines.md` に従う。失敗した場合は `doc/guidelines/one-password-integration-guidelines.md` に従って中断する。
 
 ### 9. push
 

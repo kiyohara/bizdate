@@ -178,6 +178,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 | 想定していないタイミングで head SHA が動いた | 原因を断定せず、context を取り直して続行する。取り直しても繰り返す場合はユーザーへ報告して止める |
 | subagent が完了要約を投稿できない | read 系 tool で反映を確認する。未反映なら再投稿の可否を判断し、解消しなければユーザーへ報告して止める（`review-pull-request` の「MCP write failure の安全手順」） |
 | subagent が前提条件で停止し、ユーザー確認を要求した | 確認事項をユーザーへ中継し、回答を得てから再委譲する |
+| git / GitHub 操作が 1Password の承認待ちで失敗した | `doc/guidelines/one-password-integration-guidelines.md` に従って中断し、ユーザーへ報告する。subagent で起きた場合は確認事項として中継する |
 | 対象 PR が closed / merged になった | 処理を停止してユーザーへ報告する |
 
 ## 反復上限

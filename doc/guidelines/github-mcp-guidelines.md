@@ -26,8 +26,9 @@
 優先順位:
 
 1. MCP server が設定済みで、操作対象が allowlist 内の MCP tool で完結する場合は MCP を使う。
-2. 操作が allowlist に無い、MCP が未設定、MCP が起動失敗・応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。
-3. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
+2. 操作が allowlist に無い、MCP が未設定、または起動済みの MCP が応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。
+3. MCP server が起動しない場合（tool が見えない、接続 timeout、`Connection closed` など）は、原因を切り分けず `gh` へも進まず、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。wrapper の `op run` が承認を待って失敗した可能性があり、agent からは他の原因と区別できない。cloud session は組み込み tool を使うため該当しない（後述）。
+4. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
 
 ### 汎用 skill / plugin と競合する場合
 
@@ -87,7 +88,7 @@ write 系 MCP tool が失敗した場合は、次の順で扱う。
 
 1. 直ちに `gh` で同じ write を再実行しない。
 2. read 系 tool で部分反映・重複の有無を確認する。
-3. MCP 未反映で、かつ fallback 条件を満たす場合だけ `gh` へ fallback する。
+3. MCP 未反映で、かつ「MCP 優先・`gh` fallback」の優先順位 2 に当たる場合だけ `gh` へ fallback する。
 4. fallback する場合は、試した MCP tool、失敗内容、未反映確認の結果、実行するコマンドをユーザーへ明示する。
 
 ## permission
