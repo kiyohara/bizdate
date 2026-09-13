@@ -45,12 +45,13 @@ Claude Code は server ごとの接続ログへ wrapper の stderr を書き出�
 | ログの内容 | 判定 |
 | --- | --- |
 | `Server stderr: mcp-github-op-integrated: ...` | 機能としての失敗。文言が原因を名指しする（`op` / `docker` が PATH に無い、config file が無い、引数エラー）。優先順位 2 に従って `gh` へ fallback してよい |
-| `op` 由来の文言（`authorization timeout`、`couldn't connect to the 1Password desktop app`、secret reference の解決エラーなど） | 1Password 起因。承認待ちかどうかも文言で分かるので `doc/guidelines/one-password-approval-failure.md` に従う。**`op` 自身の出力がこのログに記録されるかは未実測である**（確認できているのは wrapper の診断まで）。記録されていなければ次の行として扱う |
+| `Server stderr: docker: ...` | 機能としての失敗。`exec` 後の `docker` が出した診断であり、承認を通過した後にしか起きない。優先順位 2 に従って `gh` へ fallback してよい |
+| `op` 由来の文言（`authorization timeout`、`couldn't connect to the 1Password desktop app`、secret reference の解決エラーなど） | 1Password 起因。承認待ちかどうかも文言で分かるので `doc/guidelines/one-password-approval-failure.md` に従う。**`op` 自身の出力がこのログに記録されるかは未実測である**（確認できているのは wrapper の診断まで）。記録されていなければ、最後の行（stderr が無く接続 timeout だけ）として扱う |
 | stderr が無く、接続 timeout だけ | 承認待ちの可能性が高い。同ルールに従って中断する |
 
-引用できるのは wrapper の診断メッセージの本文（`mcp-github-op-integrated: ...`）と、接続結果の分類（`CONNECTION_CLOSED` など）だけである。**JSON レコードをそのまま貼らない。** 各レコードは `sessionId` と `cwd`（開発機の絶対 path）を含み、wrapper は `op run --no-masking` で起動するため secret や `op://` の vault / item 名も現れ得る。いずれも note・PR・コメントへ書かない（`doc/guidelines/working-branch-notes-security.md`）。
+引用できるのは wrapper の診断メッセージの本文（`mcp-github-op-integrated: ...`）と、接続結果の分類（`CONNECTION_CLOSED` など）だけである。**JSON レコードをそのまま貼らない。** 各レコードは `sessionId` と `cwd`（開発機の絶対 path）を含み、wrapper は `op run --no-masking` で起動するため secret や `op://` の vault / item 名も現れ得る。いずれも note・PR・コメントへ書かない（`doc/guidelines/working-branch-notes-security.md`）。診断メッセージ本文に path が含まれる場合（`config file が見つからない: <path>` など）は、その path も伏せる。どの診断が出たかは判定に足り、path の実値は要らない。
 
-image の有無は、どちらの手段でも判定材料にしない。`op run` の承認が済むまで `docker run` は起動せず、承認が通れば既定の `--pull=missing` で pull される。image が未取得のときは初回 pull が host の接続 timeout を超えた可能性が残るので、その旨を報告へ添える。
+image の有無は、どちらの手段でも判定材料にしない。`op run` の承認が済むまで `docker run` は起動せず、承認が通れば既定の `--pull=missing` で pull される。ただし初回 pull が host の接続 timeout を超えることはあるので、原因を特定できないときは、その可能性も報告へ添える。
 
 接続ログが読めない場合、または host が別の場合（Cursor / Codex など）は、承認を要求しない次の確認で切り分ける。
 
