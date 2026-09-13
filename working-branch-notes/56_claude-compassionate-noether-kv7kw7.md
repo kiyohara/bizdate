@@ -12,7 +12,7 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-P1（実装と PR 作成）と review cycle 1 周目の P2 〜 P4 を終えた。P5（再確認）待ち。
+P1（実装と PR 作成）と review cycle 1 周目（P2 〜 P6）を終えた。2 周目の P4 で `[fyi]` 2 件を反映し、P5（再確認）待ち。
 
 ## 決定事項
 
@@ -96,7 +96,7 @@ P1（実装と PR 作成）と review cycle 1 周目の P2 〜 P4 を終えた�
 ## リスク・ブロッカー
 
 - 上記「未検証事項」の 2 件が残る。いずれも本 session の実行環境では再現できない。
-- review cycle 1 周目の指摘 5 件は全件採用・修正済み。未収束の指摘は無い。P5（再確認）の結果待ち。
+- review cycle 1 周目の指摘 5 件は全件採用・修正済みで、P5 は 5 件すべて resolve 可と判定した。未収束の指摘は無い。2 周目は `[fyi]` 2 件の反映のみで、P5 の再確認待ち。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
 
 ## セッションログ
@@ -107,3 +107,5 @@ P1（実装と PR 作成）と review cycle 1 周目の P2 〜 P4 を終えた�
 - 2026-09-13: P2（review）を fresh context の subagent へ委譲した。review cycle `claude-code-6f0df98-20260913031849`、head `6f0df98`、指摘 5 件（`[must]` 1 / `[ask]` 1 / `[imo]` 1 / `[nits]` 2）。
 - 2026-09-13: P3 で 5 件すべてを現物確認した。wrapper の診断メッセージ、参照元 2 箇所の文言、cloud session 節、未変更 guideline の grep を確認し、全件を妥当と判断して採用した。
 - 2026-09-13: P4 で 5 件へ対応した。MCP 起動失敗の読み分け基準を `github-mcp-guidelines.md` に新設し、新正本の適用範囲へプロンプト未到達を追加、`.op/` 確認が preflight でないことを明示、cloud session 節の文言を言い切り、見直し表へ未変更 guideline の行を追加した。
+- 2026-09-13: P5（再確認）を同じ subagent が実行した。head `69e1c70`、5 thread すべて resolve 可、未対応 0 件。新規のブロッキング指摘は無く、非ブロッキングの `[fyi]` 2 件のみ。
+- 2026-09-13: P6 で `[fyi]` 2 件を採用し、2 周目の P4 として反映した。wrapper の診断は 5 件すべて `mcp-github-op-integrated:` を prefix に持つことを script で確認し、3 件の列挙を prefix による網羅的な判定へ置き換えた。あわせて優先順位 2 から新設節への前方参照を足した。

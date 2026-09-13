@@ -26,14 +26,14 @@
 優先順位:
 
 1. MCP server が設定済みで、操作対象が allowlist 内の MCP tool で完結する場合は MCP を使う。
-2. 操作が allowlist に無い、MCP が未設定、MCP が機能として起動失敗・応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。ただし起動失敗が 1Password の承認待ちに起因する場合は fallback の対象外である。`gh` も同じ承認を要求するため、`doc/guidelines/one-password-approval-failure.md` に従って中断する。
+2. 操作が allowlist に無い、MCP が未設定、MCP が機能として起動失敗・応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。ただし起動失敗が 1Password の承認待ちに起因する場合は fallback の対象外である。`gh` も同じ承認を要求するため、`doc/guidelines/one-password-approval-failure.md` に従って中断する。両者の読み分けは後述の「起動失敗の読み分け」に従う。
 3. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
 
 ### 起動失敗の読み分け
 
 MCP host には起動失敗の原因が出ないことがある（`CONNECTION_CLOSED` だけが見えるなど）。優先順位 2 の「機能として起動失敗」と「承認待ちに起因する起動失敗」は、次の観測で読み分ける。
 
-- wrapper 自身の診断（`'1Password CLI (op)' が PATH に見つからない`、`'docker' が PATH に見つからない`、`config file が見つからない`）が見える場合は、機能としての失敗である。`gh` へ fallback してよい。
+- wrapper 自身の診断が見える場合は、機能としての失敗である。`gh` へ fallback してよい。wrapper の診断は先頭が `mcp-github-op-integrated:` である（`'1Password CLI (op)' が PATH に見つからない`、`'docker' が PATH に見つからない`、`config file が見つからない`、引数エラー）。
 - 原因を特定できない場合、wrapper が `op run` を使う環境では中断を既定とする。`op run` は承認待ちでタイムアウトしても wrapper の診断を出さないため、原因不明はこちらへ寄せる（`doc/guidelines/one-password-approval-failure.md`）。
 - cloud session は適用対象外である。`op` が無く MCP server は起動できないため、起動失敗の表示は想定どおりで対処しない（後述の「cloud session（Claude Code on the web）」を参照）。
 
