@@ -15,7 +15,7 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 | 外向き通信 | 許可リスト方式で、直接接続は gateway が TLS を再終端する。container 内の CA では検証できない。Docker Hub の blob 配信元は許可されていない | container は sandbox の agent proxy を経由させ、base image は許可リスト内の mirror から取る（`compose.cloud.yaml`） |
 | GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` と `gh` が無く、MCP server は起動できない | 組み込みの GitHub tool を第一選択にする（同 guideline の「cloud session」） |
 | Issue 記載のブランチ名で作業する（`doc/guidelines/issue-driven-task-execution.md`） | 作業ブランチは session 作成時に platform が決め、push はそのブランチにだけ許可される | session のブランチをそのまま使う（同 guideline と `doc/guidelines/git-operation-guidelines.md` の「cloud session」） |
-| commit 署名は 1Password（`doc/guidelines/git-operation-guidelines.md`） | 署名と author は platform 側で行われる | 署名の切り分け手順は適用しない（同 guideline の「cloud session」） |
+| commit 署名は 1Password（`doc/guidelines/git-operation-guidelines.md`） | 署名と author は platform 側で行われ、`op` も無い | 署名の切り分け手順と 1Password 承認待ちの中断手順は適用しない（同 guideline の「cloud session」、`doc/guidelines/one-password-approval-failure.md` の「適用範囲」） |
 
 ## 設定ファイル
 

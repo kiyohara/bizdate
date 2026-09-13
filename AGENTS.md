@@ -15,6 +15,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - 開発コマンド実行ルール（Compose 経由での `cargo` 実行 / 実行環境の正）: `doc/guidelines/development-command-guidelines.md`
 - GitHub MCP 利用ルール（MCP 優先 / `gh` fallback / tool allowlist）: `doc/guidelines/github-mcp-guidelines.md`
 - GitHub CLI 実行ルール（`gh` の実行範囲 / 承認が必要な操作 / write 失敗時の扱い）: `doc/guidelines/github-cli-guidelines.md`
+- 1Password 承認待ち失敗ルール（前段ゲートの禁止 / 失敗時の中断と選択肢 / 禁止する回避策）: `doc/guidelines/one-password-approval-failure.md`
 - Pull Request 作成ガイドライン: `doc/guidelines/pull-request-guidelines.md`
 - Working branch notes 取り扱いルール（性質・整合性スコープ・ライフサイクル・ファイル名規約）: `doc/guidelines/working-branch-notes-handling.md`
 - Working branch notes 情報統制ルール（`working-branch-notes/**/*.md` のセキュリティ禁則）: `doc/guidelines/working-branch-notes-security.md`
@@ -58,6 +59,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - `cargo` などの開発コマンドを実行するときは `doc/guidelines/development-command-guidelines.md` に従い、Compose 経由で実行する。
 - Claude Code on the web の cloud session で作業するとき、または cloud session 向けの設定（`.agents/scripts/cloud-session-setup.sh`、`.claude/settings.json`、`compose.cloud.yaml`、environment の setup script）を変更するときは `doc/guidelines/cloud-session-guidelines.md` に従う。
 - commit、tag、push、merge など git 操作を行う前に `doc/guidelines/git-operation-guidelines.md` に従う。`main` へ直接 push しない。
+- 1Password 連携を伴う git / GitHub / MCP 操作が承認待ちで失敗したときは `doc/guidelines/one-password-approval-failure.md` に従う。前段にゲートや preflight を置かず、失敗した時点で中断する。
 - GitHub の PR / issue / レビューコメントを操作するときは `doc/guidelines/github-mcp-guidelines.md` に従い、MCP を優先する。
 - `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。
 - PR を作成または更新するときは `doc/guidelines/pull-request-guidelines.md` に従う。PR の merge は agent が行わない。

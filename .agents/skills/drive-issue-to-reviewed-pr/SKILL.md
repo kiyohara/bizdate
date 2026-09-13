@@ -179,6 +179,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 | subagent が完了要約を投稿できない | read 系 tool で反映を確認する。未反映なら再投稿の可否を判断し、解消しなければユーザーへ報告して止める（`review-pull-request` の「MCP write failure の安全手順」） |
 | subagent が前提条件で停止し、ユーザー確認を要求した | 確認事項をユーザーへ中継し、回答を得てから再委譲する |
 | 対象 PR が closed / merged になった | 処理を停止してユーザーへ報告する |
+| 1Password の承認待ちで git / GitHub 操作が失敗した | `doc/guidelines/one-password-approval-failure.md` に従って中断する。subagent で起きた場合は確認事項として orchestrator へ返し、orchestrator がユーザーへ中継する |
 
 ## 反復上限
 

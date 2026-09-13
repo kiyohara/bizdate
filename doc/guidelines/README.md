@@ -18,6 +18,7 @@
 | `git-operation-guidelines.md` | commit 署名、remote、保護ブランチの取り扱い |
 | `github-mcp-guidelines.md` | GitHub 操作の MCP 優先と `gh` fallback の判断 |
 | `github-cli-guidelines.md` | `gh` の実行範囲と承認が必要な操作 |
+| `one-password-approval-failure.md` | 1Password 連携操作が承認待ちで失敗したときの中断と報告 |
 | `pull-request-guidelines.md` | PR title / description / 検証記載 |
 | `working-branch-notes-handling.md` | 作業メモの性質・整合性スコープ・ライフサイクル・ファイル名規約 |
 | `working-branch-notes-security.md` | 作業メモの情報統制（秘密情報・個人情報の禁則） |

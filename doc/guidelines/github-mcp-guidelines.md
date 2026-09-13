@@ -26,7 +26,7 @@
 優先順位:
 
 1. MCP server が設定済みで、操作対象が allowlist 内の MCP tool で完結する場合は MCP を使う。
-2. 操作が allowlist に無い、MCP が未設定、MCP が起動失敗・応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。
+2. 操作が allowlist に無い、MCP が未設定、MCP が機能として起動失敗・応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。ただし起動失敗が 1Password の承認待ちに起因する場合は fallback の対象外である。`gh` も同じ承認を要求するため、`doc/guidelines/one-password-approval-failure.md` に従って中断する。
 3. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
 
 ### 汎用 skill / plugin と競合する場合
@@ -83,7 +83,9 @@ CI は **read のみ MCP に載せる**。GitHub MCP Server は `actions_run_tri
 
 ## MCP write が失敗したとき
 
-write 系 MCP tool が失敗した場合は、次の順で扱う。
+1Password の承認待ちに起因する失敗は、`doc/guidelines/one-password-approval-failure.md` に従って中断する。以下の fallback 判断は適用しない。
+
+それ以外の理由で write 系 MCP tool が失敗した場合は、次の順で扱う。
 
 1. 直ちに `gh` で同じ write を再実行しない。
 2. read 系 tool で部分反映・重複の有無を確認する。

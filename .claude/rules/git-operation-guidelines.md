@@ -3,4 +3,4 @@
 - 詳細は `doc/guidelines/git-operation-guidelines.md`
 - commit 署名が失敗したら、まず `git config --get gpg.ssh.program` で実行経路を確認する。1Password の `op-ssh-sign` なら SSH agent は無関係で、`SSH_AUTH_SOCK` の変更は不要。
 - `main` は保護されている。直接 push しない。変更は PR 経由で入れる。
-- GitHub remote は HTTPS。push / fetch は SSH agent 連携の対象外。
+- GitHub remote の scheme は環境依存。HTTPS なら credential helper、SSH なら SSH agent が認証する。どちらかを前提にしない。

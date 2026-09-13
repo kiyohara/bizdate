@@ -4,7 +4,9 @@
 
 ## このリポジトリの前提
 
-- GitHub remote は `origin`（**HTTPS**: `https://github.com/kiyohara/bizdate.git`）。push / fetch / pull は `gh` の credential helper で認証するため、SSH agent 連携の対象外である。
+- GitHub remote は `origin`。URL の scheme は clone 時の選択とメンバーの設定に依存するため、どちらかを前提にしない。必要になった時点で `git remote -v` で確認する。
+  - HTTPS（`https://github.com/kiyohara/bizdate.git`）の場合、push / fetch / pull は credential helper（`gh` など）が認証し、SSH agent は関与しない。
+  - SSH（`git@github.com:kiyohara/bizdate.git`）の場合、push / fetch / pull は SSH agent 経由で認証する。1Password の SSH agent を使う構成では、これらの操作でも承認ダイアログが出る。
 - `cursor-origin` remote は参照用に残してある。通常の作業では使わない。
 - commit 署名が有効（`commit.gpgsign = true`、`gpg.format = ssh`）。署名鍵は 1Password が保持する。実行経路は `gpg.ssh.program` の設定によって変わる（後述）。
 - `main` は保護されている。直接 push できない。変更は必ず PR 経由で入れる。
@@ -35,7 +37,7 @@ git config --get gpg.ssh.program
 - 署名の承認プロンプトが表示され、応答できる状態か。AI agent の実行環境、sandbox、TTY 設定によっては承認プロンプトが届かない場合がある。
 - `gpg.ssh.program` が指す実行ファイルが存在するか。
 
-解決できない場合は、制約のない実行環境で同じコマンドを再実行する。
+承認待ちに起因する失敗であれば、回避策を試さず `doc/guidelines/one-password-approval-failure.md` に従って中断する。署名の無効化、鍵・`gpg.ssh.program`・`SSH_AUTH_SOCK` の無断変更はしない。
 
 ### 標準の ssh-keygen を使う場合
 
@@ -50,6 +52,8 @@ ssh-add -l
 ```sh
 SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" git commit ...
 ```
+
+socket の path は OS と 1Password の版で変わる。上は macOS の既定 path である。この経路でも、承認待ちに起因する失敗は `doc/guidelines/one-password-approval-failure.md` に従って扱う。
 
 `~/.ssh/config` の `IdentityAgent` は `ssh` 接続には効くが、`ssh-keygen -Y sign` は `SSH_AUTH_SOCK` を見る。両者は別経路である。
 
@@ -85,3 +89,5 @@ git log -1 --format="%G? %GS"
 ## 関連ルール
 
 `gh pr create`、`gh run view` など、`git` コマンドではなく GitHub CLI(`gh`)を使う場合は `doc/guidelines/github-cli-guidelines.md` に従う。
+
+1Password 連携を伴う操作（signer による commit 署名、SSH agent 経由の push / fetch）が承認待ちで失敗したときの中断手順は `doc/guidelines/one-password-approval-failure.md` に従う。前段にゲートや preflight は置かない。

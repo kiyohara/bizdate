@@ -32,6 +32,7 @@
 | 0018 | decided | cloud session の実行環境 | Claude Code on the web でも Compose 経由を維持。SessionStart hook（`.claude/settings.json`）から `.agents/scripts/cloud-session-setup.sh` が Docker daemon を起動し dev image を用意する。cloud 差分は `compose.cloud.yaml`、base image は許可リスト内の mirror。environment の setup script は stub のみ。GitHub 操作は組み込み tool、ブランチは session 固定 | [0018-cloud-session-environment.md](0018-cloud-session-environment.md) |
 | 0019 | decided | Issue 起点 review cycle の orchestration | `drive-issue-to-reviewed-pr` を orchestrator として追加。実装と PR 作成は `run-issue-task`、review / 対応 / 再確認は `review-pull-request` へ委譲する。review と再確認は context 分離のため subagent が担当し、反復上限と処置の分類は被委譲 skill に委ねる。merge と resolve は人間 | [0019-issue-review-cycle-orchestration.md](0019-issue-review-cycle-orchestration.md) |
 | 0020 | decided | 採番 skill の合意ゲート | 完了タスク行のうち機械判定できるものは、ユーザー合意を待たず書き換える。複合行と判断できない行は触らず終了時に報告する。PR #44 / #46 で維持した合意ゲートは撤回。判定基準は変更せず、書き換えた行は終了時の報告で可視化する。成果物の内容判断を理由とする同種のゲートは他 skill に無い | [0020-note-numbering-consent-gate.md](0020-note-numbering-consent-gate.md) |
+| 0021 | decided | 1Password 承認待ち失敗時の扱い | 前段にゲートも preflight も置かず、承認待ちに起因して失敗した時点で中断しユーザーへ選択肢を提示する。別の 1Password 連携経路への自動 fallback、署名の無効化、鍵・remote・credential helper の無断変更は禁止。正本は新規 guideline。remote の scheme は環境依存として断定しない | [0021-one-password-approval-failure.md](0021-one-password-approval-failure.md) |
 
 ## 未決事項
 

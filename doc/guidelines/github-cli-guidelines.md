@@ -26,11 +26,11 @@ op plugin run -- gh ...
 
 この経路では、このリポジトリにスコープを限定した fine-grained PAT が使われる。`.op/` が無い、または `op` が使えない場合は通常の `gh ...` を使ってよい。
 
-`op plugin run -- gh ...` は 1Password app との連携を必要とする。AI agent の実行環境、sandbox、TTY 設定により承認プロンプトが届かない場合は、制約のない実行環境で再実行する。
+`op plugin run -- gh ...` は 1Password app との連携を必要とする。承認プロンプトが届かない、または承認待ちでタイムアウトする場合の扱いは `doc/guidelines/one-password-approval-failure.md` に従う。承認が通るかを確かめる preflight は実行せず、通常どおり実行して失敗した時点で中断する。
 
 ## 認証
 
-認証状態は次で確認する。
+認証切れが疑われる場合に限り、次で状態を確認する。`gh` 実行の preflight として毎回先に実行しない（`doc/guidelines/one-password-approval-failure.md`）。
 
 ```sh
 op plugin run -- gh auth status
@@ -62,7 +62,9 @@ token の値そのものを出力・log しない。認証が切れている場�
 
 ## write 操作が失敗したとき
 
-`gh` の write が失敗した場合、同じコマンドをそのまま再実行しない。二重作成・二重コメントを避けるため、次の順で扱う。
+1Password の承認待ちに起因する失敗は `doc/guidelines/one-password-approval-failure.md` に従って中断する。別の 1Password 連携経路へ自動で切り替えない。
+
+それ以外の理由で `gh` の write が失敗した場合、同じコマンドをそのまま再実行しない。二重作成・二重コメントを避けるため、次の順で扱う。
 
 1. read 系コマンドで、対象が部分的に作成・更新されていないか確認する。
 2. 未反映であることを確認してから再実行する。
