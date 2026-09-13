@@ -8,7 +8,7 @@
 
 PR / issue / レビューコメントの操作は、原則 `doc/guidelines/github-mcp-guidelines.md` に従って GitHub MCP Server を優先する。本ルールは次の場合に適用する。
 
-- MCP server が未設定、または現在の環境で利用できない。
+- MCP server が未設定である。MCP server が起動しない場合は `gh` へ進まず、`doc/guidelines/github-mcp-guidelines.md` の優先順位 3 に従って中断する。
 - 対象の操作が MCP の allowlist に含まれていない（merge、file push、release、workflow の実行・再実行・cancel・log 削除、repository settings 変更などが該当する）。CI の **read**（workflow / run / job / artifact / job log / check run）は MCP 側にあるので `gh` を使わない。
 - MCP 経由の実行が失敗し、`gh` で再試行する必要がある。
 
@@ -16,7 +16,7 @@ PR / issue / レビューコメントの操作は、原則 `doc/guidelines/githu
 
 ## 1Password op plugin 連携
 
-`gh` を実行する前に、リポジトリ直下の `.op/` の有無と `op` コマンドの利用可否を確認する。
+`gh` を実行する前に、リポジトリ直下の `.op/` の有無と `op` コマンドの利用可否を確認する。`.op/plugins/gh.json` は `op plugin init gh` を実行したメンバーが「このリポジトリでは 1Password の gh plugin を使う」と宣言した設定であり、これに従う実行形式の選択である。承認が通るかを確かめる preflight ではない（`doc/guidelines/one-password-integration-guidelines.md`）。
 
 `.op/` が存在し、かつ `op` が実行可能な場合、`gh ...` を直接実行せず次の形式を使う。shell alias には依存しない。
 
@@ -26,11 +26,11 @@ op plugin run -- gh ...
 
 この経路では、このリポジトリにスコープを限定した fine-grained PAT が使われる。`.op/` が無い、または `op` が使えない場合は通常の `gh ...` を使ってよい。
 
-`op plugin run -- gh ...` は 1Password app との連携を必要とする。AI agent の実行環境、sandbox、TTY 設定により承認プロンプトが届かない場合は、制約のない実行環境で再実行する。
+`op plugin run -- gh ...` は 1Password の承認ダイアログを伴う。承認待ちで失敗した場合は `doc/guidelines/one-password-integration-guidelines.md` に従って中断する。
 
 ## 認証
 
-認証状態は次で確認する。
+認証エラーが出たときは次で状態を確認する。preflight としては実行しない。
 
 ```sh
 op plugin run -- gh auth status

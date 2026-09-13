@@ -11,10 +11,11 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - Agent 設定管理ルール（skill / rule / agent 固有入口の作成・削除・rename・配置）: `doc/guidelines/agent-configuration-management.md`
 - 開発ループ入口（GitHub Issue / progress.md / PR / working branch note の流れ）: `doc/guidelines/development-loop.md`
 - Issue 駆動タスク実行ルール（Issue 指定タスクの消化手順 / 1 Issue = 1 PR / merge はユーザー）: `doc/guidelines/issue-driven-task-execution.md`
-- Git 操作ルール（commit 署名 / 1Password SSH agent / remote と保護ブランチ）: `doc/guidelines/git-operation-guidelines.md`
+- Git 操作ルール（commit 署名 / remote と保護ブランチ）: `doc/guidelines/git-operation-guidelines.md`
 - 開発コマンド実行ルール（Compose 経由での `cargo` 実行 / 実行環境の正）: `doc/guidelines/development-command-guidelines.md`
 - GitHub MCP 利用ルール（MCP 優先 / `gh` fallback / tool allowlist）: `doc/guidelines/github-mcp-guidelines.md`
 - GitHub CLI 実行ルール（`gh` の実行範囲 / 承認が必要な操作 / write 失敗時の扱い）: `doc/guidelines/github-cli-guidelines.md`
+- 1Password 連携ルール（前段ゲートを置かない / 承認待ち失敗時の中断と選択肢 / やらないこと）: `doc/guidelines/one-password-integration-guidelines.md`
 - Pull Request 作成ガイドライン: `doc/guidelines/pull-request-guidelines.md`
 - Working branch notes 取り扱いルール（性質・整合性スコープ・ライフサイクル・ファイル名規約）: `doc/guidelines/working-branch-notes-handling.md`
 - Working branch notes 情報統制ルール（`working-branch-notes/**/*.md` のセキュリティ禁則）: `doc/guidelines/working-branch-notes-security.md`
@@ -60,6 +61,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - commit、tag、push、merge など git 操作を行う前に `doc/guidelines/git-operation-guidelines.md` に従う。`main` へ直接 push しない。
 - GitHub の PR / issue / レビューコメントを操作するときは `doc/guidelines/github-mcp-guidelines.md` に従い、MCP を優先する。
 - `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。
+- `git` / `gh` / `op` の実行や MCP server の起動が失敗し、出力に 1Password や承認に関する文言がある、または原因を判断できないときは、1Password の承認ダイアログへの応答が間に合わなかった可能性を疑い、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。1Password 連携の有無で手順を分けず、前段にゲートや preflight を置かない。
 - PR を作成または更新するときは `doc/guidelines/pull-request-guidelines.md` に従う。PR の merge は agent が行わない。
 - `working-branch-notes/**/*.md` を作成・編集・レビューするときは `doc/guidelines/working-branch-notes-handling.md` と `doc/guidelines/working-branch-notes-security.md` の両方に従う。
 - ドキュメントを作成・移動・分類変更するときは、まず `doc/README.md` と該当ディレクトリの `README.md` を確認する。

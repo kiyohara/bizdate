@@ -71,4 +71,5 @@ main worktree に `.config/github-op-integrated.conf` があればコピーさ�
 | `'1Password CLI (op)' が PATH に見つからない` | `op` をインストールし、MCP host が読む PATH に含まれているか。 |
 | `'docker' が PATH に見つからない` | Docker がインストールされ daemon が起動しているか。 |
 | tool 一覧に現れない | MCP host を再起動したか。project の MCP 設定を有効化したか。 |
+| 端末での直接起動で `authorization timeout` が出る。MCP host 経由では接続 timeout や `Connection closed` になる | `op run` が 1Password の承認を待って失敗した可能性がある。agent は原因を切り分けず `doc/guidelines/one-password-integration-guidelines.md` に従って中断する。ユーザーは app の unlock と承認の後、MCP host 側で再接続する。 |
 | 401 / 403 が返る | PAT の repository access にこのリポジトリが含まれるか。Pull requests / Issues の権限があるか。 |
