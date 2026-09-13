@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/compassionate-noether-kv7kw7`
-- PR: 未作成
+- PR: #56
 - 最終更新: 2026-09-13
 
 ## 目的
@@ -67,7 +67,7 @@ P1（実装と PR 作成）の実装と検証を終えた。
 - [x] 既存 guideline / skill / 入口を見直す
 - [x] decision log を記録し、入口を登録する
 - [x] Issue の検証項目を実行する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 
 ## 検証
 
