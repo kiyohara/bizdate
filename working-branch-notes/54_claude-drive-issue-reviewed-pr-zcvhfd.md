@@ -78,7 +78,7 @@ review 以降の結果。
 ## リスク・ブロッカー
 
 - 合意を廃すると、誤検出の書き換えがユーザーの却下を経ずに commit へ入る。書き換え形式が `- [x]` / 行末 `（完了）` の付記に限られ、行を削除せず、note の整合性スコープも「当ブランチの作業判断・経緯を読める範囲で十分」であるため、可逆かつ低リスクと判断した。誤検出は終了時の報告で可視化する。
-- 可視化は本 skill の「終了時の報告」に依存し、上位 skill の報告項目には引き上げ規定が無い。0020 に制約として記録したが、規定としては担保されていない。上位 skill を直す場合は別 Issue とする。
+- 可視化は本 skill の「終了時の報告」に依存し、上位 skill の報告項目には引き上げ規定が無い。0020 に制約として記録したが、規定としては担保されていない。ユーザーの指示により Issue #55 として登録し、0020 の「後から見直す条件」から参照できるようにした。
 - 未検証: 複合行を含む note での採番の挙動。本 PR の note には複合行が無く、追試していない。
 - `github-op-integrated` MCP は cloud session で起動に失敗する。想定どおりであり、組み込み GitHub tool で進める（`doc/guidelines/cloud-session-guidelines.md`、`doc/guidelines/github-mcp-guidelines.md` の「cloud session」が skill 内の `github-op-integrated` の記載を組み込み tool へ読み替えると定めている）。
 
@@ -88,3 +88,5 @@ review 以降の結果。
 - 2026-09-13: PR #54 を作成し、変更後の手順で note を採番した（`44fbd96`）。合意待ちの停止は発生せず、書き換えた行 1 件・触らなかった行 1 件を報告に回した。
 - 2026-09-13: review cycle `claude-code-2caa8e6-20260913005740` を subagent へ委譲した（対象 head `2caa8e6`、CI success）。指摘 6 件を実物で確認し、全件採用して SKILL.md と 0020 を修正した（`0066a22`）。
 - 2026-09-13: P5 を review 担当の subagent 再利用で実行し、1 周で収束した（対象 head `0066a22`、6 thread すべて resolve 可）。`[fyi]` 2 件は note で直した。この note 更新分は検証済み head `0066a22` より後になるため、PR コメントで head の差分を開示した。
+- 2026-09-13: ユーザーの指示により、可視化の引き上げ規定を Issue #55 として登録した。0020 の「後から見直す条件」へ参照を入れた。
+- 2026-09-13: この参照追加は PR #54 の merge（head `3e1db3c`）より後の push となり、同 PR に含まれなかった。merge 済み PR は再利用しないため、branch を merge 後の `main` から切り直して当該 commit を rebase し、作業漏れの補足として PR #57 を作成した。note は `doc/guidelines/working-branch-notes-handling.md` の「1 ブランチ 1 note」に従い、本ファイルへ追記して rename しない。
