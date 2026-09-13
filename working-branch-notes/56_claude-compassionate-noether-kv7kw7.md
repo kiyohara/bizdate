@@ -12,7 +12,7 @@ Issue #53 を消化する。1Password 連携操作が承認待ちで失敗した
 
 ## 現在の状況
 
-P1（実装と PR 作成）から review cycle の収束まで終えた。2 周で収束し、未収束の指摘は無い。残るのは人間による inline thread 5 本の resolve と merge 判断である。
+review cycle（2 周）の収束後、1Password 連携のあるローカル環境で追試を行い、その結果を反映した。追試で読み分けの観測点が成り立たないことが判明したため、`github-mcp-guidelines.md` の「起動失敗の読み分け」を書き直している。
 
 ## 決定事項
 
@@ -30,6 +30,7 @@ P1（実装と PR 作成）から review cycle の収束まで終えた。2 周�
 - 別の 1Password 連携経路へ自動 fallback しない。`github-mcp-guidelines.md` の fallback 条件に当たらないことを明記した。
 - 署名の無効化、鍵・`gpg.ssh.program`・`SSH_AUTH_SOCK`・credential helper・remote URL の無断変更、承認を迂回する設定変更を禁止する。
 - subagent は選択肢を選ばず、確認事項として呼び出し元へ返す。
+- MCP 起動失敗の読み分けは、host の表示文字列ではなく 1Password 非依存の確認で行う（追試による補正）。これにより docker 不在や config 不在のような機能失敗では `gh` fallback が従来どおり働き、原因が見つからない場合だけ中断へ寄る。
 - 1Password 起因か切り分けられない場合も断定せず中断する。
 
 ## 見直しの結果（対象ファイルごとの該当有無と処置）
@@ -90,16 +91,51 @@ P1（実装と PR 作成）から review cycle の収束まで終えた。2 周�
 | `cargo` 再検証 | 省略。Rust コードと `Cargo.toml` / `Cargo.lock` に変更が無いことを `git diff --cached --name-only` で確認した（Issue の指示どおり） |
 | review 指摘の現物確認（P3） | 5 件すべて確認済み。`[must]` は wrapper の診断メッセージ（`op` / `docker` / config の 3 種）と MCP host の表示を突き合わせ、原因不明の起動失敗が実在することを確認。`[imo]` は参照元 2 箇所が「プロンプト未到達」を新正本へ送っていることを確認。`[nits]` 2 件は該当行と未変更 guideline の grep（該当は `agent-configuration-management.md` の secret reference 2 件のみ）で確認 |
 | P4 修正後の `git diff --check` | 通った |
+| ローカル追試（1Password 実環境） | 実施。macOS 26.6 / 1Password 8.12.36 / `op` 2.34.1 の環境で、Q1 〜 Q8 と Q10 を実施した。結果は下記「ローカル追試の結果」 |
+
+### ローカル追試の結果
+
+cloud session では `op` が無く再現できなかったため、1Password 連携のあるローカル環境で追試した（実施: 2026-09-13、macOS 26.6.2 / 1Password 8.12.36 / `op` 2.34.1 / Claude Code 2.1.175 と 2.1.270）。追試は push せず read 中心で行い、commit の検証は scratch branch 上の `--allow-empty` に限定している。
+
+前提どおりだった点:
+
+| 確認項目 | 結果 |
+| --- | --- |
+| commit 署名の失敗で commit が作られないか | 作られない。lock / 拒否 / タイムアウト / app 未起動の全 4 ケースで HEAD が動かず `git status --short` も空。正本が示す確認コマンドで判別できる |
+| lock 中に `op plugin run -- gh` は成功するか | 成功しない。直前に承認済みでも再度承認を要求して失敗する（session cache では通らない）。fallback 禁止の前提が成り立つ |
+| SSH agent 経路で承認ダイアログは出るか | 出る（`ssh -T` による代理確認。remote は HTTPS のため本経路は非該当） |
+| macOS の socket path の例示 | 1Password 8.12.36 で実在する |
+| `ssh-add -l` と署名の可否は無関係か | 無関係。`op-ssh-sign` 経路では鍵 0 件でも署名は成功する |
+| `.claude/rules/` の rule は全セッションにロードされるか | される（frontmatter 無し）。ただしブランチ切り替え後に開始した session でないと効かない |
+
+前提が崩れた点:
+
+| 確認項目 | 結果 |
+| --- | --- |
+| MCP host は wrapper の診断を agent に渡すか | **渡さない。** 診断は host の debug log にしか残らず、host の画面（起動時警告 / MCP 一覧 / doctor）にも tool 検索の結果にも出ない。当初の読み分け基準の第 1 bullet は観測点として存在しなかった |
+| 承認待ちは `authorization timeout` として見えるか | **見えない。** host の接続 timeout（30 秒）が `op` の承認 timeout（約 60 秒）より短く、agent に届くのは `CONNECT_TIMEOUT` / `connection timed out after 30000ms`。当初例示した `CONNECTION_CLOSED` も実際とずれていた |
+| 承認待ちの最中はどう見えるか | 失敗ではなく「接続中（再検索を促す）」として見える。規定が無かった |
+| 即時の切断は非 1Password の証拠になるか | ならない。app 未起動や承認の拒否でも `op` は 0〜3 秒で失敗する |
+| host が諦めた後のダイアログ承認で復旧するか | 復旧しない（ダイアログは host の timeout 後も残る）。host 側の再接続が必要 |
+| SSH agent 経路の出力から 1Password 起因と判定できるか | できない。`agent refused operation` / `Permission denied (publickey)` は鍵未登録の場合と区別できない |
+| app 未起動時の `op` のエラー文言 | app の更新を促す。agent が更新へ進む余地があった |
+
+反映内容は「セッションログ」と `doc/design/decision-log/0021-one-password-approval-failure.md` の「追試による補正」に記録した。
 
 ### 未検証事項
 
-- **承認待ちタイムアウトの再現**: 再現できなかった。本 session は cloud session で、sandbox に `op` も `gh` も無く、`gpg.ssh.program` は platform の signer を指すため 1Password が関与しない。新正本の「適用範囲」が cloud session を対象外としている状態そのものであり、手順どおりの中断と選択肢提示は実環境で確認が必要。確認手段は、1Password 連携のあるローカル環境で app を lock したまま `git commit` または `op plugin run -- gh` を実行すること。
-- **新 rule の description による発火**: `.claude/rules/one-password-approval-failure.md` は frontmatter なしの全セッションロード、`.cursor/rules/one-password-approval-failure.mdc` は `description` による判断に委ねる構成にした。Cursor が意図した場面でこの rule を読み込むかは、その場面を Cursor で再現しない限り確認できない。確認手段は Cursor で git / GitHub 操作を含む作業を開始し、rule がロードされるかを見ること。
+- **Cursor での `description` 発火**: 未実施。追試環境では Cursor を常用していないため確認できていない。`.claude/rules/` 側は frontmatter 無しの全セッションロードで確認済みであり、発火条件に依存しない。確認手段は Cursor で git / GitHub 操作を含む作業を開始し、rule がロードされるかを見ること。
+- **承認プロンプトが実行環境へ届かないケース**: 追試環境では再現しなかった（agent から実行したコマンドでもダイアログはユーザーの画面に届いた）。sandbox / TTY 制約のある構成でのみ起きる。
+- **host の接続 timeout 後にダイアログを承認した場合の実測**: 復旧しないという判断は、host が先に失敗を確定させる事実からの推論であり、承認して回復しないことの実測ではない。
+- **staged 変更がある状態での署名失敗時の index 保持**: 追試は `--allow-empty` に限ったため未観測。
+- **Codex を host にした場合の MCP 起動失敗の見え方**: 未実施。
 
 ## リスク・ブロッカー
 
 - 上記「未検証事項」の 2 件が残る。いずれも本 session の実行環境では再現できない。
 - review cycle は 2 周で収束した。指摘 5 件は全件採用・修正済みで、2 周目の P5 も 5 件すべて resolve 可と判定した。未収束の指摘は無い。
+- 追試の反映で `github-mcp-guidelines.md` の「起動失敗の読み分け」を書き直したため、`[must]` thread の対象本文は P5 時点から再び変わっている。resolve 可否の再判定が必要である。
+- 読み分けの新しい基準は、MCP host の現在の仕様（wrapper の stderr を agent へ渡さない、接続 timeout 30 秒）に依存する。host 側の仕様変更で前提が変わるため、decision log 0021 の「後から見直す条件」に加えた。
 - 2 周目の P5 で挙がった `[fyi]` 1 件（`mcp-github-op-integrated.sh` の 48 行目だけが `mcp-github-op-integrated:` prefix を持たない）は、本 PR では対処しないと判断した。48 行目は 47 行目の config file 診断の 2 行目として同じ `if` ブロックで直後に出力され、単独では現れない。guideline の本文は「診断の先頭が prefix」と書いており行単位の網羅を主張していない。log が末尾 1 行に切れた場合は prefix 無しと見え「原因不明 → 中断」へ倒れるため安全側である。対処は wrapper script の変更になり、本 Issue のスコープ外。
 - `.agents/skills/number-working-branch-note/SKILL.md` は Issue #52 も変更対象としていた。#52 は PR #54 として merge 済みで、本ブランチはその後の `main` から切っているため衝突は無い。
 
@@ -114,3 +150,5 @@ P1（実装と PR 作成）から review cycle の収束まで終えた。2 周�
 - 2026-09-13: P5（再確認）を同じ subagent が実行した。head `69e1c70`、5 thread すべて resolve 可、未対応 0 件。新規のブロッキング指摘は無く、非ブロッキングの `[fyi]` 2 件のみ。
 - 2026-09-13: P6 で `[fyi]` 2 件を採用し、2 周目の P4 として反映した。wrapper の診断は 5 件すべて `mcp-github-op-integrated:` を prefix に持つことを script で確認し、3 件の列挙を prefix による網羅的な判定へ置き換えた。あわせて優先順位 2 から新設節への前方参照を足した。
 - 2026-09-13: 2 周目の P5 が完了した。head `d7d7303`、5 thread すべて resolve 可、未収束 0 件。review cycle は 2 周で収束した（上限 2 周）。
+- 2026-09-13: 1Password 連携のあるローカル環境で追試を実施した（別 session。push 無し、read 中心）。commit 署名と `op plugin` の前提は確認できたが、MCP 起動失敗の読み分けの観測点が成り立たないことが判明した。
+- 2026-09-13: 追試結果を反映した。`github-mcp-guidelines.md` の「起動失敗の読み分け」を、host に出ない wrapper 診断ではなく 1Password 非依存の確認（`docker info`、config の有無、PATH、実行権限）で切り分ける形へ書き直した。新正本へ経路別の実測文言、MCP の再接続と 30 秒制約、別経路の PAT scope、app 更新の禁止を追記し、入口 shim へ MCP 起動失敗を足した。decision log 0021 に「追試による補正」を記録した。

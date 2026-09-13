@@ -77,8 +77,33 @@
 - 入口 shim（`.claude/rules/git-operation-guidelines.md`、`.cursor/rules/git-operation-guidelines.mdc`）: remote の HTTPS 断定を書き直した。
 - Rust のコードに変更は無い。
 
+## 追試による補正（2026-09-13）
+
+cloud session には `op` が無く、承認待ちの失敗を再現できなかった。1Password 連携のあるローカル環境（macOS 26.6、1Password 8.12.36、`op` 2.34.1）で追試し、次を確認した。
+
+前提どおりだった点:
+
+- commit の署名が承認待ちで失敗しても commit は作られない。`git log -1` と `git status --short` で判別できる。
+- app を lock した後の `op plugin run -- gh` は、直前に承認済みでも再度承認を要求して失敗する。session cache では通らない。「別経路も同じ承認を要求する」という fallback 禁止の前提は成り立つ。
+- SSH agent 経路でも承認ダイアログは出る。macOS の socket path の例示も実在する。
+- frontmatter 無しの `.claude/rules/one-password-approval-failure.md` は新規 session に全文ロードされる。
+
+前提が崩れた点と補正:
+
+- **MCP host は wrapper の診断を agent に渡さない。** 診断は host の debug log にしか残らず、host の画面にも tool 検索の結果にも出ない。当初の読み分け基準は「wrapper 自身の診断が見えるか」を観測点にしていたが、その観測点は agent から存在しない。`docker info` や config file の有無など **1Password に触れない確認**で切り分ける形へ改めた。これにより、docker 不在や config 不在のような機能失敗では `gh` fallback が従来どおり働く。
+- **承認待ちは `authorization timeout` として見えない。** host の接続 timeout（30 秒）が `op` の承認 timeout（約 60 秒）より短いため、agent に届くのは `CONNECT_TIMEOUT` / `connection timed out after 30000ms` である。当初例示した `CONNECTION_CLOSED` も実際とずれていた。
+- **承認待ちの最中は失敗ではなく「接続中」として見える。** tool の応答は再検索を促す。待ち続けないよう、1 回だけ再確認してから切り分けへ進む規定を足した。
+- **即時の切断も非 1Password の証拠にならない。** app 未起動や承認の拒否でも `op` は 0〜3 秒で失敗するため、所要時間では読み分けられない。
+- **host が諦めた後もダイアログは残る。** そのダイアログを承認しても接続は回復せず、host 側の再接続が必要である。選択肢の補足に加えた。
+- **SSH agent 経路の出力に 1Password の語が無い。** `agent refused operation` / `Permission denied (publickey)` は鍵未登録の場合と区別できない。「判断できない場合」へ落ちることを明記した。
+- **app 未起動時の `op` のエラーは app の更新を促す。** agent が更新へ進まないよう、禁止する回避策に app の更新・再インストール・再起動を加えた。
+- 「切り分けのための調査コマンドを重ねない」と、上記の 1Password 非依存の確認が衝突しないよう、例外として許す範囲を明示した。
+
+補正後も決定そのもの（事後中断案、新規 guideline という配置）は変えていない。変えたのは読み分けの観測点と、実測の文言である。
+
 ## 後から見直す条件
 
 - 1Password 連携を使うメンバーがいなくなった場合。正本の適用範囲が空になるため、rule の削除を検討する。
 - 承認ダイアログを出さずに署名や認証を通す構成（service account、長期 session など）を全メンバーが採る場合。
 - 中断が頻発して自律フローの実効が落ちる場合。選択肢の提示方法や、ユーザー不在を前提にした待ち合わせ方を再検討する。
+- MCP host の仕様が変わった場合。wrapper の stderr を agent へ渡すようになる、接続 timeout が `op` の承認 timeout より長くなる、timeout 値が設定可能になるなどの変更は、「起動失敗の読み分け」の前提を変える。

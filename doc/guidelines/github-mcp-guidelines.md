@@ -31,11 +31,28 @@
 
 ### 起動失敗の読み分け
 
-MCP host には起動失敗の原因が出ないことがある（`CONNECTION_CLOSED` だけが見えるなど）。優先順位 2 の「機能として起動失敗」と「承認待ちに起因する起動失敗」は、次の観測で読み分ける。
+**MCP host は起動失敗の原因を agent に渡さない。** wrapper 自身の診断（先頭が `mcp-github-op-integrated:`）は host の debug log にしか残らず、host の画面にも tool 検索の結果にも出ない。agent に見えるのは次の汎用表示だけである。
 
-- wrapper 自身の診断が見える場合は、機能としての失敗である。`gh` へ fallback してよい。wrapper の診断は先頭が `mcp-github-op-integrated:` である（`'1Password CLI (op)' が PATH に見つからない`、`'docker' が PATH に見つからない`、`config file が見つからない`、引数エラー）。
-- 原因を特定できない場合、wrapper が `op run` を使う環境では中断を既定とする。`op run` は承認待ちでタイムアウトしても wrapper の診断を出さないため、原因不明はこちらへ寄せる（`doc/guidelines/one-password-approval-failure.md`）。
-- cloud session は適用対象外である。`op` が無く MCP server は起動できないため、起動失敗の表示は想定どおりで対処しない（後述の「cloud session（Claude Code on the web）」を参照）。
+| agent に見える表示 | 実際に起きていること |
+| --- | --- |
+| 接続中（`Some MCP servers are still connecting` など） | 接続を待っている。`op run` が承認を待っている間もこの表示になる |
+| 接続 timeout（`CONNECT_TIMEOUT`、`connection timed out after 30000ms` など） | host が接続を諦めた。host の接続 timeout は `op` の承認 timeout より短いため、承認待ちはここへ落ちる。`authorization timeout` は agent に届かない |
+| 即時の切断（`Connection closed`、`MCP error -32000` など） | config 不在や `docker` 不在のほか、1Password app の未起動や承認の拒否でも即時にこうなる |
+
+どの表示も 1Password 起因かどうかを区別しない。**表示の文字列では読み分けない。** 失敗後に、1Password に触れない次の確認だけで切り分ける。
+
+- `docker info` が通るか（daemon が動いているか）
+- `.config/github-op-integrated.conf` が存在するか
+- `op` と `docker` が PATH にあるか
+- wrapper script に実行権限があるか
+
+ここで原因が見つかれば機能としての失敗である。優先順位 2 に従って `gh` へ fallback してよい。いずれも正常なら、残る原因は `op run` の承認待ちである。`doc/guidelines/one-password-approval-failure.md` に従って中断し、`gh` へ自動 fallback しない。
+
+これ以外の切り分けは agent が行わない。wrapper の診断を読む必要がある場合は、host を debug 付きで起動するか端末で wrapper を直接起動する作業として、ユーザーへ依頼する。
+
+接続中の表示が出ている間は失敗ではない。ただし再検索を繰り返して待たず、1 回だけ再確認する。それで接続されなければ上記の切り分けへ進む。
+
+cloud session は適用対象外である。`op` が無く MCP server は起動できないため、起動失敗の表示は想定どおりで対処しない（後述の「cloud session（Claude Code on the web）」を参照）。
 
 ### 汎用 skill / plugin と競合する場合
 

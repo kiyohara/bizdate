@@ -69,7 +69,7 @@ main worktree に `.config/github-op-integrated.conf` があればコピーさ�
 | --- | --- |
 | `config file が見つからない` | `.config/github-op-integrated.conf` を作ったか。worktree なら `worktree-setup.sh` を実行したか。 |
 | `'1Password CLI (op)' が PATH に見つからない` | `op` をインストールし、MCP host が読む PATH に含まれているか。 |
-| `op run` が `authorization timeout` で失敗する | 1Password app が起動し unlock されているか。AI agent が実行した場合は `gh` へ自動 fallback せず、`doc/guidelines/one-password-approval-failure.md` に従って中断する。 |
+| `op run` が承認待ちで失敗する（端末での直接起動は `authorization timeout`、MCP host 経由は `CONNECT_TIMEOUT` や `failed` 表示） | 1Password app が起動し unlock されているか。host の接続 timeout は `op` の承認 timeout より短いので、承認しただけでは復旧せず host 側での再接続が必要。AI agent が実行した場合は `gh` へ自動 fallback せず、`doc/guidelines/one-password-approval-failure.md` に従って中断する。 |
 | `'docker' が PATH に見つからない` | Docker がインストールされ daemon が起動しているか。 |
 | tool 一覧に現れない | MCP host を再起動したか。project の MCP 設定を有効化したか。 |
 | 401 / 403 が返る | PAT の repository access にこのリポジトリが含まれるか。Pull requests / Issues の権限があるか。 |
