@@ -105,6 +105,8 @@ GitHub MCP server の起動失敗では、原因は MCP host に出ない。wrap
 
 SSH agent 経由の失敗も、出力に 1Password の語が無いためここへ落ちる。**承認待ちかどうかを切り分ける目的で**、`~/.ssh/config` の `IdentityAgent` や agent の実体を調べに行かず、中断して報告する。
 
-署名経路の確定は別目的であり、本ルールは禁じない。`gpg.ssh.program` の確認、`ssh-add -l`、socket を明示した再実行は `doc/guidelines/git-operation-guidelines.md` の「commit 署名」が定める手順である。どちらの経路を使っているかを確定させてから、その経路の失敗が承認待ちかを本ルールで判断する。
+署名経路の確定は別目的であり、本ルールは禁じない。`gpg.ssh.program` の確認と `ssh-add -l` は 1Password に触れず、どちらの経路を使っているかを確定させる手順である（`doc/guidelines/git-operation-guidelines.md` の「commit 署名」）。経路を確定させてから、その経路の失敗が承認待ちかを本ルールで判断する。
+
+ただし、同節が示す **socket を明示した再実行（`SSH_AUTH_SOCK=... git commit ...`）は署名そのものの再試行であり、承認を再要求する。** `ssh-add -l` に鍵が出ないことは「agent が違う」場合と「1Password が lock されている」場合を区別しないため、lock が原因のときにこの再実行へ進むと、ユーザー不在のまま承認待ちの timeout を 1 回消費する。承認に応答できる状態だと分かっている場合に限って実行し、そうでなければ本ルールに従って中断する。
 
 安全側に倒す理由は、1Password 起因でない失敗に本ルールを適用しても中断と報告にしかならない一方、1Password 起因の失敗を別の原因と誤認すると、禁止している回避策や自動 fallback へ進みやすいためである。

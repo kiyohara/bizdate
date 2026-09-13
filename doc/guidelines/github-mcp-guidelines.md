@@ -42,10 +42,10 @@
 どの表示も 1Password 起因かどうかを区別しない。**表示の文字列では読み分けない。** 失敗後に、1Password に触れない次の確認だけで切り分ける。
 
 - `docker info` が通るか（daemon が動いているか）
-- `docker` と `op` が PATH にあるか（`command -v` で足りる。`op` は実行しない）
+- `docker` と `op` が PATH にあるか（`command -v` で足りる。`op` は実行しない）。ただし見ているのは agent の shell の PATH であり、MCP host が wrapper に渡す PATH と一致する保証は無い。GUI から起動した host では食い違う。見つかれば「PATH の問題ではない」と断定せず、見つからない場合の手掛かりとして使う
 - `.config/github-op-integrated.conf` が存在するか
 - MCP 設定の command が指す wrapper script が存在し、実行権限があるか
-- MCP 設定の args が wrapper の受け付ける形か（`--config <path>` のみ。不明な引数は wrapper が拒否する）
+- MCP 設定の args が wrapper の受け付ける形か（`--config <path>` と `--config=<path>` の両方を受理する。それ以外の引数は wrapper が拒否する）
 - wrapper が起動する image がローカルにあるか（`docker image inspect`。既定は `ghcr.io/github/github-mcp-server`、`GITHUB_OP_INTEGRATED_IMAGE` で上書きされる）
 
 ここで原因が見つかれば機能としての失敗である。優先順位 2 に従って `gh` へ fallback してよい。

@@ -47,7 +47,7 @@ git config --get gpg.ssh.program
 ssh-add -l
 ```
 
-署名鍵が一覧に出ない場合、その agent には利用可能な鍵がない。接続先が違うとは限らないため、まず使う agent を確定させる。1Password の SSH agent を使う構成なら、socket を明示して再実行する。
+署名鍵が一覧に出ない場合、その agent には利用可能な鍵がない。接続先が違うとは限らないため、まず使う agent を確定させる。**1Password が lock されているときも鍵は出ないので、この結果だけで接続先違いと決めない。** 1Password の SSH agent を使う構成で、かつ承認に応答できる状態なら、socket を明示して再実行する。応答できないなら `doc/guidelines/one-password-approval-failure.md` に従って中断する（再実行は署名の再試行であり、承認を再要求する）。
 
 ```sh
 SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock" git commit ...
