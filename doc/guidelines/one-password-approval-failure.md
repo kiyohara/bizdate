@@ -71,7 +71,7 @@
 次は実行しない。ユーザーが明示的に指示した場合だけ、指示された範囲で従う。
 
 - 署名の無効化。`--no-gpg-sign`、`-c commit.gpgsign=false`、`commit.gpgsign` 設定の書き換えなど。
-- 署名鍵、`gpg.ssh.program`、`SSH_AUTH_SOCK`、credential helper、remote URL の無断変更。
+- 署名鍵、`gpg.ssh.program`、credential helper、remote URL の無断変更。`SSH_AUTH_SOCK` の永続的な付け替えも含む（`doc/guidelines/git-operation-guidelines.md` が定める単発の socket 明示は、署名経路を確定させる手順なので対象外）。
 - 承認を迂回する設定変更。1Password の連携設定や `op` の sign-in 方式の変更など。
 - 1Password app の更新、再インストール、再起動。app 未起動時の `op` のエラーは更新を促す文言を返すが、それに従わない。app の起動と unlock は選択肢としてユーザーに委ねる。
 
@@ -97,10 +97,14 @@ subagent のように、ユーザーへ直接問えない実行主体が承認�
 
 エラー出力から 1Password 起因か切り分けられない場合は、原因を断定せず本ルールに従って中断する。報告には、切り分けできなかったことと判断に使った出力を含める。
 
-切り分けのための調査コマンドを重ねない。例外は、**1Password に触れない確認**である。これは承認を要求しないため、失敗後に行ってよい。1Password を経由する操作の再試行、`op` の実行、署名や認証を伴う操作は、切り分けの目的で繰り返さない。
+切り分けのための調査コマンドを重ねない。例外は、**1Password に触れない確認**である。これは承認を要求しないため、失敗後に行ってよい。`command -v op` のように `op` が PATH にあるかを見るだけの確認はこちらに入る（`op` を起動しないため承認を要求しない）。
 
-GitHub MCP server の起動失敗では、原因は MCP host に出ない。wrapper が `op run` を使う環境では、1Password に触れない確認で原因が見つからない起動失敗を本ルールへ寄せて中断する（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」に確認する項目を挙げている）。
+一方、`op` を実際に走らせる操作（`op whoami`、`op run`、`op plugin run -- ...` など）、1Password を経由する操作の再試行、署名や認証を伴う操作は、切り分けの目的で繰り返さない。
 
-SSH agent 経由の失敗も、出力に 1Password の語が無いためここへ落ちる。`~/.ssh/config` の `IdentityAgent` や agent の実体を調べに行かず、中断して報告する。
+GitHub MCP server の起動失敗では、原因は MCP host に出ない。wrapper が `op run` を使う環境では、1Password に触れない確認で原因が見つからない起動失敗も、承認待ちと断定せず本ルールへ寄せて中断する（`doc/guidelines/github-mcp-guidelines.md` の「起動失敗の読み分け」に確認する項目と、断定しない理由を挙げている）。
+
+SSH agent 経由の失敗も、出力に 1Password の語が無いためここへ落ちる。**承認待ちかどうかを切り分ける目的で**、`~/.ssh/config` の `IdentityAgent` や agent の実体を調べに行かず、中断して報告する。
+
+署名経路の確定は別目的であり、本ルールは禁じない。`gpg.ssh.program` の確認、`ssh-add -l`、socket を明示した再実行は `doc/guidelines/git-operation-guidelines.md` の「commit 署名」が定める手順である。どちらの経路を使っているかを確定させてから、その経路の失敗が承認待ちかを本ルールで判断する。
 
 安全側に倒す理由は、1Password 起因でない失敗に本ルールを適用しても中断と報告にしかならない一方、1Password 起因の失敗を別の原因と誤認すると、禁止している回避策や自動 fallback へ進みやすいためである。

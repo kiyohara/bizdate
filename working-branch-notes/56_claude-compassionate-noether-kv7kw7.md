@@ -132,7 +132,7 @@ cloud session では `op` が無く再現できなかったため、1Password �
 
 ## リスク・ブロッカー
 
-- 上記「未検証事項」の 2 件が残る。いずれも本 session の実行環境では再現できない。
+- 上記「未検証事項」の 5 件が残る。追試で解消した 2 件（承認待ちの再現、`.claude/rules/` のロード）は除いた後の数である。残る 5 件は、cloud session でも追試環境でも再現できなかったものと、推論に留まるものである。
 - review cycle は 2 周で収束した。指摘 5 件は全件採用・修正済みで、2 周目の P5 も 5 件すべて resolve 可と判定した。未収束の指摘は無い。
 - 追試の反映で `github-mcp-guidelines.md` の「起動失敗の読み分け」を書き直したため、`[must]` thread の対象本文は P5 時点から再び変わっている。resolve 可否の再判定が必要である。
 - 読み分けの新しい基準は、MCP host の現在の仕様（wrapper の stderr を agent へ渡さない、接続 timeout 30 秒）に依存する。host 側の仕様変更で前提が変わるため、decision log 0021 の「後から見直す条件」に加えた。
@@ -152,3 +152,5 @@ cloud session では `op` が無く再現できなかったため、1Password �
 - 2026-09-13: 2 周目の P5 が完了した。head `d7d7303`、5 thread すべて resolve 可、未収束 0 件。review cycle は 2 周で収束した（上限 2 周）。
 - 2026-09-13: 1Password 連携のあるローカル環境で追試を実施した（別 session。push 無し、read 中心）。commit 署名と `op plugin` の前提は確認できたが、MCP 起動失敗の読み分けの観測点が成り立たないことが判明した。
 - 2026-09-13: 追試結果を反映した。`github-mcp-guidelines.md` の「起動失敗の読み分け」を、host に出ない wrapper 診断ではなく 1Password 非依存の確認（`docker info`、config の有無、PATH、実行権限）で切り分ける形へ書き直した。新正本へ経路別の実測文言、MCP の再接続と 30 秒制約、別経路の PAT scope、app 更新の禁止を追記し、入口 shim へ MCP 起動失敗を足した。decision log 0021 に「追試による補正」を記録した。
+- 2026-09-13: 追試結果の反映にあたり、新しい review cycle `claude-code-0273fda-20260913064236` を回した（指摘 5 件: `[must]` 2 / `[imo]` 2 / `[nits]` 1）。既存 5 thread は新 head でも resolve 可と再判定された。
+- 2026-09-13: 2 cycle 目の指摘 5 件へ対応した。読み分けの確認項目を 6 項目へ広げ、「いずれも正常なら承認待ち」という断定をやめた（wrapper は `exec op run -- docker run` まで進むため、image や secret reference の解決失敗が一覧の外に残る）。SSH 経路の調査禁止が `git-operation-guidelines.md` の署名経路確定手順と衝突していたため目的で切り分け、`SSH_AUTH_SOCK` の禁止範囲を永続的な付け替えに限定した。`command -v op` と `op` の実行の区別、接続中の再確認の回数、decision log の 影響 節の取りこぼしも直した。

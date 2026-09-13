@@ -42,15 +42,19 @@
 どの表示も 1Password 起因かどうかを区別しない。**表示の文字列では読み分けない。** 失敗後に、1Password に触れない次の確認だけで切り分ける。
 
 - `docker info` が通るか（daemon が動いているか）
+- `docker` と `op` が PATH にあるか（`command -v` で足りる。`op` は実行しない）
 - `.config/github-op-integrated.conf` が存在するか
-- `op` と `docker` が PATH にあるか
-- wrapper script に実行権限があるか
+- MCP 設定の command が指す wrapper script が存在し、実行権限があるか
+- MCP 設定の args が wrapper の受け付ける形か（`--config <path>` のみ。不明な引数は wrapper が拒否する）
+- wrapper が起動する image がローカルにあるか（`docker image inspect`。既定は `ghcr.io/github/github-mcp-server`、`GITHUB_OP_INTEGRATED_IMAGE` で上書きされる）
 
-ここで原因が見つかれば機能としての失敗である。優先順位 2 に従って `gh` へ fallback してよい。いずれも正常なら、残る原因は `op run` の承認待ちである。`doc/guidelines/one-password-approval-failure.md` に従って中断し、`gh` へ自動 fallback しない。
+ここで原因が見つかれば機能としての失敗である。優先順位 2 に従って `gh` へ fallback してよい。
 
-これ以外の切り分けは agent が行わない。wrapper の診断を読む必要がある場合は、host を debug 付きで起動するか端末で wrapper を直接起動する作業として、ユーザーへ依頼する。
+**いずれも正常でも、承認待ちだと断定しない。** この一覧は網羅ではない。`op run` が config の secret reference を解決できない場合のように、1Password を経由しても承認待ちではない失敗が残る。原因を特定できないときは `doc/guidelines/one-password-approval-failure.md` に従って中断し、`gh` へ自動 fallback しない。報告には、確認した項目と、原因を確定するには wrapper の診断が要ることを書く。
 
-接続中の表示が出ている間は失敗ではない。ただし再検索を繰り返して待たず、1 回だけ再確認する。それで接続されなければ上記の切り分けへ進む。
+wrapper の診断を読む作業（host を debug 付きで起動する、端末で wrapper を直接起動する）はユーザーへ依頼する。そこで機能としての失敗だと分かった場合は、優先順位 2 に戻って `gh` へ fallback してよい。
+
+接続中の表示が出ている間は失敗ではない。tool 一覧の再取得を 1 回だけ行う。まだ接続中なら、そこで polling を繰り返さない。host が接続を諦めると表示は接続 timeout へ変わるので、その時点で上記の切り分けへ進む。
 
 cloud session は適用対象外である。`op` が無く MCP server は起動できないため、起動失敗の表示は想定どおりで対処しない（後述の「cloud session（Claude Code on the web）」を参照）。
 

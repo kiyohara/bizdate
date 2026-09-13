@@ -69,12 +69,13 @@
 - 新規: `doc/guidelines/one-password-approval-failure.md`、`.cursor/rules/one-password-approval-failure.mdc`、`.claude/rules/one-password-approval-failure.md`。`AGENTS.md` と `doc/guidelines/README.md` に登録する。
 - `doc/guidelines/git-operation-guidelines.md`: remote の scheme 断定を撤回し、署名失敗時の「制約のない実行環境で再実行する」を新正本への参照に置き換えた。SSH agent 経路の socket path が macOS の例であることを明示した。
 - `doc/guidelines/github-cli-guidelines.md`: `op plugin run` 失敗時の記述を新正本への参照に置き換え、`gh auth status` が preflight でないことを明示し、write 失敗時の扱いに承認待ちの分岐を加えた。
-- `doc/guidelines/github-mcp-guidelines.md`: fallback 優先順位と write 失敗時の手順から、承認待ちに起因する失敗を除外した。
+- `doc/guidelines/github-mcp-guidelines.md`: fallback 優先順位と write 失敗時の手順から、承認待ちに起因する失敗を除外した。「起動失敗の読み分け」節を新設し、優先順位 2 から同節への前方参照を足した（読み分けの基準は後述の「追試による補正」で改めた）。
 - `doc/guidelines/cloud-session-guidelines.md`: 本ルールが cloud session では発動しないことを表に加えた。
-- `.agents/mcp/github-op-integrated/README.md`: トラブルシュートに `authorization timeout` の行を加えた。
+- `.agents/mcp/github-op-integrated/README.md`: トラブルシュートに承認待ち失敗の行を加えた。追試の後、端末での直接起動と MCP host 経由で見え方が違うこと、host 側の再接続が必要なことまで含める形へ広げた。
 - `.agents/skills/number-working-branch-note/SKILL.md`: `.op/` と `op` の有無による分岐を guideline 参照へ縮めた。
 - `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md`: 「停止とエスカレーション」に 1 行加えた。
 - 入口 shim（`.claude/rules/git-operation-guidelines.md`、`.cursor/rules/git-operation-guidelines.mdc`）: remote の HTTPS 断定を書き直した。
+- 新 rule の入口 shim（`.claude/rules/one-password-approval-failure.md`、`.cursor/rules/one-password-approval-failure.mdc`）: 正本の要点を置いた。追試の後、MCP 起動失敗（`CONNECT_TIMEOUT` など）を検知の契機として 1 行追加した。常時ロードされる shim に MCP への言及が無いと、正本を開くきっかけが弱いためである。
 - Rust のコードに変更は無い。
 
 ## 追試による補正（2026-09-13）

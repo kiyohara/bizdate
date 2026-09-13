@@ -37,7 +37,7 @@ git config --get gpg.ssh.program
 - 署名の承認プロンプトが表示され、応答できる状態か。AI agent の実行環境、sandbox、TTY 設定によっては承認プロンプトが届かない場合がある。
 - `gpg.ssh.program` が指す実行ファイルが存在するか。
 
-承認待ちに起因する失敗であれば、回避策を試さず `doc/guidelines/one-password-approval-failure.md` に従って中断する。署名の無効化、鍵・`gpg.ssh.program`・`SSH_AUTH_SOCK` の無断変更はしない。
+承認待ちに起因する失敗であれば、回避策を試さず `doc/guidelines/one-password-approval-failure.md` に従って中断する。署名の無効化や、鍵・`gpg.ssh.program` の無断変更はしない。この経路は `SSH_AUTH_SOCK` を見ないため、その付け替えも解決にならない。
 
 ### 標準の ssh-keygen を使う場合
 
