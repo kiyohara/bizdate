@@ -115,8 +115,8 @@ expect 1 no "$bin" first --date 2026-01-02 --day-off 2026-01-02
 expect 0 yes "$bin" first --date 2026-01-05 --day-off 2026-01-02
 
 echo "== errors (exit 2)"
-expect_error "date" "$bin" first --date 2026-02-30
-expect_error "date" "$bin" first --date 2026-02-30 --quiet
+expect_error "invalid calendar date" "$bin" first --date 2026-02-30
+expect_error "invalid calendar date" "$bin" first --date 2026-02-30 --quiet
 expect_error "Usage:" "$bin" first --unknown
 expect_error "local holiday data is missing" XDG_DATA_HOME="$work/empty" "$bin" first --date 2026-01-02
 
@@ -138,6 +138,10 @@ expect_error "unknown IANA time zone" TZDIR="$tzdir" BIZDATE_TZ=Europe/London "$
 expect 0 "bizdate $version" TZDIR="$tzdir" "$bin" --version
 
 echo "== runtime requirements"
+# 記録は先にファイルへ書き切ってから出力する。pipeline の中で書くと、objdump などの失敗が
+# 後段 (tee) の exit 0 に隠れ、記録が途中で切れたまま成功扱いになるため。同じ理由で、
+# 整形の前段に置くコマンドは出力を変数に受け、失敗を代入の時点で検出する。
+record=$work/record.md
 {
     echo "### platform-check: $(uname -sm)"
     echo '```'
@@ -147,13 +151,17 @@ echo "== runtime requirements"
         Linux)
             echo "--- build environment ---"
             sed -n 's/^PRETTY_NAME=//p' /etc/os-release
-            # head で pipe を先に閉じると Ubuntu の ldd (shell script) が SIGPIPE の診断を出すため、sed で 1 行目だけ取る。
-            ldd --version | sed -n '1p'
+            ldd_version=$(ldd --version)
+            printf '%s\n' "$ldd_version" | sed -n '1p'
             echo "--- dynamic link (ldd) ---"
             ldd "$bin"
             echo "--- versioned symbol requirements (objdump -T) ---"
-            objdump -T "$bin" | grep -oE '(GLIBC|GCC)_[0-9.]+' | sort -u -V
-            echo "minimum glibc: $(objdump -T "$bin" | grep -o 'GLIBC_[0-9.]*' | sort -u -V | tail -n 1)"
+            dynamic_symbols=$(objdump -T "$bin")
+            versions=$(printf '%s\n' "$dynamic_symbols" | grep -oE '(GLIBC|GCC)_[0-9.]+' | sort -u -V)
+            minimum_glibc=$(printf '%s\n' "$versions" | grep '^GLIBC_' | tail -n 1)
+            [ -n "$minimum_glibc" ] || fail "no GLIBC symbol version found in $bin"
+            printf '%s\n' "$versions"
+            echo "minimum glibc: $minimum_glibc"
             ;;
         Darwin)
             echo "--- build environment ---"
@@ -161,6 +169,7 @@ echo "== runtime requirements"
             echo "--- dynamic link (otool -L) ---"
             otool -L "$bin"
             echo "--- code signature (codesign -dv) ---"
+            # x86_64 は linker が署名しないため、未署名でも記録だけ残して失敗にしない。
             codesign -dv "$bin" 2>&1 || true
             ;;
         *)
@@ -168,4 +177,8 @@ echo "== runtime requirements"
             ;;
     esac
     echo '```'
-} | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
+} > "$record"
+cat "$record"
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    cat "$record" >> "$GITHUB_STEP_SUMMARY"
+fi

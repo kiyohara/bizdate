@@ -27,7 +27,7 @@ CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だ�
 docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
 ```
 
-原則は変えない。ローカルで行う検証は Compose 経由を正とする。上記を実行した結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
+原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、4 target の実行確認、最低 glibc の実測、release 成果物の生成）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
 
 ## cloud session（Claude Code on the web）
 

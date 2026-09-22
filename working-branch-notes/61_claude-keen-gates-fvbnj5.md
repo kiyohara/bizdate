@@ -12,7 +12,7 @@ Issue #37。配布対象 4 target（`aarch64-apple-darwin` / `x86_64-apple-darwi
 
 - 依存の #36（PR #42）は merge 済み。open PR は無く、直列消化の前提を満たす。
 - cloud session（Claude Code on the web）で作業している。GitHub 操作は組み込み tool、開発コマンドは Compose 経由。
-- 実装と文書更新を終え、Compose で CI と同じコマンド列を通し、PR #61 を作成した。CI は 4 target とも success（検証欄に記録）。review cycle が残っている。
+- 実装と文書更新を終え、Compose で CI と同じコマンド列を通し、PR #61 を作成した。CI は 4 target とも success（検証欄に記録）。review cycle `claude-code-b0339ef-20260922122430` の指摘 3 件へ対応し、再確認（P5）を待つ。
 
 ## 調査結果
 
@@ -114,3 +114,4 @@ CI の `platform` job と同じ順序・同じ option で実行した。
 - 2026-09-22: CI workflow（`lint` + `platform` matrix）、`platform-check.sh`、guideline / Copilot 指示 / `distribution.md` の前方参照 / `progress.md` を更新。Compose で CI と同じコマンド列を通し、検証欄に記録。
 - 2026-09-22: PR #61 を作成し、`number-working-branch-note` で note を採番（commit `c8f9cc0`）。`progress.md` の DIST-02 に PR 番号を反映（`490cc5e`）。P1 の引き上げ項目: 完了として書き換えたタスク行 1 件（note の「PR を作成し、note を採番する」。PR description には該当なし）。触らなかった stale 表現 1 件（「現在の状況」の「PR 作成と CI の実行結果の記録が残っている」は定型外の prose のため採番 skill では触らず、この更新で書き換えた）。採番 skill は停止せず完走した。
 - 2026-09-22: head `82b2060` の CI（run 35725908817）が 5 job とも success。4 target の実測（host / uname、テスト件数、最低 glibc、動的リンク先、署名、所要時間）を検証欄に記録。Linux の記録に混ざった `ldd` の SIGPIPE 診断を `sed -n '1p'` で解消し、Compose で再確認。
+- 2026-09-22: P2 review（cycle `claude-code-b0339ef-20260922122430`、head `b0339ef`）で指摘 3 件（imo 1 / nits 2、must 0）。P3 で 3 件とも Compose で実物確認し採用: (1) 記録ブロックが `{ } | tee` の pipeline 内にあり `objdump` などの失敗が exit 0 に飲まれる → 一時ファイルへ書き切ってから出力し、整形の前段は変数に受けて失敗を代入時に検出する形へ変更（`objdump` 失敗と `ldd` 不在の stub で exit 1 になることを確認）。(2) `expect_error "date"` が `bizdate: ` prefix に常に一致して無効 → `invalid calendar date` へ変更。(3) 開発コマンド guideline の「上記」が Compose の実行例を指すように読める → 「表の CI 側の実行」と明示。P4 で修正を push し、各 thread へ処置を返信。
