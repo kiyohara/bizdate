@@ -32,7 +32,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | done | なし | 完了。配布仕様を `doc/design/distribution.md` に、経緯を 0016 に置いた | [#42](https://github.com/kiyohara/bizdate/pull/42) |
-| DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | done | #36 | 完了。4 target の native `platform` job と最低 glibc の実測を CI に置いた | - |
+| DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | done | #36 | 完了。4 target の native `platform` job と最低 glibc の実測を CI に置いた | [#61](https://github.com/kiyohara/bizdate/pull/61) |
 | DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #37 | dist の成果物と Releases workflow を整備する | - |
 | DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #38 | Homebrew Formula 生成と更新連携を整備する | - |
 | DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
