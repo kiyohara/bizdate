@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/keen-gates-fvbnj5`（cloud session が決めたブランチ。Issue の推奨名 `add-platform-validation` へは切り替えない）
-- PR: 未作成
+- PR: #61
 - 最終更新: 2026-09-22
 
 ## 目的
@@ -54,7 +54,7 @@ Issue #37。配布対象 4 target（`aarch64-apple-darwin` / `x86_64-apple-darwi
 - [x] CI workflow と `platform-check.sh` を実装する
 - [x] guideline / Copilot 指示 / spec の前方参照 / progress.md を更新する
 - [x] Compose で検証し、結果を記録する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] CI の 4 matrix job の結果（OS / architecture、テスト件数、head SHA、run URL、最低 glibc、動的リンク先）を記録する
 
 ## 検証
