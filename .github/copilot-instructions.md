@@ -6,8 +6,8 @@ I want to review in Japanese.
 
 - 目的はマージ前に修正すべき問題を見つけることであり、改善案の網羅的な列挙ではない。**重要な問題が無ければ、追加コメントを生成しないことを正しい結果とする。**
 - 本リポジトリは v1 の CLI 実装を完了している。実装言語は Rust で、`src/` に実装と unit test、`tests/` に実バイナリを起動する統合テストがある。
-- CI（GitHub Actions）が PR ごとに `cargo fmt --check` / `clippy`（warning を error 扱い）/ `test` / `build` を検査する。フォーマット違反、clippy の lint、ビルドエラーは CI が検出するため指摘しない。
-- 配布仕様は `doc/design/distribution.md` で決定済みだが、実装は未着手である。release workflow、配布対象 4 target の CI、Homebrew Formula、インストール手順が無いことは指摘しない。
+- CI（GitHub Actions）が PR ごとに、`cargo fmt --check` / `clippy`（warning を error 扱い）を Linux で、`test`（unit / CLI E2E）/ release `build` / release バイナリの起動確認を配布対象 4 target（macOS / Linux × arm64 / x86_64）の native runner で検査する。フォーマット違反、clippy の lint、ビルドエラー、対象 OS でのテスト失敗は CI が検出するため指摘しない。
+- 配布仕様は `doc/design/distribution.md` で決定済みで、配布対象 4 target の CI は導入済みである。release workflow、Homebrew Formula、インストール手順が無いことは指摘しない。
 
 ## 原則
 

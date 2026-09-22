@@ -19,7 +19,7 @@
 
 v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22〜#28）を完了し、続けて Dependabot による GitHub Actions の更新運用を導入した（Issue #21、#31 / PR #29、#32）。各フェーズの到達点と参照は「完了」の表にまとめる。
 
-2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。最初の #36 で配布仕様を確定し、正本を `doc/design/distribution.md`、経緯を decision log 0016 に置いた。以降の CI・release workflow・Homebrew・手順整備と初回公開は未着手である。
+2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。最初の #36 で配布仕様を確定し、正本を `doc/design/distribution.md`、経緯を decision log 0016 に置いた。続く #37 で配布対象 4 target の native CI と最低 glibc の実測を `.github/workflows/ci.yml` に置いた。release workflow・Homebrew・手順整備と初回公開は未着手である。
 
 2026-09-12 に、Claude Code on the web の cloud session でも Compose 経由の開発コマンドと GitHub 操作が成立するよう実行環境と運用ルールを整えた（Issue #47 / PR #48、decision log 0018）。正本は `doc/guidelines/cloud-session-guidelines.md`。配布準備の状況は変わっていない。
 
@@ -32,14 +32,14 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | done | なし | 完了。配布仕様を `doc/design/distribution.md` に、経緯を 0016 に置いた | [#42](https://github.com/kiyohara/bizdate/pull/42) |
-| DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | todo | #36 | 対象環境での CLI 検証を CI に追加する | - |
+| DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | done | #36 | 完了。4 target の native `platform` job と最低 glibc の実測を CI に置いた | - |
 | DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | todo | #37 | dist の成果物と Releases workflow を整備する | - |
 | DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #38 | Homebrew Formula 生成と更新連携を整備する | - |
 | DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
 
 ## 次にやること
 
-- `run-issue-task` で #37 へ進む。配布対象 4 target の native ビルドと実行確認、最低 glibc の実測を CI に載せる。
+- `run-issue-task` で #38 へ進む。`dist` の成果物と Releases workflow を整備する。
 - #36〜#40 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 

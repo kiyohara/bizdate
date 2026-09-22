@@ -1,5 +1,7 @@
-# fmt / clippy / test / build を回す CI。方針は doc/design/decision-log/0010-hosting-and-ci-platform.md、
-# toolchain と cargo option は doc/design/decision-log/0014-dependency-crates-and-toolchain.md と
+# fmt / clippy と、配布対象 4 target での test / release build / 起動確認を回す CI。
+# 方針は doc/design/decision-log/0010-hosting-and-ci-platform.md、配布対象と runner は
+# doc/design/distribution.md（経緯は 0016）、toolchain と cargo option は
+# doc/design/decision-log/0014-dependency-crates-and-toolchain.md と
 # doc/guidelines/development-command-guidelines.md に従う。
 name: CI
 
@@ -20,10 +22,14 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。
+  # 2 つの job で共有するため、値はここに 1 つだけ置く。
+  RUST_TOOLCHAIN: "1.98"
 
 jobs:
-  check:
-    name: fmt / clippy / test / build
+  # fmt / clippy は対象 OS に依存しないため、matrix に展開せず 1 回だけ回す。
+  lint:
+    name: fmt / clippy
     runs-on: ubuntu-latest
     # 未指定だと GitHub-hosted runner の上限 6 時間まで走る。応答の返らない処理が
     # 紛れ込んだときの頭打ちとして置く。現状の実行時間は 1 分未満である。
@@ -33,12 +39,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。
       - name: Install Rust toolchain
         # 末尾は Dependabot が認識する tag のみとし、固定時点は SHA と Git 履歴で追う。
         uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
-          toolchain: "1.98"
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: rustfmt, clippy
 
       - name: Cache cargo registry and target
@@ -51,8 +56,62 @@ jobs:
       - name: cargo clippy
         run: cargo clippy --locked --all-targets -- -D warnings
 
-      - name: cargo test
-        run: cargo test --locked
+  # 配布対象 4 target を、それぞれ対象 architecture の runner で native にビルドして動かす。
+  # emulation と cross-build は使わない。runner の選定理由は doc/design/distribution.md を参照する。
+  platform:
+    name: test / build (${{ matrix.target }})
+    strategy:
+      # 1 つの target が落ちても、残りの target の結果を揃える。
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-15
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-22.04-arm
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
+    # macOS runner の cache 無しビルドを含めても 10 分に収まる想定。lint と同じく頭打ちとして置く。
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: cargo build
-        run: cargo build --locked
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: ${{ matrix.target }}
+
+      # runner の host triple が対象 target と一致することを確かめ、emulation や cross-build で
+      # 通ってしまう構成を弾く。以降の --target 指定は、この確認を前提にした明示である。
+      - name: Confirm the native runner
+        run: |
+          host="$(rustc -vV | sed -n 's/^host: //p')"
+          echo "host=${host} uname=$(uname -sm)"
+          test "${host}" = "${{ matrix.target }}"
+
+      # unit test と、実バイナリを起動する CLI E2E (tests/cli_e2e.rs)。OS 依存のテストも skip しない。
+      - name: cargo test
+        run: cargo test --locked --target ${{ matrix.target }}
+
+      - name: cargo build (release)
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      # 配布するのは release profile のバイナリであり、debug の E2E だけでは配布物の取得・更新・
+      # exit code を確認したことにならない。ビルド済みの release 成果物を使って E2E だけを通す。
+      - name: cargo test (release, CLI E2E)
+        run: cargo test --locked --release --target ${{ matrix.target }} --test cli_e2e
+
+      # release バイナリを起動して help / version / 判定 / タイムゾーンの採用経路を確かめ、
+      # 最低 glibc と動的リンク先を step summary に記録する。
+      - name: Run the release binary and record its runtime requirements
+        run: .github/scripts/platform-check.sh target/${{ matrix.target }}/release/bizdate
