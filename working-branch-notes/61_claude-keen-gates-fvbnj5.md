@@ -12,7 +12,7 @@ Issue #37。配布対象 4 target（`aarch64-apple-darwin` / `x86_64-apple-darwi
 
 - 依存の #36（PR #42）は merge 済み。open PR は無く、直列消化の前提を満たす。
 - cloud session（Claude Code on the web）で作業している。GitHub 操作は組み込み tool、開発コマンドは Compose 経由。
-- 実装と文書更新を終え、Compose で CI と同じコマンド列を通し、PR #61 を作成した。CI の実行結果の記録と review cycle が残っている。
+- 実装と文書更新を終え、Compose で CI と同じコマンド列を通し、PR #61 を作成した。CI は 4 target とも success（検証欄に記録）。review cycle が残っている。
 
 ## 調査結果
 
@@ -55,7 +55,7 @@ Issue #37。配布対象 4 target（`aarch64-apple-darwin` / `x86_64-apple-darwi
 - [x] guideline / Copilot 指示 / spec の前方参照 / progress.md を更新する
 - [x] Compose で検証し、結果を記録する
 - [x] PR を作成し、note を採番する
-- [ ] CI の 4 matrix job の結果（OS / architecture、テスト件数、head SHA、run URL、最低 glibc、動的リンク先）を記録する
+- [x] CI の 4 matrix job の結果（OS / architecture、テスト件数、head SHA、run URL、最低 glibc、動的リンク先）を記録する
 
 ## 検証
 
@@ -85,20 +85,32 @@ CI の `platform` job と同じ順序・同じ option で実行した。
 - `git diff --check`: clean。
 - note の情報統制: 秘密情報、個人情報、認証情報付き URL、ローカル絶対 path は含まない。
 
-### 未実施（CI 実行後に記録する）
+### CI（PR #61、head `82b2060`、[run 35725908817](https://github.com/kiyohara/bizdate/actions/runs/35725908817)、2026-09-22）
 
-- 4 matrix job の成功、各対象の OS / architecture、テスト件数、head SHA、run URL。
-- macOS 2 対象の動的リンク先と署名種別、Linux 2 対象（runner 上）の最低 glibc。macOS 側は Compose では確認できない。
+5 job すべて success。`fmt / clippy`（`ubuntu-latest`）は 0 分 17 秒（[job](https://github.com/kiyohara/bizdate/actions/runs/35725908817/job/106739640724)）。`platform` の 4 job はいずれも host triple の確認が通り（native 実行）、`cargo test --locked --target`（unit 69 件、子プロセス再入 2 件、CLI E2E 12 件、doc-test 0 件）、`cargo build --locked --release --target`、release バイナリでの CLI E2E 12 件、`platform-check.sh` の 29 項目がすべて成功した。macOS 2 job は cache 無し（`No cache found`）、Linux 2 job は直前の run（head `490cc5e`、push で cancel）が保存した cache を復元しており、所要時間の差はこれによる。
+
+| target | runner | 実測した host / uname | 最低 glibc | 動的リンク先 | 署名 | 所要時間 |
+|---|---|---|---|---|---|---|
+| `aarch64-apple-darwin` | `macos-15`（image 20260907.0337.1、macOS 15.7.9） | host `aarch64-apple-darwin`、`Darwin arm64` | 該当なし | `libSystem.B.dylib`、`libiconv.2.dylib` | ad-hoc（`flags=0x20002(adhoc,linker-signed)`、`Signature=adhoc`） | 1 分 21 秒、[job](https://github.com/kiyohara/bizdate/actions/runs/35725908817/job/106739640837) |
+| `x86_64-apple-darwin` | `macos-15-intel`（image 20260824.0482.1、macOS 15.7.9） | host `x86_64-apple-darwin`、`Darwin x86_64` | 該当なし | `libSystem.B.dylib`、`libiconv.2.dylib` | 未署名（`code object is not signed at all`） | 2 分 40 秒、[job](https://github.com/kiyohara/bizdate/actions/runs/35725908817/job/106739640344) |
+| `aarch64-unknown-linux-gnu` | `ubuntu-22.04-arm`（image 20260920.137.1、Ubuntu 22.04.5、glibc 2.35） | host `aarch64-unknown-linux-gnu`、`Linux aarch64` | `GLIBC_2.34`（GCC symbol は `GCC_4.2.0` が最大） | `libc.so.6`、`libgcc_s.so.1`（ほかに `ld-linux-aarch64.so.1`、`linux-vdso.so.1`） | - | 0 分 25 秒、[job](https://github.com/kiyohara/bizdate/actions/runs/35725908817/job/106739640723) |
+| `x86_64-unknown-linux-gnu` | `ubuntu-22.04`（image 20260907.292.1、Ubuntu 22.04.5、glibc 2.35） | host `x86_64-unknown-linux-gnu`、`Linux x86_64` | `GLIBC_2.34`（GCC symbol は `GCC_4.2.0` が最大） | `libc.so.6`、`libgcc_s.so.1`（ほかに `ld-linux-x86-64.so.2`、`linux-vdso.so.1`） | - | 0 分 26 秒、[job](https://github.com/kiyohara/bizdate/actions/runs/35725908817/job/106739640727) |
+
+- 最低 glibc は Linux 2 対象とも `GLIBC_2.34` で、#36 の参考値（Compose の aarch64、glibc 2.41 環境）と一致した。runner の glibc 2.35 ともビルド環境の値とも一致しないことを実測で確認した。
+- Apple Silicon の release バイナリには linker の ad-hoc 署名が付く（`linker-signed`）。Intel 側は未署名で、Intel Mac は未署名バイナリを実行できるため配布上の問題は無いが、事実として記録する。
+- タイムゾーン採用経路の確認は 4 対象すべてで同じ結果になった（`TZ` 未設定の local 解決も runner の `/etc/localtime` で成功）。
+- build だけで終わった対象は無い。4 対象とも test と起動確認まで通っており、未検証の対象は無い。
+- `platform-check.sh` の Linux の記録に `ldd --version | head` 由来の `printf: write error: Broken pipe` が混ざった（Ubuntu の `ldd` は shell script で、`head` が pipe を先に閉じる）。動作には影響しないが、`sed -n '1p'` に直して Compose で再確認した。この修正後の run は CI が再実行する。
 
 ## リスク・ブロッカー
 
 - `ubuntu-22.04` は support policy 上、`ubuntu-26.04` の GA に伴って deprecation が始まり得る。Linux runner を古い側に固定する方針（0016）は維持するが、label が使えなくなった時点で `ubuntu-24.04` へ移し、最低 glibc の実測値が変わらないことを確認する必要がある。
 - `macos-15-intel` は 2027 年秋に提供終了が予告されている（0016 の見直し条件）。
 - docs.github.com の公式 runner 一覧は cloud session から開けない。ローカル環境での再確認手段として URL を残す。
-- CI の実行結果は未確認。push 後に 4 matrix job の結果を記録する。
 
 ## セッションログ
 
 - 2026-09-22: Issue #37 を読み、依存（#36 / PR #42 merge 済み）と open PR 無しを確認。cloud session のブランチ `claude/keen-gates-fvbnj5` で着手。main の ruleset / branch protection を read-only で確認（required status checks なし）。runner 一覧は `actions/runner-images` README で確認（docs.github.com は遮断）。jiff の `TZDIR` / `TZ` の挙動をソースで確認し、tzdb 前提の再現方法を決めた。
 - 2026-09-22: CI workflow（`lint` + `platform` matrix）、`platform-check.sh`、guideline / Copilot 指示 / `distribution.md` の前方参照 / `progress.md` を更新。Compose で CI と同じコマンド列を通し、検証欄に記録。
 - 2026-09-22: PR #61 を作成し、`number-working-branch-note` で note を採番（commit `c8f9cc0`）。`progress.md` の DIST-02 に PR 番号を反映（`490cc5e`）。P1 の引き上げ項目: 完了として書き換えたタスク行 1 件（note の「PR を作成し、note を採番する」。PR description には該当なし）。触らなかった stale 表現 1 件（「現在の状況」の「PR 作成と CI の実行結果の記録が残っている」は定型外の prose のため採番 skill では触らず、この更新で書き換えた）。採番 skill は停止せず完走した。
+- 2026-09-22: head `82b2060` の CI（run 35725908817）が 5 job とも success。4 target の実測（host / uname、テスト件数、最低 glibc、動的リンク先、署名、所要時間）を検証欄に記録。Linux の記録に混ざった `ldd` の SIGPIPE 診断を `sed -n '1p'` で解消し、Compose で再確認。

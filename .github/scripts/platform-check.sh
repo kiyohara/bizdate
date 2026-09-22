@@ -147,7 +147,8 @@ echo "== runtime requirements"
         Linux)
             echo "--- build environment ---"
             sed -n 's/^PRETTY_NAME=//p' /etc/os-release
-            ldd --version | head -n 1
+            # head で pipe を先に閉じると Ubuntu の ldd (shell script) が SIGPIPE の診断を出すため、sed で 1 行目だけ取る。
+            ldd --version | sed -n '1p'
             echo "--- dynamic link (ldd) ---"
             ldd "$bin"
             echo "--- versioned symbol requirements (objdump -T) ---"
