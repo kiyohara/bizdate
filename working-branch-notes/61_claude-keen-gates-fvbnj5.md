@@ -12,7 +12,7 @@ Issue #37。配布対象 4 target（`aarch64-apple-darwin` / `x86_64-apple-darwi
 
 - 依存の #36（PR #42）は merge 済み。open PR は無く、直列消化の前提を満たす。
 - cloud session（Claude Code on the web）で作業している。GitHub 操作は組み込み tool、開発コマンドは Compose 経由。
-- 実装と文書更新を終え、Compose で CI と同じコマンド列を通した。PR 作成と CI の実行結果の記録が残っている。
+- 実装と文書更新を終え、Compose で CI と同じコマンド列を通し、PR #61 を作成した。CI の実行結果の記録と review cycle が残っている。
 
 ## 調査結果
 
@@ -101,3 +101,4 @@ CI の `platform` job と同じ順序・同じ option で実行した。
 
 - 2026-09-22: Issue #37 を読み、依存（#36 / PR #42 merge 済み）と open PR 無しを確認。cloud session のブランチ `claude/keen-gates-fvbnj5` で着手。main の ruleset / branch protection を read-only で確認（required status checks なし）。runner 一覧は `actions/runner-images` README で確認（docs.github.com は遮断）。jiff の `TZDIR` / `TZ` の挙動をソースで確認し、tzdb 前提の再現方法を決めた。
 - 2026-09-22: CI workflow（`lint` + `platform` matrix）、`platform-check.sh`、guideline / Copilot 指示 / `distribution.md` の前方参照 / `progress.md` を更新。Compose で CI と同じコマンド列を通し、検証欄に記録。
+- 2026-09-22: PR #61 を作成し、`number-working-branch-note` で note を採番（commit `c8f9cc0`）。`progress.md` の DIST-02 に PR 番号を反映（`490cc5e`）。P1 の引き上げ項目: 完了として書き換えたタスク行 1 件（note の「PR を作成し、note を採番する」。PR description には該当なし）。触らなかった stale 表現 1 件（「現在の状況」の「PR 作成と CI の実行結果の記録が残っている」は定型外の prose のため採番 skill では触らず、この更新で書き換えた）。採番 skill は停止せず完走した。
