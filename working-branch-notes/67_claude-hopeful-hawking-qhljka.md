@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/hopeful-hawking-qhljka`（cloud session が決めたブランチ。Issue の推奨名 `drop-intel-mac-target` へは切り替えない）
-- PR: （採番前）
+- PR: #67
 - 最終更新: 2026-09-23
 
 ## 目的
@@ -38,7 +38,7 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 - [x] guideline / Copilot 指示 / `progress.md` を改める
 - [x] 残った参照を検索し、改めない箇所の理由を記録する
 - [x] Compose で検証する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [x] 後続 Issue（#39 / #40 / #63）の本文を 3 target の前提へ同期する
 - [x] PR CI の結果と所要時間を記録し、PR #62 の最終 push と比べる
 
