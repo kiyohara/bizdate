@@ -16,12 +16,18 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 
 | 実行 | 場所 | 理由 |
 |---|---|---|
-| macOS 向けの native ビルド | GitHub Actions の macOS runner | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
-| 配布対象 4 target での実行確認 | GitHub Actions の各 native runner | 対象 OS / architecture 上でしか実行成功を確認できない |
-| 最低 glibc の実測 | GitHub Actions の Linux runner | 配布に使うバイナリそのものを測る必要がある |
-| release 成果物の生成と公開 | GitHub Actions の release workflow | `dist` が runner 上で成果物一式を作る |
+| macOS 向けの native ビルド | CI の `platform` job（`macos-15` / `macos-15-intel`） | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
+| 配布対象 4 target での実行確認 | CI の `platform` job（4 つの native runner） | 対象 OS / architecture 上でしか実行成功を確認できない |
+| 最低 glibc の実測 | CI の `platform` job（Linux runner） | 配布に使うバイナリそのものを測る必要がある |
+| release 成果物の生成と公開 | GitHub Actions の release workflow（#38 で整備する） | `dist` が runner 上で成果物一式を作る |
 
-原則は変えない。ローカルで行う検証は Compose 経由を正とする。上記を実行した結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
+CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 4 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）と動的リンク先を job の step summary に記録する。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
+
+```sh
+docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
+```
+
+原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、4 target の実行確認、最低 glibc の実測、release 成果物の生成）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
 
 ## cloud session（Claude Code on the web）
 
@@ -82,9 +88,9 @@ MSRV の値は 4 箇所に現れる。上げるときは 4 つを同時に更新
 | `Cargo.toml` | `rust-version` | crate が要求する最小 Rust version |
 | `Dockerfile` | `FROM ${BASE_REGISTRY}/rust:<MSRV>-trixie` | container の toolchain を実際に決める。`BASE_REGISTRY` は base image の取得元の差し替え口で、MSRV とは無関係 |
 | `compose.yaml` | `image: bizdate-dev:<MSRV>` | build した image に付ける local tag 名 |
-| `.github/workflows/ci.yml` | `toolchain: "<MSRV>"` | CI の toolchain を決める |
+| `.github/workflows/ci.yml` | `RUST_TOOLCHAIN: "<MSRV>"` | CI の toolchain を決める。workflow の `env` に 1 つだけ置き、`lint` と `platform` の両 job が参照する |
 
-`compose.yaml` の tag はビルド結果に影響しないが、ずれると tag が実態を偽る。`Dockerfile` の `FROM` だけ古いまま `rust-version` を上げると、build が MSRV エラーで落ちる。`.github/workflows/ci.yml` の `toolchain` だけ古いまま上げると、CI が `Cargo.toml` の `rust-version` を満たせず落ちる。
+`compose.yaml` の tag はビルド結果に影響しないが、ずれると tag が実態を偽る。`Dockerfile` の `FROM` だけ古いまま `rust-version` を上げると、build が MSRV エラーで落ちる。`.github/workflows/ci.yml` の `RUST_TOOLCHAIN` だけ古いまま上げると、CI が `Cargo.toml` の `rust-version` を満たせず落ちる。
 
 4 箇所を更新したうえで image を作り直す。
 
@@ -123,5 +129,5 @@ docker compose down -v
 ## やらないこと
 
 - host の `cargo` で実行した結果を、Compose 経由の検証結果として報告する。
-- MSRV の 4 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag、`.github/workflows/ci.yml` の `toolchain`）をずらす。
+- MSRV の 4 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag、`.github/workflows/ci.yml` の `RUST_TOOLCHAIN`）をずらす。
 - container 内へ開発用の追加 component を場当たりで入れる。恒常的に必要なものは `Dockerfile` に書く。

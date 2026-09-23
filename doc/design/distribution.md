@@ -42,7 +42,7 @@ Linux は glibc 版（`*-unknown-linux-gnu`）だけを配る。musl 版は v1 �
 objdump -T <binary> | grep -o 'GLIBC_[0-9.]*' | sort -u -V | tail -1
 ```
 
-- 実測は #37 で整備する CI に置き、4 対象すべてについて記録する。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
+- 実測は CI の `platform` job（`.github/workflows/ci.yml`）に置き、Linux 2 対象の最低 glibc と 4 対象の動的リンク先を job の step summary に記録する。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
 - 最低 glibc が上がると、それまで動いていた環境が黙って動かなくなる。実測値が上がった場合は release note に明記する。
 
 ### 実行時前提
