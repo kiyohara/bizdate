@@ -15,7 +15,7 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 - 実装と文書更新を終え、Compose（cloud session）で検証した。PR #67 を作成した。head `ee5d285` の PR CI（CI と Release workflow）はすべて成功し、`release-tools` を要する検証をその結果で代えた。所要時間と macOS job 数を PR #62 の最終 push と比べた。
 - 後続 Issue（#39 / #40 / #63）の本文を 3 target の前提へ同期した。
 - note を PR #67 で採番した。
-- review cycle `claude-code-310ea80-20260923143547`（head `310ea80`）で指摘 4 件（imo 1 / nits 2 / fyi 1。must / ask は 0）を受け、全件を採用して対応した（P4）。元の Review 担当による再確認（P5）が残る。
+- review cycle `claude-code-310ea80-20260923143547`（head `310ea80`）で指摘 4 件（imo 1 / nits 2 / fyi 1。must / ask は 0）を受け、全件を採用して対応した（P4、`66e4644`）。再確認（P5）で 4 thread とも resolve 可と判定され、1 周で収束した。残るのは人間による thread の resolve と merge の判断である。
 
 ## 調査結果
 
@@ -120,6 +120,11 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - stub なしの Linux（container）では、従来どおり 29 項目が通り、`== code signature` は出ない。`sh -n` と `git diff --check` も通った。
 - 0016 の追記、`.github/copilot-instructions.md`、この note は文書の修正であり、Rust の検証は再実行していない（コードの変更が無い）。
 
+### PR CI（head `66e4644`、review 対応、2026-09-23）
+
+- CI（[run 35877367113](https://github.com/kiyohara/bizdate/actions/runs/35877367113)）と Release workflow（[run 35877367670](https://github.com/kiyohara/bizdate/actions/runs/35877367670)）がすべて success。`host` と `announce` は skipped。
+- `macos-15` の job（CI の `test / build (aarch64-apple-darwin)` と `custom-release-verify / archive (aarch64-apple-darwin)`）で、`== code signature` の確認が最初の起動より前に通り、記録に `flags=0x20002(adhoc,linker-signed)` と `minimum macOS: 11.0` が載った。
+
 ## リスク・ブロッカー
 
 - cloud session では `release-tools` を使えないため、Issue の検証のうち `dist generate --check` / `dist plan` と third-party 表記の生成・照合は Compose で実行していない。PR CI の結果（`plan` の一致の検査と成果物の一覧、各 build job での生成と照合）で代えた。ローカルの Compose での実行はユーザーに残す。
@@ -132,3 +137,4 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - 2026-09-23: `number-working-branch-note` で note を PR #67 で採番した（`aaf480f`。先行の `3897cd1` と同じ push で反映）。PR description の note 参照を 1 箇所置換し、読み戻しで一致を確かめた。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）で、PR description には該当なし。触らなかった stale 表現は note の 1 件（「調査結果」の「`dist generate` の出力は変わらない見込みである」。定型外のため採番 skill は触らなかった。PR CI の `plan` job で確かめ済みのため、この更新で書き換えた）で、PR description には該当なし。採番 skill は停止せず完走した。
 - 2026-09-23: P2 の review（cycle `claude-code-310ea80-20260923143547`、head `310ea80`）を subagent に委譲した。review 1 本と inline 4 件が投稿され、読み戻しで確かめた。指摘は imo 1 / nits 2 / fyi 1、must / ask は 0。Issue の充足、decision log の追記方式、`release-tools` の代わりに PR CI で確かめたことは妥当と判定された。
 - 2026-09-23: P3 で 4 件とも事実を確かめ（`expect_usage` の失敗の形、0016 の 139 行目、Copilot 指示の 11 / 49 行目、0008 の 45 行目）、全件を採用した。P4 で `platform-check.sh` の署名の確認を最初の起動より前へ移し、0016 の追記の置き換え範囲と「影響」、Copilot 指示の根拠の示し方、この note の「残した参照」を直した。返信の `Model` は、model の識別子を GitHub への投稿に書かないこの環境の規定に従って `unknown` とする（P2 の review 本文には識別子が入っている）。
+- 2026-09-23: P5 の再確認（P2 と同じ subagent、head `66e4644`）で 4 thread とも resolve 可（resolve 可マーカー付きの返信 4 件と完了要約 1 本を読み戻しで確かめた）。未対応 0、新規指摘 0。確認中に `custom-release-verify / archive (aarch64-unknown-linux-gnu)` の check run が API 上で `in_progress` のまま見えたが、全 step は success で、その後 completed / success となり、PR の `mergeable_state` は `clean` に戻った。P6 で追加対応は不要と判断した。
