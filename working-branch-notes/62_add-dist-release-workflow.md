@@ -13,7 +13,7 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 依存の #37（PR #61）は merge 済み。レビュー待ちの自分の PR は無く、直列消化の前提を満たす。
 - ローカル環境（Docker Desktop、arm64）で作業している。
 - 実装と文書更新を終え、Compose で検証した。PR #62 を作成し、note を採番した。head `5544cd5` の PR CI（CI と Release workflow）がすべて成功し、4 target の archive 検証の結果を記録した。
-- review cycle `claude-code-72767ff-20260923094145`（head `72767ff`）で指摘 9 件を受け、全件を採用して対応した（P4）。再確認（P5）が残る。
+- review cycle `claude-code-72767ff-20260923094145`（head `72767ff`）で指摘 9 件を受け、全件を採用して対応した（P4、`9eb833f`）。再確認（P5）で 9 thread とも resolve 可と判定され、1 周で収束した。残るのは人間による thread の resolve と merge の判断。
 
 ## 調査結果
 
@@ -117,11 +117,20 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 最低 glibc、動的リンク先、署名の種別は、#37 の CI が `--release` のバイナリで実測した値（PR #61 の note）と同じだった。
 - build job の所要時間の大半は cargo-about の `cargo install` だった（`macos-15-intel` 333 秒、`macos-15` 126 秒、`ubuntu-22.04-arm` 92 秒、`ubuntu-22.04` 68 秒）。生成は 3〜11 秒、照合は 2 秒以内、`dist build` は 20〜68 秒。
 
+### PR CI（head `72767ff` / `9eb833f`、2026-09-23）
+
+- head `72767ff`: CI（[run 35843775671](https://github.com/kiyohara/bizdate/actions/runs/35843775671)）と Release workflow（[run 35843776142](https://github.com/kiyohara/bizdate/actions/runs/35843776142)）がすべて success。
+- head `9eb833f`（review 対応）: CI（[run 35848494571](https://github.com/kiyohara/bizdate/actions/runs/35848494571)）と Release workflow（[run 35848495226](https://github.com/kiyohara/bizdate/actions/runs/35848495226)）がすべて success。PR なので `host` と `announce` は skipped。
+  - `check-action-pins.sh`（書き直し後）は lint job で `ok: 27`。
+  - `release tag` job は PR 用の step だけを通った（tag の検査は PR 以外で走る）。
+  - 最低 macOS version（`platform-check.sh` が `otool -l` から記録）は、archive 検証と CI の `platform` job の両方で `aarch64-apple-darwin` が `11.0`、`x86_64-apple-darwin` が `10.12`。spec の表と一致した。
+  - 4 target の archive 検証は `5544cd5` と同じ項目がすべて通った。
+
 ### 未検証
 
 - tag push での公開経路（`host` / `announce`）。tag の push と Release の作成はスコープ外で、公開は #40 の手順に従う。
 - cloud session での `release-tools`。review 対応で「cloud session では使えない」と明記した（override を置いていない）。
-- `platform-check.sh` の macOS の最低 version の抽出は、host の `otool` が Xcode のライセンス未同意で使えないため、合成した `otool -l` の出力で parser を確かめた。実物の値は PR CI の macOS job で確かめる。
+- `platform-check.sh` の macOS の最低 version の抽出は、host の `otool` が Xcode のライセンス未同意で使えないため、ローカルでは合成した `otool -l` の出力で parser を確かめた。実物の値は PR CI の macOS job で確かめた（上の「PR CI（head `72767ff` / `9eb833f`）」）。
 
 ## リスク・ブロッカー
 
@@ -139,3 +148,5 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 2026-09-23: head `5544cd5` の CI（run 35842593579）と Release workflow（run 35842593797）がすべて success。PR では `host` / `announce` が skipped。4 target の archive の最低 glibc、動的リンク先、署名、build の所要時間を検証欄に記録した（sha256 は情報統制の観点で note に書かない）。
 - 2026-09-23: P2 review（cycle `claude-code-72767ff-20260923094145`、head `72767ff`）を subagent に委譲。subagent の GitHub への投稿が権限判定で止められたため、ユーザーの指示で subagent の review（inline 9 件と完了要約）を orchestrator が内容を変えずに代理投稿し、read-back で review 1 本・inline 9 件・conversation comment 0 件を確かめた。指摘は ask 2 / imo 4 / fyi 1 / nits 2、must 0。公開ゲートは成立と判定された。
 - 2026-09-23: P3 で 9 件の事実を確かめた（`check-action-pins.sh` の空入力と `.yaml` の素通り、checksum file の末尾の空行と macOS / coreutils 8.x の WARNING、`--strict` での失敗を再現）。Issue の起票はユーザーに確認し、「役割は固定していない」との指示で #63 を起票した。P4 で全件を採用して対応: `check-action-pins.sh` の fail-closed 化と `.yaml` 対応、tag 検査の fail-closed 化、`platform-check.sh` での最低 macOS version の記録、0022 に残るリスク 2 点と見直し条件、spec に checksum の警告と最低 macOS の記録、guideline / cloud guideline / 開発ループに cloud session での制約、MSRV 手順に `release-tools` の作り直し、`ci.yml` のコメント、`progress.md` / 0015 / index に #63。
+- 2026-09-23: 対応を `9eb833f` で push し、9 thread へ処置を返信（metadata は Mode: address-comments、Reviewed head: `9eb833f`）。PR 本文の検証・未検証事項・補足を更新し、公開 API で読み戻した。head `9eb833f` の CI（run 35848494571）と Release workflow（run 35848495226）はすべて success で、最低 macOS version は 11.0 / 10.12。
+- 2026-09-23: P5 再確認（同じ subagent を再開、head `9eb833f`）で 9 thread とも resolve 可（`**修正確認済み（resolve 可）**`）、未対応 0、新規 inline 指摘 0。今回は subagent が自分で投稿できた。完了要約内の `[fyi]` 1 件（note に `9eb833f` の CI と最低 macOS version の記録が無く、未検証の記述が古い）はこの更新で直した。P6 で追加対応不要と判断し、1 周で収束。
