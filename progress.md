@@ -23,9 +23,13 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 
 2026-09-12 に、Claude Code on the web の cloud session でも Compose 経由の開発コマンドと GitHub 操作が成立するよう実行環境と運用ルールを整えた（Issue #47 / PR #48、decision log 0018）。正本は `doc/guidelines/cloud-session-guidelines.md`。配布準備の状況は変わっていない。
 
+2026-09-23 に、PR #67 の review cycle を cloud session で回して見つかった課題を #68〜#70 として起票した。model の識別子の扱い、cloud session での review metadata、`gh` の利用であり、「進行中タスク」の「cloud session での agent 運用」の表で追跡する。
+
 [#30](https://github.com/kiyohara/bizdate/issues/30) は Dependabot の更新 PR 待ちの単発 Issue として継続する。索引には載せず、配布準備の依存にしない。
 
 ## 進行中タスク
+
+### 配布準備
 
 配布準備を次の順で直列に消化する。依存欄は直前の必須依存だけを記載し、その Issue に対応する PR の merge を確認してから着手する。推移的な依存は先行 Issue の完了を通じて満たす。詳細な作業内容・検証・スコープ外は各 Issue を正とする。
 
@@ -39,9 +43,20 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #65 | Homebrew Formula 生成と更新連携を整備する | - |
 | DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
 
+### cloud session での agent 運用
+
+PR #67 の review cycle を cloud session で回して見つかった課題を追跡する。依存欄の書き方は配布準備の表と同じとする。配布準備とは独立しており、どちらを先に進めるかはユーザーが決める。
+
+| ID | Issue | 状態 | 依存 | 次にやること | PR |
+|---|---|---|---|---|---|
+| OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | todo | なし | model の識別子を記載してよい範囲と、review metadata の `Model` の扱いを明文化する | - |
+| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | todo | なし | cloud session で `gh` を使えるようにする。network の許可リストへの host の追加も判断する | - |
+| OPS-03 | [#69](https://github.com/kiyohara/bizdate/issues/69) | todo | #68 | cloud session で review の canonical metadata を規定どおりに書けるようにする。#70 の後なら `gh` の利用を前提に書ける | - |
+
 ## 次にやること
 
 - `run-issue-task` で #65 へ進む。cargo-about を prebuilt で導入し、PR での CI の二重実行をやめる。続いて #39 へ進める。
+- cloud session での agent 運用（#68〜#70）は配布準備と独立している。タスクは直列に消化するため、配布準備との順はユーザーが決める。表の中では #68 と #70 を先に、#69 を最後に進める。
 - #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。実装は [#63](https://github.com/kiyohara/bizdate/issues/63) で行う（索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
 - #36〜#40 と #64 / #65 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
