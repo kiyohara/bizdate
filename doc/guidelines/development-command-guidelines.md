@@ -19,7 +19,8 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 | macOS 向けの native ビルド | CI の `platform` job（`macos-15` / `macos-15-intel`） | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
 | 配布対象 4 target での実行確認 | CI の `platform` job（4 つの native runner） | 対象 OS / architecture 上でしか実行成功を確認できない |
 | 最低 glibc の実測 | CI の `platform` job（Linux runner） | 配布に使うバイナリそのものを測る必要がある |
-| release 成果物の生成と公開 | GitHub Actions の release workflow（#38 で整備する） | `dist` が runner 上で成果物一式を作る |
+| release 成果物の生成と公開 | release workflow の build job（4 つの native runner）と `host` job | `dist` が対象 runner 上で archive と checksum を作る。公開は `v<version>` tag の push でだけ行う |
+| 配布 archive の検証 | release workflow の `release-verify` job（4 つの native runner） | 配る binary そのものを対象環境で起動して確かめる |
 
 CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 4 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）と動的リンク先を job の step summary に記録する。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
 
@@ -27,7 +28,7 @@ CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だ�
 docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
 ```
 
-原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、4 target の実行確認、最低 glibc の実測、release 成果物の生成）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
+原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、4 target の実行確認、最低 glibc の実測、release 成果物の生成と検証）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
 
 ## cloud session（Claude Code on the web）
 
@@ -73,26 +74,98 @@ docker compose run --rm dev sh -c 'cargo build && ./target/debug/bizdate --versi
 
 ## image の更新
 
-`Dockerfile` を変更したときは image を作り直す。
+`Dockerfile` を変更したときは image を作り直す。`release-tools` service を使う場合は、それも作り直す（「配布成果物の生成と確認」）。
 
 ```sh
 docker compose build dev
 ```
 
+## 配布成果物の生成と確認
+
+配布成果物は `dist` が作る。設定は `dist-workspace.toml`、配布物の仕様は `doc/design/distribution.md`、release workflow の構成の採否理由は `doc/design/decision-log/0022-release-workflow.md` を参照する。
+
+### ローカルの実行環境
+
+`dist` と `cargo-about` は dev image に入れず、Compose の `release-tools` service（`Dockerfile` の `release-tools` stage）で実行する。dev image に 2 つの tool を足しただけで、toolchain と volume は dev と共有する。profile を付けているため、`docker compose run` で名指ししたときだけ使われる。初回と `Dockerfile` の変更後は image を作る。
+
+```sh
+docker compose build release-tools
+```
+
+`release.yml` を設定から作り直す。`release.yml` は手で直さない。dist の設定（`dist-workspace.toml`、`.github/build-setup.yml`、`Cargo.toml` の `[package.metadata.dist]` と `[profile.dist]`）を変えたら作り直し、設定と一緒に commit する。
+
+```sh
+docker compose run --rm release-tools dist generate
+```
+
+生成物が設定と一致すること、配布する成果物の一覧（archive、同梱物、checksum）を確かめる。release workflow の `plan` job も、実行のたびに同じ一致を検査する。
+
+```sh
+docker compose run --rm release-tools sh -c 'dist generate --check && dist plan'
+```
+
+third-party 表記（`THIRD-PARTY-LICENSES.md`）を生成し、配布対象の依存と対応していることを確かめる。生成物は commit しない（`.gitignore` 済み）。
+
+```sh
+docker compose run --rm release-tools sh -c 'cargo about generate --locked --fail --output-file THIRD-PARTY-LICENSES.md about.hbs && .github/scripts/check-third-party-licenses.sh THIRD-PARTY-LICENSES.md'
+```
+
+container と同じ target の archive を作り、release workflow の `release-verify` job と同じ検証を通す。`dist build` は `cargo build` に `--locked` を付けないため、先に `cargo fetch --locked` を実行する。
+
+```sh
+docker compose run --rm release-tools sh -c 'target=$(rustc -vV | sed -n "s/^host: //p") && cargo fetch --locked && cargo about generate --locked --fail --output-file THIRD-PARTY-LICENSES.md about.hbs && dist build --artifacts=local --target="$target" && dist plan --output-format=json > target/distrib/plan.json && .github/scripts/verify-release-archive.sh "$target" target/distrib target/distrib/plan.json'
+```
+
+tag の形と、第三者 action の SHA 固定を確かめる。どちらも dev service で動く。
+
+```sh
+docker compose run --rm dev .github/scripts/check-release-tag.sh v0.1.0
+docker compose run --rm dev .github/scripts/check-action-pins.sh
+```
+
+Compose で確かめられるのは、Linux コンテナと同じ target の archive だけである。macOS と別 architecture の archive は release workflow の結果で確かめ、報告では runner を書く。
+
+### release workflow
+
+`.github/workflows/release.yml` は PR と tag の push で走る。PR では公開の直前までを通し、`host` 以降は走らない。
+
+| job | 内容 | PR | tag の push |
+|---|---|---|---|
+| `plan` | `dist plan`（tag の push では `dist host --steps=create`）で成果物を決め、`release.yml` と設定の一致を検査する | 走る | 走る |
+| `build-local-artifacts` | 4 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
+| `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す | 走る | 走る |
+| `build-global-artifacts` | 全 archive の checksum をまとめた `sha256.sum` を作る | 走る | 走る |
+| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、4 target の archive を検証する | 走る | 走る |
+| `host` | GitHub Release を作り、成果物を添付する | 走らない | 上の job がすべて成功したときだけ走る |
+| `announce` | dist の後処理 | 走らない | `host` の成功後に走る |
+
+検証の結果（archive 名、sha256、構成、`platform-check.sh` の記録）は `custom-release-verify` の各 job の step summary に残る。PR で確かめた archive はその run の workflow artifact であり、公開された Release asset ではない。
+
+### tool と action の version を上げるとき
+
+| 対象 | 箇所 | 注意 |
+|---|---|---|
+| dist | `dist-workspace.toml` の `cargo-dist-version`、`Dockerfile` の `release-tools` stage（version と checksum） | 上げたら `dist generate` で `release.yml` を作り直す。2 箇所がずれると `dist generate` が version の不一致で止まる |
+| cargo-about | `.github/scripts/install-cargo-about.sh` | `Dockerfile` と release workflow の build job が同じ script で入れる |
+| `release.yml` の第三者 action | `dist-workspace.toml` の `github-action-commits` | 値は `"<SHA> # <tag>"` の形で書き、`dist generate` で作り直す。Dependabot の更新 PR が `release.yml` を変えた場合の扱いは `doc/guidelines/development-loop.md` を参照する |
+
 ## MSRV を上げるとき
 
-MSRV の値は 4 箇所に現れる。上げるときは 4 つを同時に更新する。
+MSRV の値は 5 箇所に現れる。上げるときは 5 つを同時に更新する。
 
 | 箇所 | 値 | 役割 |
 |---|---|---|
 | `Cargo.toml` | `rust-version` | crate が要求する最小 Rust version |
 | `Dockerfile` | `FROM ${BASE_REGISTRY}/rust:<MSRV>-trixie` | container の toolchain を実際に決める。`BASE_REGISTRY` は base image の取得元の差し替え口で、MSRV とは無関係 |
-| `compose.yaml` | `image: bizdate-dev:<MSRV>` | build した image に付ける local tag 名 |
+| `compose.yaml` | `image: bizdate-dev:<MSRV>`、`image: bizdate-release-tools:<MSRV>` | build した image に付ける local tag 名 |
 | `.github/workflows/ci.yml` | `RUST_TOOLCHAIN: "<MSRV>"` | CI の toolchain を決める。workflow の `env` に 1 つだけ置き、`lint` と `platform` の両 job が参照する |
+| `.github/build-setup.yml` | `rustup toolchain install <MSRV>` と `rustup default <MSRV>` | release workflow の build job が配布 archive をビルドする toolchain を決める。dist は toolchain を指定しないため、ここで CI と揃える |
 
 `compose.yaml` の tag はビルド結果に影響しないが、ずれると tag が実態を偽る。`Dockerfile` の `FROM` だけ古いまま `rust-version` を上げると、build が MSRV エラーで落ちる。`.github/workflows/ci.yml` の `RUST_TOOLCHAIN` だけ古いまま上げると、CI が `Cargo.toml` の `rust-version` を満たせず落ちる。
 
-4 箇所を更新したうえで image を作り直す。
+`.github/build-setup.yml` だけ古いままにすると、CI が test した toolchain と異なる toolchain で配布 archive をビルドする。変えたら `dist generate` で `release.yml` を作り直す。
+
+5 箇所を更新したうえで image を作り直す。
 
 ```sh
 docker compose build dev
@@ -129,5 +202,5 @@ docker compose down -v
 ## やらないこと
 
 - host の `cargo` で実行した結果を、Compose 経由の検証結果として報告する。
-- MSRV の 4 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag、`.github/workflows/ci.yml` の `RUST_TOOLCHAIN`）をずらす。
+- MSRV の 5 箇所（`Cargo.toml` の `rust-version`、`Dockerfile` の `FROM`、`compose.yaml` の image tag、`.github/workflows/ci.yml` の `RUST_TOOLCHAIN`、`.github/build-setup.yml` の toolchain）をずらす。
 - container 内へ開発用の追加 component を場当たりで入れる。恒常的に必要なものは `Dockerfile` に書く。

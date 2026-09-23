@@ -4,7 +4,7 @@
 
 想定読者は、配布を実装・運用する開発者と AI agent である。
 
-公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/` のリリース guideline とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md) を参照する。
+公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/` のリリース guideline とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md)、release workflow の構成は [`decision-log/0022-release-workflow.md`](decision-log/0022-release-workflow.md) を参照する。
 
 ## 配布手段
 
@@ -42,7 +42,7 @@ Linux は glibc 版（`*-unknown-linux-gnu`）だけを配る。musl 版は v1 �
 objdump -T <binary> | grep -o 'GLIBC_[0-9.]*' | sort -u -V | tail -1
 ```
 
-- 実測は CI の `platform` job（`.github/workflows/ci.yml`）に置き、Linux 2 対象の最低 glibc と 4 対象の動的リンク先を job の step summary に記録する。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
+- 実測は CI の `platform` job（`.github/workflows/ci.yml`）に置き、Linux 2 対象の最低 glibc と 4 対象の動的リンク先を job の step summary に記録する。release workflow の `release-verify` job も、配布 archive から取り出した binary について同じ記録を step summary に残す。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
 - 最低 glibc が上がると、それまで動いていた環境が黙って動かなくなる。実測値が上がった場合は release note に明記する。
 
 ### 実行時前提
@@ -95,6 +95,8 @@ tzdb をバイナリへ bundle する選択は取らない。システム側の�
 
 - `dist` の既定に従い `sha256` とする。archive ごとに `.sha256` ファイルを Release に添付する。
 - `sha256sum -c` で検証できる形式とする。
+- `dist` は加えて、全 archive の checksum をまとめた `sha256.sum` と、成果物の一覧である `dist-manifest.json` を Release に添付する。`sha256.sum` は checksum を有効にしている限り外せない。
+- ソースの tarball は `dist` では作らない。GitHub が Release に付ける source code archive で足りる。
 - 署名付き checksum、GPG 署名、sigstore は v1 では導入しない。
 
 ### 同梱物
@@ -131,6 +133,8 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 - 対象は 4 target すべてを合わせた集合とする。platform ごとに別ファイルへ分けない。
 - 生成物はリポジトリに commit せず、release build のたびに生成する。依存の追加・更新で内容が古くなる事故を避けるためである。
 - 検証は、生成が成功し、かつ `cargo-about` が未許可ライセンスを検出せずに終了することをもって行う。許可するライセンス識別子は生成設定に列挙し、依存追加時に見直す。
+- 生成設定は repository root の `about.toml`（許可するライセンス、対象 target、依存の範囲）と `about.hbs`（書式）に置く。dev-dependencies は配布物に入らないため除き、build 依存と proc-macro は含める。bizdate 自身は含めない。
+- release workflow は、生成した表記の crate と version が配布対象の依存と過不足なく一致すること、上の表の条件の本文が該当 crate の分として載っていることも確かめる。
 
 ## version と tag
 
@@ -144,7 +148,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 
 - tag 名は `v<version>` とする（例: `v0.1.0`）。
 - tag の version 部分は `Cargo.toml` の `version` と一致させる。
-- tag の push が release workflow の trigger になる。
+- tag の push が release workflow の trigger になる。`v<Cargo.toml の version>` の形でない tag では公開しない。
 
 ### stable と prerelease
 

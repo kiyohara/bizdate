@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-09
-- 最終更新日: 2026-09-09
-- 関連: `.github/dependabot.yml`, `.github/workflows/ci.yml`, `doc/guidelines/development-loop.md`, [Issue #21](https://github.com/kiyohara/bizdate/issues/21)
+- 最終更新日: 2026-09-23
+- 関連: `.github/dependabot.yml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `dist-workspace.toml`, `doc/guidelines/development-loop.md`, [Issue #21](https://github.com/kiyohara/bizdate/issues/21), [Issue #38](https://github.com/kiyohara/bizdate/issues/38)
 
 ## 背景
 
@@ -76,3 +76,31 @@ Days since release : 35 (cooldown days 3)
 このため、上流が新 version を出しても直後は更新 PR が出ない。「更新 PR が出ない」原因を切り分けるときは、更新チェックの完了、ignore、open PR 上限、grouping に加えて既定 cooldown も候補に含める。
 
 `cooldown` は明示設定していない。既定のままとし、window を変える必要が生じた時点で改めて判断する。「決定」の内容は変更しない。観測した log と run URL は [Issue #30 のコメント](https://github.com/kiyohara/bizdate/issues/30#issuecomment-5593296663) にある。既定値は上流の変更で動きうるため、恒久の仕様として扱わない。
+
+## 2026-09-23 追記: release workflow の導入に伴う再判断
+
+「後から見直す条件」の「Cargo の更新運用や release workflow の追加を扱う場合」に当たる。Issue #38 で release workflow と配布 archive を導入した（[0022](0022-release-workflow.md)）。Cargo の version updates、Dependabot alerts（security alerts）、Dependabot security updates を分けて判断し直す。あわせて、GitHub Actions の version updates と、dist が生成する `release.yml` の関係を決める。
+
+### 判断
+
+| 対象 | 採否 | 理由 | 実装 |
+|---|---|---|---|
+| Cargo の version updates | 採用 | 配布を始めると、依存の修正（TLS を担う `rustls` / `ring`、root store を埋め込む `webpki-roots` を含む）は再ビルドと再リリースでしか利用者に届かない（[0016](0016-distribution-contract.md) の TLS trust）。更新に気付く経路を自動化する価値が上がった。上の「検討内容」で挙げた検証負荷は、4 target の native CI（#37）と、PR ごとに archive と third-party 表記を検証する Release workflow（#38）で受け止められる。許可していないライセンスの依存が入れば build job の cargo-about が止まり、MSRV を超える更新は MSRV の toolchain で回す CI が止める | 別 Issue で行い、本件には含めない。grouping、open PR 上限、major 更新の扱い、更新 PR のレビュー観点はその Issue で決める |
+| Dependabot alerts | 採用 | 依存に既知の脆弱性が公表されたとき、現状は気付く経路が無い。alerts は通知だけで PR を作らないため、運用の負担が小さい | repository settings で有効にする。agent は settings を変えず、有効化はユーザーが行う |
+| Dependabot security updates | 採用 | 修正版への更新 PR を、version updates の cooldown と open PR 上限を待たずに作れる。配布 binary は修正を再リリースで届けるしかなく、着手までの時間を縮める | repository settings で有効にする（alerts が前提）。有効化はユーザーが行う。更新 PR は bot PR と同じ流れでレビューし、merge は人間が行う。grouping の要否は Cargo の version updates と同じ Issue で決める |
+
+Cargo の version updates の実装 Issue は、配布準備（#36〜#40）の依存にしない単発の作業である。`progress.md` の索引には載せない（#30 と同じ扱い）。
+
+### `release.yml` と GitHub Actions の version updates
+
+`release.yml` は dist の生成物で、第三者 action の SHA は `dist-workspace.toml` の `github-action-commits` から入る。Dependabot は `.github/workflows/` にある `release.yml` も更新する。更新 PR が `release.yml` の SHA だけを変えると、Release workflow の `plan` job が生成結果との差分で失敗する。
+
+- 決定: `release.yml` を Dependabot の対象から外さない。更新 PR で Release workflow が差分により失敗したら、`github-action-commits` を同じ SHA と tag へ揃え、`dist generate --check` が通ることを確かめた commit を更新 PR に足してから merge する。手順は `doc/guidelines/development-loop.md` の「Dependabot が作成する更新 PR」に置く。
+- 理由: 対象から外すと、`release.yml` の action だけが更新されないまま、公開の日まで気付かない。差分での失敗は、揃える作業が要ることを更新 PR の時点で示す。
+- 影響: この場合に限り、bot PR に人間（または依頼を受けた agent）の commit が加わる。
+
+### 見直す条件
+
+- Cargo の更新 PR のレビュー負荷や、MSRV 起因の失敗が大きい場合。grouping、頻度、major 更新の扱いを見直す。
+- dist が、生成する workflow の action を他の workflow と揃えて更新する仕組みを持った場合。`release.yml` の扱いを見直す。
+- security updates の PR が version updates の PR と衝突し、レビューの手戻りが目立つ場合。

@@ -1,0 +1,23 @@
+# Third-Party Licenses
+
+bizdate の配布バイナリに含まれる第三者の crate と、そのライセンスの一覧です。bizdate 本体のライセンスは同梱の `LICENSE` を参照してください。
+
+## Crates
+
+| crate | version | license |
+|---|---|---|
+{{#each crates}}
+| {{{package.name}}} | {{{package.version}}} | {{{license}}} |
+{{/each}}
+
+## License texts
+{{#each licenses}}
+
+### {{{name}}} ({{{id}}})
+
+Used by: {{#each used_by}}{{{crate.name}}} {{{crate.version}}}{{#unless @last}}, {{/unless}}{{/each}}
+
+````text
+{{{text}}}
+````
+{{/each}}

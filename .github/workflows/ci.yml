@@ -10,6 +10,15 @@ on:
   push:
     branches:
       - main
+  # release workflow (.github/workflows/release.yml) が、公開する commit でも同じ検査を通すために呼ぶ
+  # (dist-workspace.toml の local-artifacts-jobs)。dist は custom job へ plan を渡すため、受け口だけを置く。
+  # 中身は使わない。
+  workflow_call:
+    inputs:
+      plan:
+        description: dist の plan。CI では使わない
+        required: false
+        type: string
 
 # 検査のみを行う workflow であり、書き込み権限を必要としない。
 permissions:
@@ -48,6 +57,11 @@ jobs:
 
       - name: Cache cargo registry and target
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      # release.yml は dist の生成物で、SHA は dist-workspace.toml と .github/build-setup.yml から入る。
+      # dist の設定を変えて新しい action が現れたときに、tag 参照のまま入らないことを確かめる。
+      - name: Check that third-party actions are pinned to commit SHAs
+        run: .github/scripts/check-action-pins.sh
 
       # cargo fmt は Cargo.lock を解決しないため --locked を受け付けない。
       - name: cargo fmt

@@ -1,0 +1,33 @@
+# cargo-about の設定。配布 archive に同梱する THIRD-PARTY-LICENSES.md を about.hbs から生成する。
+# 生成物は commit せず、release workflow が release build のたびに作る。配布仕様は
+# doc/design/distribution.md、生成と確認のコマンドは doc/guidelines/development-command-guidelines.md。
+
+# 依存が使ってよいライセンス。ここに無いライセンスしか選べない crate があると、生成は失敗する。
+# 依存を追加・更新して失敗したら、そのライセンスの条件を確かめてから足す。
+# 並び順は OR で選べる場合の優先順位を兼ねる。
+accepted = [
+    "MIT",
+    "Apache-2.0",
+    "ISC",
+    "BSD-3-Clause",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
+    "BSL-1.0",
+    "Unlicense",
+]
+
+# 配布対象 4 target の依存を合わせた集合を対象にする。target ごとに分けない。
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-gnu",
+]
+
+# build script と proc-macro の依存も対象に残す。dev-dependencies は配布物に入らない。
+ignore-build-dependencies = false
+ignore-dev-dependencies = true
+ignore-transitive-dependencies = false
+
+# bizdate 自身 (publish = false) は第三者の表記に含めない。本体の LICENSE は archive に別途入る。
+private = { ignore = true }
