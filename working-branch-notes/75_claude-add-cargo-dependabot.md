@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/add-cargo-dependabot`
-- PR: 未作成
+- PR: #75
 - 最終更新: 2026-09-23
 
 ## 目的
@@ -26,7 +26,7 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 
 ## 次にやること
 
-- 実装、検証、PR 作成、note の採番。
+- 実装、検証、PR 作成、note の採番。（完了）
 - review cycle（`drive-issue-to-reviewed-pr` の P2 以降）。
 
 ## 検証
@@ -49,3 +49,4 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 - proxy で拒否された操作: docs.github.com の取得（WebFetch）。options reference は github/docs の source を clone して読んだ。
 - `github-op-integrated` MCP server は接続できなかった（CONNECTION_CLOSED）。組み込みの GitHub tool で進めた。
 - 追跡用 Issue #73 を作成した。
+- 2026-09-23T23:48Z PR #75 を作成した（head `5cbeee1`）。note を採番した。
