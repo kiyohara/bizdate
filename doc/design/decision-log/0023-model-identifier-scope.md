@@ -45,7 +45,7 @@ review metadata の `Model`:
 ## 決定
 
 - model の識別子の記載を禁止するのは **PR title** だけとする。tool 名、tool 由来の prefix と並べて `doc/guidelines/pull-request-guidelines.md` の「Tool 名と model の識別子の扱い」に置く。
-- PR description、PR と review のコメント、commit message（trailer を含む）、code と文書の本文では制限しない。書くかどうかは書き手の裁量とし、harness の既定の指示に従って省いてもよい。
+- PR description、PR と review のコメント、commit message（trailer を含む）、code と文書の本文では制限しない。書くかどうかは書き手の裁量とし、harness の既定の指示に従って省いてもよい。この範囲は tool 名にも同じく適用する。
 - review の canonical metadata の `Model` は必須のキーとし、実行環境で確認した識別子を書く。実行環境の既定の指示を理由に `unknown` にしない。`unknown` は識別子を確認できない場合に限る。
 - 正本は、記載範囲を `doc/guidelines/pull-request-guidelines.md`、`Model` のキー定義を `.agents/skills/review-pull-request/SKILL.md` とし、後者から前者を参照する。
 - 確認の手段（cloud session での session 情報の取得など）は本ログで決めず、Issue #69 で扱う。
@@ -61,7 +61,7 @@ review metadata の `Model`:
 - 入口 shim（`.claude/rules/pull-request-guidelines.md`、`.cursor/rules/pull-request-guidelines.mdc`）は title の禁止内容を要約しているため同期した。`AGENTS.md` と `CLAUDE.md` は正本への参照だけを持ち、変更しない。
 - `.github/copilot-instructions.md` は同期しない。Copilot code review は PR の diff を見るものであり、PR title と review metadata の書き方を扱わない。tool 名の扱いも元から載せていない。
 - commit message の扱いは `doc/guidelines/git-operation-guidelines.md` に書かない。制限しない以上、commit 時に読む必要がないためである。
-- 0017 の決定は変わらない。model の識別子への拡張を本ログに記録する。
+- 「PR title 以外では制限しない」は節全体に掛かるため、tool 名についても commit message と code / 文書の本文で制限しないことを明文化した。0017 は commit message を無規定とし、code / 文書に触れていなかった。どちらも実質の扱いは変わらず（無規定は制限しないことと同じで、文書は `.claude/rules/` のような tool 名を含む path を元から書いている）、記載範囲を 1 か所で読めるようにしたものである。0017 の決定（禁止は PR title のみ）は変わらない。
 
 ## 後から見直す条件
 
