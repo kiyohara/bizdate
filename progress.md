@@ -34,7 +34,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | done | なし | 完了。配布仕様を `doc/design/distribution.md` に、経緯を 0016 に置いた | [#42](https://github.com/kiyohara/bizdate/pull/42) |
 | DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | done | #36 | 完了。4 target の native `platform` job と最低 glibc の実測を CI に置いた | [#61](https://github.com/kiyohara/bizdate/pull/61) |
 | DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | done | #37 | 完了。`dist` の設定と release workflow を置いた。初回公開は未実施 | [#62](https://github.com/kiyohara/bizdate/pull/62) |
-| DIST-03a | [#64](https://github.com/kiyohara/bizdate/issues/64) | done | #38 | 完了。配布対象を 3 target にし、Intel Mac（`x86_64-apple-darwin`）を外した | - |
+| DIST-03a | [#64](https://github.com/kiyohara/bizdate/issues/64) | done | #38 | 完了。配布対象を 3 target にし、Intel Mac（`x86_64-apple-darwin`）を外した | [#67](https://github.com/kiyohara/bizdate/pull/67) |
 | DIST-03b | [#65](https://github.com/kiyohara/bizdate/issues/65) | todo | #64 | cargo-about を prebuilt で導入し、PR での CI の二重実行をやめる | - |
 | DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #65 | Homebrew Formula 生成と更新連携を整備する | - |
 | DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
