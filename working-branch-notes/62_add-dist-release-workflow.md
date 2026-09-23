@@ -12,7 +12,7 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 
 - 依存の #37（PR #61）は merge 済み。レビュー待ちの自分の PR は無く、直列消化の前提を満たす。
 - ローカル環境（Docker Desktop、arm64）で作業している。
-- 実装と文書更新を終え、Compose で検証した。PR の作成と、PR CI（CI と Release workflow）の結果の記録が残っている。
+- 実装と文書更新を終え、Compose で検証した。PR #62 を作成し、note を採番した。head `5544cd5` の PR CI（CI と Release workflow）がすべて成功し、4 target の archive 検証の結果を記録した。次は review cycle（P2）。
 
 ## 調査結果
 
@@ -64,7 +64,7 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - [x] guideline / spec / Copilot 指示 / progress.md を更新する
 - [x] Compose で検証し、結果を記録する
 - [x] PR を作成し、note を採番する
-- [ ] PR CI（CI と Release workflow）の結果を記録する
+- [x] PR CI（CI と Release workflow）の結果を記録する
 
 ## 検証
 
@@ -98,16 +98,32 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - `.github/copilot-instructions.md` の同期要否を `agent-configuration-management.md` に従って確認し、CI と release workflow の記述、`release.yml` の手編集の扱いを更新した。
 - note の情報統制: 秘密情報、個人情報、認証情報付き URL、ローカル絶対 path は含まない。
 
+### PR CI（PR #62、head `5544cd5`、2026-09-23）
+
+- CI（[run 35842593579](https://github.com/kiyohara/bizdate/actions/runs/35842593579)）: 5 job すべて success。`fmt / clippy` の job で action の SHA 固定の検査も通った。
+- Release workflow（[run 35842593797](https://github.com/kiyohara/bizdate/actions/runs/35842593797)）: `plan`（`release.yml` と設定の一致の検査を含む）、`build-local-artifacts` 4 job、`custom-ci` 5 job、`build-global-artifacts`、`custom-release-verify` 5 job がすべて success。`host` と `announce` は skipped で、PR では Release を作らないことを確かめた。
+- 検証した archive はこの run の workflow artifact であり、公開された Release asset ではない。
+
+| target | runner | build | 検証 | 最低 glibc | 動的リンク先 | 署名 |
+|---|---|---|---|---|---|---|
+| `aarch64-apple-darwin` | `macos-15` | 3m05s | 0m13s | 該当なし | `libSystem.B.dylib`、`libiconv.2.dylib` | ad-hoc（`linker-signed`） |
+| `x86_64-apple-darwin` | `macos-15-intel` | 7m32s | 0m31s | 該当なし | `libSystem.B.dylib`、`libiconv.2.dylib` | 未署名 |
+| `aarch64-unknown-linux-gnu` | `ubuntu-22.04-arm` | 2m17s | 0m08s | `GLIBC_2.34`（GCC symbol は `GCC_4.2.0`） | `libc.so.6`、`libgcc_s.so.1` | - |
+| `x86_64-unknown-linux-gnu` | `ubuntu-22.04` | 1m48s | 0m07s | `GLIBC_2.34`（GCC symbol は `GCC_4.2.0`） | `libc.so.6`、`libgcc_s.so.1` | - |
+
+- 4 target とも、checksum の照合、archive 名と構成の plan との一致（`bizdate` / `LICENSE` / `README.md` / `THIRD-PARTY-LICENSES.md`）、`README.md` / `LICENSE` の同一性、third-party 表記の照合（50 crate）、`platform-check.sh` の 29 項目が通った。`release tag` job は PR のため tag の検査を行わず、公開しない旨を出して成功した。
+- 最低 glibc、動的リンク先、署名の種別は、#37 の CI が `--release` のバイナリで実測した値（PR #61 の note）と同じだった。
+- build job の所要時間の大半は cargo-about の `cargo install` だった（`macos-15-intel` 333 秒、`macos-15` 126 秒、`ubuntu-22.04-arm` 92 秒、`ubuntu-22.04` 68 秒）。生成は 3〜11 秒、照合は 2 秒以内、`dist build` は 20〜68 秒。
+
 ### 未検証
 
-- macOS 2 target と `x86_64-unknown-linux-gnu` の archive（PR CI で確認する）。
 - tag push での公開経路（`host` / `announce`）。tag の push と Release の作成はスコープ外で、公開は #40 の手順に従う。
 - cloud session での `release-tools` の build（GitHub の release asset への到達を含む）。
 
 ## リスク・ブロッカー
 
 - dist が生成する job は `contents: write` を継ぎ、build job に `GH_TOKEN` が渡る。dist の制約として 0022 に記録した。
-- PR ごとに Release workflow が 4 target の build と検証、CI の再実行を行うため、PR の CI 時間が増える。
+- PR ごとに Release workflow が 4 target の build と検証、CI の再実行を行うため、PR の CI 時間が増える。head `5544cd5` では Release workflow が約 9 分（うち `macos-15-intel` の cargo-about の install が約 5.5 分）、CI 単体は約 1.5 分だった。
 - `Dockerfile` と `compose.yaml` の変更により、cloud session の environment cache は drift 警告が出る。stub の貼り直しはユーザーの操作。
 - Dependabot の Cargo 運用の実装 Issue は未起票。
 
@@ -116,3 +132,5 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 2026-09-23: Issue #38 を読み、依存（#37 / PR #61 merge 済み）と open PR 無しを確認。ブランチ `add-dist-release-workflow` で着手。
 - 2026-09-23: dist 0.32.0 と cargo-about 0.9.2 のソースを読み、Compose に `release-tools` を用意して `dist init` / `generate` / `plan` / `build` を試した。当初 `plan-jobs` に置いた CI と third-party 表記の生成が `host` の条件を素通りすると分かり、`local-artifacts-jobs` / `global-artifacts-jobs` と build job 内での生成へ組み替えた。
 - 2026-09-23: 0022 を新設し、0015 に再判断を追記。guideline / spec / Copilot 指示 / progress.md を更新し、Compose で検証した。
+- 2026-09-23: 最初の commit が 1Password の承認待ち（`failed to fill whole buffer`）で失敗し、guideline に従って中断した。ユーザーの指示で再実行して commit（`150b782`）。PR #62 を作成し、`number-working-branch-note` で note を採番（`5544cd5`）。`progress.md` の DIST-03 に PR 番号を反映。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）、PR description には該当なし。触らなかった stale 表現は 1 件（「現在の状況」の「PR の作成と、PR CI の結果の記録が残っている」。定型外の prose で完了要素と未完要素が混在するため採番 skill は触らず、この更新で書き換えた）。採番 skill は停止せず完走した。PR 本文は MCP の読み出しで `<...>` と引用符が sanitize されるため、置換は公開 API で読んだ本文に対して行い、読み戻しで一致を確かめた。
+- 2026-09-23: head `5544cd5` の CI（run 35842593579）と Release workflow（run 35842593797）がすべて success。PR では `host` / `announce` が skipped。4 target の archive の最低 glibc、動的リンク先、署名、build の所要時間を検証欄に記録した（sha256 は情報統制の観点で note に書かない）。
