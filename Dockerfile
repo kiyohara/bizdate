@@ -35,9 +35,9 @@ RUN set -eu; \
     install -m 0755 "$work/cargo-dist-${arch}-unknown-linux-gnu/dist" /usr/local/bin/dist; \
     rm -rf "$work"; \
     dist --version
-# cargo-about は release workflow の build job と同じ script で入れる (version は script を正とする)。
-# 実行時は registry が named volume に置き換わるため、install で取得した crate は image に残さない。
+# cargo-about は release workflow の build job と同じ script で、upstream の prebuilt を sha256 と照合して
+# 入れる (version と sha256 は script を正とする)。/usr/local/bin/cargo-about に置く。
 COPY .github/scripts/install-cargo-about.sh /tmp/install-cargo-about.sh
 RUN /tmp/install-cargo-about.sh --root /usr/local \
-    && rm -rf /tmp/install-cargo-about.sh /usr/local/cargo/registry \
+    && rm /tmp/install-cargo-about.sh \
     && cargo about --version
