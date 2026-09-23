@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-09
-- 最終更新日: 2026-09-09
-- 関連: `doc/design/distribution.md`, `doc/design/concept.md`, `doc/design/cli-interface.md`
+- 最終更新日: 2026-09-23
+- 関連: `doc/design/distribution.md`, `doc/design/concept.md`, `doc/design/cli-interface.md`, [Issue #64](https://github.com/kiyohara/bizdate/issues/64)
 
 ## 背景
 
@@ -172,3 +172,61 @@ macOS を署名しないのは、`dist` の署名機能は使えるものの、A
 - macOS で Gatekeeper の確認が実際に利用者の障害になった場合。`dist` の `macos-sign` は既に使えるため、費用と運用負担を引き受けるかの判断になる。
 - `dist` が notarization に対応した場合。
 - 公開契約が安定し、`1.0.0` を名乗る段階になった場合。
+
+## 2026-09-23 追記: 配布対象から Intel Mac を外す
+
+Issue #64。「後から見直す条件」の「macOS Intel runner が使えなくなった場合」を待たずに、対象 target を見直す。#37 / #38（PR #61 / #62）で 4 target の native CI と release workflow を導入した結果、PR へ push するたびに CI と Release workflow が 4 target を回し、待ち時間の大半を Intel Mac（`x86_64-apple-darwin`、runner は `macos-15-intel`）が占めていた。
+
+### 候補
+
+上の候補（A〜J）と区別するため、K から続ける。
+
+- K: 4 target を維持する
+- L: `x86_64-apple-darwin` を外し、3 target にする
+- M: Intel Mac 向けを universal binary やクロスビルドで残す
+
+### 検討内容
+
+PR #62 の最終 push（head `3a505c3`）の実測は次のとおりである。
+
+- Release workflow（[run 35852002755](https://github.com/kiyohara/bizdate/actions/runs/35852002755)）は 8 分 14 秒。律速は `build-local-artifacts (x86_64-apple-darwin)` の 6 分 59 秒で、うち 4 分 42 秒は cargo-about の `cargo install` だった。cargo-about 0.9 系は `x86_64-apple-darwin` の prebuilt を配っていない（0.8.4 までは配っていた）。
+- CI（[run 35852002437](https://github.com/kiyohara/bizdate/actions/runs/35852002437)）は 1 分 6 秒で、最後に終わったのは `macos-15-intel` の job（63 秒）だった。
+- push 1 回で macOS job が 8 本走る（CI 2 本、Release workflow 6 本）。開始時に 6 本が同時に要求されて macOS の同時実行上限（Free / Pro / Team で 5 本）を超え、Intel の build は開始が約 30 秒遅れた。
+
+リポジトリは public であり、標準 runner に料金はかからない。問題は料金ではなく、PR ごとの待ち時間と macOS の同時実行枠である。
+
+Intel Mac の周辺環境は終息に向かっている。
+
+- Apple: macOS 26 Tahoe が Intel Mac に対応する最後の macOS であり、macOS 27 は Apple Silicon 専用である。
+- Homebrew: 7.0.0（2026-09-13）で Intel を Tier 3 に下げた。2027-09-01 に、Intel Mac 上で Homebrew を動かす機能を削除する予定である。
+- GitHub Actions: macOS の Intel runner は、macOS 15 image の引退（2027 年秋）で提供が終わる。
+- Rust: `x86_64-apple-darwin` は Tier 2 に降格済みである（上の「対象環境と libc」）。
+
+配布はまだ一度も公開していない。対象から外しても、影響を受ける既存の利用者はいない。
+
+K では Intel の build job が律速のまま残る。cargo-about を prebuilt で入れる方式へ切り替えても、`x86_64-apple-darwin` の prebuilt が無いため Intel の job は短くならない。M は、すべて対象 architecture 上の native ビルドで配る方針（上の「決定」）から外れ、Intel 上での native な実行確認もできない。
+
+### 決定
+
+2026-09-23 にユーザーが判断した。
+
+- 配布対象から `x86_64-apple-darwin` を外し、`aarch64-apple-darwin` / `aarch64-unknown-linux-gnu` / `x86_64-unknown-linux-gnu` の 3 target とする（候補 L）。すべて native ビルドとする方針は変えない。上の「決定」のうち「対象は 4 target」と、ビルド runner の `macos-15-intel` をこの追記で置き換える。
+- macOS の CI と配布 archive の検証は、Apple Silicon（`macos-15`）だけで行う。Linux の 2 target は従来どおり回す。
+- 利用者への案内は「macOS は Apple Silicon のみ対応」といった記載だけとする。Intel Mac での手動ビルド（ソースからのビルド）はサポートせず、手順も案内しない。universal binary やクロスビルドによる代替も提供しない（候補 M は採らない）。
+- Intel Mac の再追加は検討しない。見直し条件にも置かない。
+
+### 理由
+
+- Intel の build job が Release workflow の律速であり、その大半を占める cargo-about のビルドは prebuilt に置き換えられない。外せば、残る 3 target の build runner はすべて cargo-about の prebuilt を使える（#65 で扱う）。macOS の job は push 1 回あたり 4 本（CI 1 本、Release workflow 3 本）になり、同時実行上限にかからない見込みである。
+- OS、Homebrew、CI runner、Rust のいずれも Intel Mac の支持を縮めており、配り続けても支えられる期間は短い。
+- 未公開のため、いま外せば既存の利用者に影響しない。
+
+### 影響
+
+- `doc/design/distribution.md` を 3 target に改めた（target triple の表、最低実行環境、実測の対象、third-party 表記の対象集合、Homebrew Formula の分岐、「対象外」、利用者向けの案内）。`concept.md` もそろえた。
+- `dist-workspace.toml` の `targets` と `github-custom-runners`、`about.toml` の `targets`、`.github/workflows/ci.yml` の `platform` job の matrix から外した。`release.yml` には target ごとの記述が無く、build の matrix は `plan` job の `dist plan` が決める。
+- `.github/scripts/` から Intel Mac 向けの分岐を外した。`platform-check.sh` は macOS の binary に署名が無ければ失敗にし、最低 macOS version を `LC_BUILD_VERSION` だけから読む。
+- third-party 表記の crate 集合は変わらない。2026-09-23 時点の `Cargo.lock` では 4 target の依存が同一で、`x86_64-apple-darwin` だけが持つ依存は無かった。
+- 上の「後から見直す条件」のうち「macOS Intel runner が使えなくなった場合」は、対象から外したため適用しない。
+- [0022](0022-release-workflow.md) の本文の「4 target」は当時の値である。cargo-about を `cargo install` で入れる根拠（`x86_64-apple-darwin` の prebuilt が無い）は #65 で見直す。
+- #39（Homebrew Formula）、#40（リリース手順と案内）、#63（Cargo の Dependabot）の Issue 本文を 3 target の前提へ同期した。

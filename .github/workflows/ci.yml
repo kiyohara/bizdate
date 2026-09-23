@@ -1,4 +1,4 @@
-# fmt / clippy と、配布対象 4 target での test / release build / 起動確認を回す CI。
+# fmt / clippy と、配布対象 3 target での test / release build / 起動確認を回す CI。
 # 方針は doc/design/decision-log/0010-hosting-and-ci-platform.md、配布対象と runner は
 # doc/design/distribution.md（経緯は 0016）、toolchain と cargo option は
 # doc/design/decision-log/0014-dependency-crates-and-toolchain.md と
@@ -71,7 +71,7 @@ jobs:
       - name: cargo clippy
         run: cargo clippy --locked --all-targets -- -D warnings
 
-  # 配布対象 4 target を、それぞれ対象 architecture の runner で native にビルドして動かす。
+  # 配布対象 3 target を、それぞれ対象 architecture の runner で native にビルドして動かす。
   # emulation と cross-build は使わない。runner の選定理由は doc/design/distribution.md を参照する。
   platform:
     name: test / build (${{ matrix.target }})
@@ -82,8 +82,6 @@ jobs:
         include:
           - target: aarch64-apple-darwin
             runner: macos-15
-          - target: x86_64-apple-darwin
-            runner: macos-15-intel
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04-arm
           - target: x86_64-unknown-linux-gnu

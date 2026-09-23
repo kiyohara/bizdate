@@ -17,18 +17,19 @@
 
 ### target triple
 
-次の 4 対象を配布対象とする。いずれも対象 architecture の runner 上で native ビルドし、クロスビルドは使わない。
+次の 3 対象を配布対象とする。いずれも対象 architecture の runner 上で native ビルドし、クロスビルドは使わない。macOS は Apple Silicon（arm64）だけを対象とし、Intel Mac（`x86_64-apple-darwin`）には配らない。
 
 | target triple | OS / architecture | libc | 最低実行環境 | ビルド runner |
 |---|---|---|---|---|
 | `aarch64-apple-darwin` | macOS / arm64 | - | macOS 11.0 | `macos-15` |
-| `x86_64-apple-darwin` | macOS / x86_64 | - | macOS 10.12 | `macos-15-intel` |
 | `aarch64-unknown-linux-gnu` | Linux / arm64 | glibc | 「libc 条件」に従う | `ubuntu-22.04-arm` |
 | `x86_64-unknown-linux-gnu` | Linux / x86_64 | glibc | 同上 | `ubuntu-22.04` |
 
 最低 macOS version は rustc の既定 deployment target である。`MACOSX_DEPLOYMENT_TARGET` は設定せず既定のままとする。CI の `platform` job と release workflow の `release-verify` job は、binary の load command に書かれた最低 macOS version を step summary に記録する。
 
-native ビルドを要件とするのは、Apple Silicon が ad-hoc であっても署名済みバイナリしか実行しないためである。macOS runner 上で link すればリンカが ad-hoc 署名を付けるが、他 OS からのクロスビルドでは付かない。
+native ビルドを要件とするのは、Apple Silicon が ad-hoc であっても署名済みバイナリしか実行しないためである。macOS runner 上で link すればリンカが ad-hoc 署名を付けるが、他 OS からのクロスビルドでは付かない。CI の `platform` job と release workflow の `release-verify` job は、macOS の binary に署名があることを確かめる。
+
+利用者向けの案内では、対応環境を「macOS は Apple Silicon のみ対応」と記載するにとどめる。Intel Mac での手動ビルド（ソースからのビルド）はサポートせず、手順も案内しない。
 
 ### libc 条件
 
@@ -42,7 +43,7 @@ Linux は glibc 版（`*-unknown-linux-gnu`）だけを配る。musl 版は v1 �
 objdump -T <binary> | grep -o 'GLIBC_[0-9.]*' | sort -u -V | tail -1
 ```
 
-- 実測は CI の `platform` job（`.github/workflows/ci.yml`）に置き、Linux 2 対象の最低 glibc と 4 対象の動的リンク先を job の step summary に記録する。release workflow の `release-verify` job も、配布 archive から取り出した binary について同じ記録を step summary に残す。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
+- 実測は CI の `platform` job（`.github/workflows/ci.yml`）に置き、Linux 2 対象の最低 glibc と 3 対象の動的リンク先を job の step summary に記録する。release workflow の `release-verify` job も、配布 archive から取り出した binary について同じ記録を step summary に残す。参考値として、2026-09-09 時点の `aarch64-unknown-linux-gnu` release build では `GLIBC_2.34` および `GCC_4.2.0` が最大だった。
 - 最低 glibc が上がると、それまで動いていた環境が黙って動かなくなる。実測値が上がった場合は release note に明記する。
 
 ### 実行時前提
@@ -131,7 +132,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 
 - `THIRD-PARTY-LICENSES.md` を生成し、archive に同梱する。crate 名、version、ライセンス識別子、ライセンス本文を含める。
 - 生成には `cargo-about` を使う。採用 version は 0.9.2 とする。`cargo install` する場合は `--features cli` が要る。
-- 対象は 4 target すべてを合わせた集合とする。platform ごとに別ファイルへ分けない。
+- 対象は 3 target すべてを合わせた集合とする。platform ごとに別ファイルへ分けない。
 - 生成物はリポジトリに commit せず、release build のたびに生成する。依存の追加・更新で内容が古くなる事故を避けるためである。
 - 検証は、生成が成功し、かつ `cargo-about` が未許可ライセンスを検出せずに終了することをもって行う。許可するライセンス識別子は生成設定に列挙し、依存追加時に見直す。
 - 生成設定は repository root の `about.toml`（許可するライセンス、対象 target、依存の範囲）と `about.hbs`（書式）に置く。dev-dependencies は配布物に入らないため除き、build 依存と proc-macro は含める。bizdate 自身は含めない。
@@ -177,13 +178,14 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 - tap は `kiyohara/homebrew-tap` を slapex と共用する（[0010](decision-log/0010-hosting-and-ci-platform.md)）。
 - `dist` は Formula を tap の `Formula/` 配下へ書く。既存の `Casks/slapex.rb` とはディレクトリが分かれるため共存できる。Cask を Formula へ移す作業は行わない。
 - `dist` は Cask を生成しない。`bizdate` は CLI であり Formula が適切である。
-- Formula は 4 対象すべてを 1 ファイルで扱い、`OS` と `Hardware::CPU` で分岐して該当 archive を取得する。
+- Formula は 3 対象すべてを 1 ファイルで扱い、`OS` と `Hardware::CPU` で分岐して該当 archive を取得する。macOS 向けの archive は Apple Silicon の 1 つだけで、Intel Mac 向けの archive は持たない。
 
 ## 対象外
 
 次は配布仕様の対象外とする。
 
 - Windows 向けの配布（[0008](decision-log/0008-language-and-distribution.md)）
+- Intel Mac（`x86_64-apple-darwin`）向けの配布（universal binary やクロスビルドによるものを含む）と、Intel Mac での手動ビルド（ソースからのビルド）のサポート
 - crates.io への公開。`Cargo.toml` の `publish = false` は維持する
 - 公開ライブラリクレートとしての提供
 - Linux の musl 版、パッケージマネージャ（apt / dnf / AUR など）向けのパッケージ

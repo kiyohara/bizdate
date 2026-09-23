@@ -32,7 +32,6 @@ fail() {
 echo "== native runner"
 case $target in
     aarch64-apple-darwin) want="Darwin arm64" ;;
-    x86_64-apple-darwin) want="Darwin x86_64" ;;
     aarch64-unknown-linux-gnu) want="Linux aarch64" ;;
     x86_64-unknown-linux-gnu) want="Linux x86_64" ;;
     *) fail "unknown target: $target" ;;

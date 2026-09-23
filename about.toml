@@ -16,10 +16,9 @@ accepted = [
     "Unlicense",
 ]
 
-# 配布対象 4 target の依存を合わせた集合を対象にする。target ごとに分けない。
+# 配布対象 3 target の依存を合わせた集合を対象にする。target ごとに分けない。
 targets = [
     "aarch64-apple-darwin",
-    "x86_64-apple-darwin",
     "aarch64-unknown-linux-gnu",
     "x86_64-unknown-linux-gnu",
 ]

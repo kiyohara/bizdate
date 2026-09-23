@@ -16,7 +16,9 @@ ci = "github"
 hosting = "github"
 # installer は作らない。Homebrew は後続 (Issue #39) で足す。shell installer は提供しない。
 installers = []
-targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+# 配布対象は doc/design/distribution.md の 3 target。macOS は Apple Silicon だけで、Intel Mac
+# (x86_64-apple-darwin) には配らない。1 行の配列で書く (check-third-party-licenses.sh がこの形で読む)。
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu"]
 unix-archive = ".tar.gz"
 checksum = "sha256"
 # README.md と LICENSE は auto-includes で入る。third-party 表記は build job が dist build の直前に
@@ -24,7 +26,7 @@ checksum = "sha256"
 include = ["THIRD-PARTY-LICENSES.md"]
 # 配る成果物は archive と checksum に限る。ソースは GitHub が Release に付ける source code archive で足りる。
 source-tarball = false
-# PR でも 4 target の archive を作り、release-verify job で検証する。公開 (host 以降) は tag push だけ。
+# PR でも 3 target の archive を作り、release-verify job で検証する。公開 (host 以降) は tag push だけ。
 pr-run-mode = "upload"
 # 公開する build を cache に依存させない。
 cache-builds = false
@@ -34,7 +36,7 @@ github-build-setup = "../build-setup.yml"
 # 公開を止める検査は、host が結果を確かめる段階に置く。plan 段階 (plan-jobs) に置くと、失敗したときに
 # 後続の build が skipped になり、skipped を許す host の条件が成立してしまうため使わない。
 # - local-artifacts-jobs: build と並行して、公開する commit で CI (.github/workflows/ci.yml) を回す
-# - global-artifacts-jobs: build の後に tag の形を確かめ、4 target の native runner で archive を検証する
+# - global-artifacts-jobs: build の後に tag の形を確かめ、3 target の native runner で archive を検証する
 local-artifacts-jobs = ["./ci"]
 global-artifacts-jobs = ["./release-verify"]
 
@@ -48,7 +50,6 @@ release-verify = { contents = "read" }
 [dist.github-custom-runners]
 global = "ubuntu-22.04"
 aarch64-apple-darwin = "macos-15"
-x86_64-apple-darwin = "macos-15-intel"
 aarch64-unknown-linux-gnu = "ubuntu-22.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
 
