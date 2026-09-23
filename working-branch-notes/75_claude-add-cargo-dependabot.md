@@ -50,3 +50,4 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 - `github-op-integrated` MCP server は接続できなかった（CONNECTION_CLOSED）。組み込みの GitHub tool で進めた。
 - 追跡用 Issue #73 を作成した。
 - 2026-09-23T23:48Z PR #75 を作成した（head `5cbeee1`）。note を採番した。
+- P1 の引き上げ（`number-working-branch-note`）: 完了として書き換えたタスク行は note の「次にやること」の「実装、検証、PR 作成、note の採番。」の 1 行。PR description は該当なし。触らなかった stale 表現は note の「検証」の「PR CI: PR 作成後に記入する。」の 1 件（定型に当たらない。CI 完了後に自分で書き換える）。停止は無し。
