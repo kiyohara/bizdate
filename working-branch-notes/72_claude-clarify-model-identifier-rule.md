@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/clarify-model-identifier-rule`
-- PR: -
+- PR: #72
 - 最終更新: 2026-09-23
 
 ## 目的
@@ -24,7 +24,7 @@
 
 ## 次にやること
 
-- PR を作成し、note を採番する。
+- PR を作成し、note を採番する。（完了）
 - `drive-issue-to-reviewed-pr` の P2 以降（review を subagent へ委譲）。
 
 ## 検証
