@@ -135,7 +135,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 - 生成物はリポジトリに commit せず、release build のたびに生成する。依存の追加・更新で内容が古くなる事故を避けるためである。
 - 検証は、生成が成功し、かつ `cargo-about` が未許可ライセンスを検出せずに終了することをもって行う。許可するライセンス識別子は生成設定に列挙し、依存追加時に見直す。
 - 生成設定は repository root の `about.toml`（許可するライセンス、対象 target、依存の範囲）と `about.hbs`（書式）に置く。dev-dependencies は配布物に入らないため除き、build 依存と proc-macro は含める。bizdate 自身は含めない。
-- release workflow は、生成した表記の crate と version が配布対象の依存と過不足なく一致すること、上の表の条件の本文が該当 crate の分として載っていることも確かめる。
+- release workflow は、生成した表記の crate と version が配布対象の依存と過不足なく一致すること、各ライセンスの本文が空でないこと、上の表の条件の本文が該当 crate の分として載っていることも確かめる。
 
 ## version と tag
 

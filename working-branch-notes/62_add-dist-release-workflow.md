@@ -13,7 +13,8 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 依存の #37（PR #61）は merge 済み。レビュー待ちの自分の PR は無く、直列消化の前提を満たす。
 - ローカル環境（Docker Desktop、arm64）で作業している。
 - 実装と文書更新を終え、Compose で検証した。PR #62 を作成し、note を採番した。head `5544cd5` の PR CI（CI と Release workflow）がすべて成功し、4 target の archive 検証の結果を記録した。
-- review cycle `claude-code-72767ff-20260923094145`（head `72767ff`）で指摘 9 件を受け、全件を採用して対応した（P4、`9eb833f`）。再確認（P5）で 9 thread とも resolve 可と判定され、1 周で収束した。残るのは人間による thread の resolve と merge の判断。
+- review cycle `claude-code-72767ff-20260923094145`（head `72767ff`）で指摘 9 件を受け、全件を採用して対応した（P4、`9eb833f`）。再確認（P5）で 9 thread とも resolve 可と判定され、1 周で収束した。
+- その後の Codex の review（cycle `codex-553a46b-20260923105349`、head `553a46b`）の [imo] 1 件（本文の空のライセンス節を照合が通す）を採用して対応した。この cycle の再確認は Review 担当と同じ Codex が行う。
 
 ## 調査結果
 
@@ -88,7 +89,7 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 
 - `check-release-tag.sh`: `v0.1.0` だけ成功。`v0.2.0`、`0.1.0`、`bizdate-v0.1.0`、`v0.1.0-rc.1` は失敗。
 - `check-action-pins.sh`: 一時的に置いた `actions/checkout@v7` の workflow で失敗（確認後に削除）。現状の 27 件の `uses:` は成功。
-- `check-third-party-licenses.sh`: 表の行の欠落、CDLA 本文の欠落、`subtle` の本文の欠落、空ファイル、`ring` の ISC 本文の付け替え、`encoding_rs` の BSD-3-Clause 本文の付け替えで失敗。
+- `check-third-party-licenses.sh`: 表の行の欠落、CDLA 本文の欠落、`subtle` の本文の欠落、空ファイル、`ring` の ISC 本文の付け替え、`encoding_rs` の BSD-3-Clause 本文の付け替えで失敗。Codex の review 対応後は、全 48 節の本文を空にした表記、1 節だけ空、空白だけの本文、fence の無い節でも失敗する（修正前は全節が空でも exit 0 だったことを再現した）。本文の検査は mawk 1.3.4 と macOS の BSD awk 20200816 で同じ判定になった。
 - `verify-release-archive.sh`: checksum の改ざん、runner と target の不一致、plan との構成不一致、`README.md` の差し替え（checksum は作り直し）で失敗。
 
 ### workflow
@@ -150,3 +151,4 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 2026-09-23: P3 で 9 件の事実を確かめた（`check-action-pins.sh` の空入力と `.yaml` の素通り、checksum file の末尾の空行と macOS / coreutils 8.x の WARNING、`--strict` での失敗を再現）。Issue の起票はユーザーに確認し、「役割は固定していない」との指示で #63 を起票した。P4 で全件を採用して対応: `check-action-pins.sh` の fail-closed 化と `.yaml` 対応、tag 検査の fail-closed 化、`platform-check.sh` での最低 macOS version の記録、0022 に残るリスク 2 点と見直し条件、spec に checksum の警告と最低 macOS の記録、guideline / cloud guideline / 開発ループに cloud session での制約、MSRV 手順に `release-tools` の作り直し、`ci.yml` のコメント、`progress.md` / 0015 / index に #63。
 - 2026-09-23: 対応を `9eb833f` で push し、9 thread へ処置を返信（metadata は Mode: address-comments、Reviewed head: `9eb833f`）。PR 本文の検証・未検証事項・補足を更新し、公開 API で読み戻した。head `9eb833f` の CI（run 35848494571）と Release workflow（run 35848495226）はすべて success で、最低 macOS version は 11.0 / 10.12。
 - 2026-09-23: P5 再確認（同じ subagent を再開、head `9eb833f`）で 9 thread とも resolve 可（`**修正確認済み（resolve 可）**`）、未対応 0、新規 inline 指摘 0。今回は subagent が自分で投稿できた。完了要約内の `[fyi]` 1 件（note に `9eb833f` の CI と最低 macOS version の記録が無く、未検証の記述が古い）はこの更新で直した。P6 で追加対応不要と判断し、1 周で収束。
+- 2026-09-23: Codex の review（cycle `codex-553a46b-20260923105349`、head `553a46b`）の [imo] 1 件に `address-comments` で対応。指摘どおり、`check-third-party-licenses.sh` は "Used by:" の行だけで (crate, id) を作り、本文を見ていなかった（全節の本文を空にしても exit 0 を再現）。各節の code fence に空白以外の本文があることを検査に足し、fence の無い節も本文無しとして扱う。同じ file の冒頭 comment が削除済みの release-prepare job を指していたため、実際の呼び出し元（build job と release-verify）へ直した。配布仕様の検証の記述に「本文が空でない」を足した。

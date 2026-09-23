@@ -1,6 +1,7 @@
 #!/bin/sh
 # 生成した THIRD-PARTY-LICENSES.md が配布対象の依存と対応していることを確かめる。
-# release workflow の release-prepare job が生成の直後に呼ぶ。Compose でも同じ形で実行できる。
+# release workflow の build job が生成の直後に (.github/build-setup.yml)、release-verify job が
+# archive から取り出した file に対して (verify-release-archive.sh) 呼ぶ。Compose でも同じ形で実行できる。
 #
 #   docker compose run --rm release-tools sh -c 'cargo about generate --locked --fail --output-file THIRD-PARTY-LICENSES.md about.hbs && .github/scripts/check-third-party-licenses.sh THIRD-PARTY-LICENSES.md'
 #
@@ -8,6 +9,7 @@
 #   - 表の crate と version が、dist-workspace.toml の配布対象 target すべての依存 (normal と build。
 #     bizdate 自身は除く) を合わせた集合と過不足なく一致する。依存は cargo tree で数える
 #   - 表のすべての crate に、ライセンス本文が 1 つ以上ある
+#   - 本文の各節 ("### " から次の "### " まで) の code fence に、空白以外の本文がある
 #   - 配布仕様 (doc/design/distribution.md) が名指しする条件の本文が、該当 crate の分として載っている
 set -eu
 
@@ -61,6 +63,24 @@ cut -d ' ' -f 1,2 "$work/texts.txt" | sort -u > "$work/with-text.txt"
 if ! diff "$work/listed.txt" "$work/with-text.txt" > "$work/diff.txt"; then
     cat "$work/diff.txt" >&2
     fail "some crates in $file have no license text ('<' listed without text, '>' text for an unlisted crate)"
+fi
+
+# 上の組は "Used by:" の行だけから作るため、本文そのものは見ていない。各節の code fence
+# (about.hbs の "````text" から "````" まで) に空白以外の文字があることを確かめ、無い節の見出しを出す。
+# fence を持たない節も本文が無いものとして扱う。
+awk '
+    function check() {
+        if (heading != "" && !has_text) print heading
+    }
+    /^### / { check(); heading = $0; has_text = 0; in_fence = 0; next }
+    /^````text$/ { in_fence = 1; next }
+    /^````$/ { in_fence = 0; next }
+    in_fence && /[^ \t\r]/ { has_text = 1 }
+    END { check() }
+' "$file" > "$work/empty-texts.txt"
+if [ -s "$work/empty-texts.txt" ]; then
+    sed 's/^/  /' "$work/empty-texts.txt" >&2
+    fail "some license sections in $file have no text"
 fi
 
 # 自前の LICENSE だけでは満たせない条件を持つ依存 (distribution.md の「third-party ライセンス表記」)。
