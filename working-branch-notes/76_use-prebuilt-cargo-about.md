@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `use-prebuilt-cargo-about`
-- PR: 未作成
+- PR: #76
 - 最終更新: 2026-09-24
 
 ## 目的
@@ -36,7 +36,7 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - [x] `distribution.md` / guideline / `build-setup.yml` と `ci.yml` のコメント / Copilot 指示を改める
 - [x] Compose で検証する（`release-tools` の作り直し、`dist generate --check`、表記の生成と照合、ソースビルドとの byte 比較、stub での失敗経路）
 - [x] `progress.md` の DIST-03b の行を更新する（PR 欄は採番後）
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] PR CI の結果と所要時間を記録し、PR #67 の実測と比べる
 
 ## 検証
