@@ -14,7 +14,8 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 - cloud session（Claude Code on the web）で作業している。GitHub 操作は組み込み tool、開発コマンドは Compose 経由。`drive-issue-to-reviewed-pr` の P1 として進めている。
 - 実装と文書更新を終え、Compose（cloud session）で検証した。PR #67 を作成した。head `ee5d285` の PR CI（CI と Release workflow）はすべて成功し、`release-tools` を要する検証をその結果で代えた。所要時間と macOS job 数を PR #62 の最終 push と比べた。
 - 後続 Issue（#39 / #40 / #63）の本文を 3 target の前提へ同期した。
-- note を PR #67 で採番した。P1 を終え、P2（review）へ進む。
+- note を PR #67 で採番した。
+- review cycle `claude-code-310ea80-20260923143547`（head `310ea80`）で指摘 4 件（imo 1 / nits 2 / fyi 1。must / ask は 0）を受け、全件を採用して対応した（P4）。元の Review 担当による再確認（P5）が残る。
 
 ## 調査結果
 
@@ -29,6 +30,7 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 - decision log は 0016 への追記とする。0016 の主題（初回配布の契約）のうち対象 target だけを変える更新であり、tzdb、TLS、archive、version / tag、署名などの決定は有効なままである。ログ全体を `superseded` にすると有効な決定まで上書き扱いになるため、0015 の 2026-09-23 追記と同じく既存ログへ追記し、index の 0016 の行を改める。
 - 0022 は変更しない。0022 は対象 target を 0016 と `distribution.md` に委ねており（背景）、本文の「4 target」は当時の記録である。「後から見直す条件」の cargo-about の件（`x86_64-apple-darwin` の prebuilt が無い前提）は、#65 が 0022 を更新して扱う。
 - `platform-check.sh` の Intel Mac 由来の許容を外す。署名が無い場合は失敗にし、最低 macOS version は `LC_BUILD_VERSION` だけから読む。Apple Silicon は署名の無い binary を実行せず、native link で linker が ad-hoc 署名を付けるためである（`distribution.md`）。
+- review 対応で決めたこと: `platform-check.sh` は macOS のとき、最初の起動より前に署名を確かめる。未署名の binary は Apple Silicon の kernel が起動時に止めるため、起動の確認（`--help`）は `stdout '' lacks usage` と理由を示さずに落ちる。署名の種別は従来どおり「runtime requirements」で記録する。
 - cloud session では `release-tools`（dist / cargo-about）を使えない（`doc/guidelines/cloud-session-guidelines.md`）。`dist generate`、`dist generate --check` / `dist plan`、`THIRD-PARTY-LICENSES.md` の生成と照合は Compose では実行せず、PR CI の Release workflow の結果で確かめる。`plan` job は実行のたびに `release.yml` と設定の一致を検査する。ローカルでの実行はユーザーに残す。
 
 ## 次にやること
@@ -47,7 +49,8 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 
 `x86_64-apple-darwin`、`macos-15-intel`、`Intel`、「4 target」「4 対象」「4 つの」などを repository 全体で検索した（過去の working branch note を除く）。改めなかった箇所と理由:
 
-- decision log 0016 の本文（候補、検討内容、決定、理由、影響、見直し条件）、0022 の本文と見直し条件、0015 の 2026-09-23 追記: 当時の記録として書き換えない。0016 には追記で置き換えを明記した。0022 の見直し条件（cargo-about の prebuilt）は #65 で更新される。
+- decision log 0016 の本文（背景、候補、検討内容、決定、理由、影響、見直し条件）、0022 の本文と見直し条件、0015 の 2026-09-23 追記: 当時の記録として書き換えない。0016 には追記で置き換えを明記した。0022 の見直し条件（cargo-about の prebuilt）は #65 で更新される。
+- decision log 0008 の決定の「対象プラットフォームは macOS と Linux の amd64 / arm64 とする」: 当時の記録として書き換えない。最初の検索語に `amd64` / `arm64` が無く漏れていた（review の `[fyi]`）。`amd64|arm64` で検索し直し、ほかに漏れが無いことを確かめた。0016 の追記の「影響」に、0008 のこの記述が当時の値であることを足した。
 - `progress.md` の現況の「続く #37 で配布対象 4 target の native CI …」と、DIST-02 の行の「4 target の native `platform` job」: #37 の完了時点の記録であり、当時の事実として残す。
 - 0021 の「4 つの選択肢」: 無関係。
 - 新たに書いた参照: `distribution.md` の対象外と案内、`dist-workspace.toml` のコメント、`.github/copilot-instructions.md`、0016 の追記。Intel Mac を外したことを明示するために置いた。
@@ -111,6 +114,12 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - 3 target とも、checksum の照合、archive 名と構成の plan との一致、`README.md` / `LICENSE` の同一性、third-party 表記の照合、`platform-check.sh` の各項目が通った。最低 glibc と動的リンク先は PR #62 の値と同じである。
 - 検証した archive はこの run の workflow artifact であり、公開された Release asset ではない。
 
+### review 対応（P4）の検証（cloud session で実行）
+
+- `platform-check.sh` の Darwin の経路を、Compose の container で `uname`（`-s` で `Darwin`）/ `codesign` / `sw_vers` / `otool` を stub にして通した。未署名の stub では `== code signature` の直後に `platform-check: FAIL: ... has no code signature: ...` で exit 1 となり、起動の確認に進まなかった。署名ありの stub では 30 項目（署名の確認 1 と従来の 29）が通って exit 0 となり、記録に `Signature=adhoc` と `minimum macOS: 11.0` が載った。実物の macOS は PR CI の `macos-15` の job で確かめる。
+- stub なしの Linux（container）では、従来どおり 29 項目が通り、`== code signature` は出ない。`sh -n` と `git diff --check` も通った。
+- 0016 の追記、`.github/copilot-instructions.md`、この note は文書の修正であり、Rust の検証は再実行していない（コードの変更が無い）。
+
 ## リスク・ブロッカー
 
 - cloud session では `release-tools` を使えないため、Issue の検証のうち `dist generate --check` / `dist plan` と third-party 表記の生成・照合は Compose で実行していない。PR CI の結果（`plan` の一致の検査と成果物の一覧、各 build job での生成と照合）で代えた。ローカルの Compose での実行はユーザーに残す。
@@ -121,3 +130,5 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - 2026-09-23: 設定、CI、script、spec、decision log（0016 追記と index）、guideline、Copilot 指示、`progress.md` を改めた。Compose で fmt / clippy / test / release build / `platform-check.sh` / `check-action-pins.sh` を通し、macOS 分岐の変更を合成入力で確かめた。
 - 2026-09-23: PR #67 を作成した。head `ee5d285` の CI（run 35873618462）と Release workflow（run 35873618982）がすべて success。所要時間、macOS job 数、archive の検証結果、cargo-about の install 時間を記録した。#39 / #40 / #63 の本文を同期し、読み戻しで一致を確かめた。
 - 2026-09-23: `number-working-branch-note` で note を PR #67 で採番した（`aaf480f`。先行の `3897cd1` と同じ push で反映）。PR description の note 参照を 1 箇所置換し、読み戻しで一致を確かめた。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）で、PR description には該当なし。触らなかった stale 表現は note の 1 件（「調査結果」の「`dist generate` の出力は変わらない見込みである」。定型外のため採番 skill は触らなかった。PR CI の `plan` job で確かめ済みのため、この更新で書き換えた）で、PR description には該当なし。採番 skill は停止せず完走した。
+- 2026-09-23: P2 の review（cycle `claude-code-310ea80-20260923143547`、head `310ea80`）を subagent に委譲した。review 1 本と inline 4 件が投稿され、読み戻しで確かめた。指摘は imo 1 / nits 2 / fyi 1、must / ask は 0。Issue の充足、decision log の追記方式、`release-tools` の代わりに PR CI で確かめたことは妥当と判定された。
+- 2026-09-23: P3 で 4 件とも事実を確かめ（`expect_usage` の失敗の形、0016 の 139 行目、Copilot 指示の 11 / 49 行目、0008 の 45 行目）、全件を採用した。P4 で `platform-check.sh` の署名の確認を最初の起動より前へ移し、0016 の追記の置き換え範囲と「影響」、Copilot 指示の根拠の示し方、この note の「残した参照」を直した。返信の `Model` は、model の識別子を GitHub への投稿に書かないこの環境の規定に従って `unknown` とする（P2 の review 本文には識別子が入っている）。

@@ -210,7 +210,7 @@ K では Intel の build job が律速のまま残る。cargo-about を prebuilt
 
 2026-09-23 にユーザーが判断した。
 
-- 配布対象から `x86_64-apple-darwin` を外し、`aarch64-apple-darwin` / `aarch64-unknown-linux-gnu` / `x86_64-unknown-linux-gnu` の 3 target とする（候補 L）。すべて native ビルドとする方針は変えない。上の「決定」のうち「対象は 4 target」と、ビルド runner の `macos-15-intel` をこの追記で置き換える。
+- 配布対象から `x86_64-apple-darwin` を外し、`aarch64-apple-darwin` / `aarch64-unknown-linux-gnu` / `x86_64-unknown-linux-gnu` の 3 target とする（候補 L）。すべて native ビルドとする方針は変えない。上の「決定」のうち「対象は 4 target」、ビルド runner の `macos-15-intel`、公開後の確認の「4 target の archive と checksum」を、この追記で 3 target の前提に置き換える。
 - macOS の CI と配布 archive の検証は、Apple Silicon（`macos-15`）だけで行う。Linux の 2 target は従来どおり回す。
 - 利用者への案内は「macOS は Apple Silicon のみ対応」といった記載だけとする。Intel Mac での手動ビルド（ソースからのビルド）はサポートせず、手順も案内しない。universal binary やクロスビルドによる代替も提供しない（候補 M は採らない）。
 - Intel Mac の再追加は検討しない。見直し条件にも置かない。
@@ -225,8 +225,8 @@ K では Intel の build job が律速のまま残る。cargo-about を prebuilt
 
 - `doc/design/distribution.md` を 3 target に改めた（target triple の表、最低実行環境、実測の対象、third-party 表記の対象集合、Homebrew Formula の分岐、「対象外」、利用者向けの案内）。`concept.md` もそろえた。
 - `dist-workspace.toml` の `targets` と `github-custom-runners`、`about.toml` の `targets`、`.github/workflows/ci.yml` の `platform` job の matrix から外した。`release.yml` には target ごとの記述が無く、build の matrix は `plan` job の `dist plan` が決める。
-- `.github/scripts/` から Intel Mac 向けの分岐を外した。`platform-check.sh` は macOS の binary に署名が無ければ失敗にし、最低 macOS version を `LC_BUILD_VERSION` だけから読む。
+- `.github/scripts/` から Intel Mac 向けの分岐を外した。`platform-check.sh` は macOS の binary に署名が無ければ起動の確認より前に失敗にし、最低 macOS version を `LC_BUILD_VERSION` だけから読む。
 - third-party 表記の crate 集合は変わらない。2026-09-23 時点の `Cargo.lock` では 4 target の依存が同一で、`x86_64-apple-darwin` だけが持つ依存は無かった。
 - 上の「後から見直す条件」のうち「macOS Intel runner が使えなくなった場合」は、対象から外したため適用しない。
-- [0022](0022-release-workflow.md) の本文の「4 target」は当時の値である。cargo-about を `cargo install` で入れる根拠（`x86_64-apple-darwin` の prebuilt が無い）は #65 で見直す。
+- [0008](0008-language-and-distribution.md) の決定の「macOS と Linux の amd64 / arm64」と、[0022](0022-release-workflow.md) の本文の「4 target」は当時の値である。macOS は本追記で arm64 だけになった。cargo-about を `cargo install` で入れる根拠（`x86_64-apple-darwin` の prebuilt が無い）は #65 で見直す。
 - #39（Homebrew Formula）、#40（リリース手順と案内）、#63（Cargo の Dependabot）の Issue 本文を 3 target の前提へ同期した。

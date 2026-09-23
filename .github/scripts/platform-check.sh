@@ -5,13 +5,13 @@
 #   docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
 #
 # 確認すること (失敗したら exit 1):
+#   - macOS: binary に署名がある (Apple Silicon は署名の無い binary を実行しない。native link で
+#     linker が ad-hoc 署名を付ける)。起動の確認より前に確かめる
 #   - help / version が stdout に出て exit 0 になる
 #   - fixture を使った first / last が yes / no を返し、--quiet は stdout だけを消す (exit 0 / 1)
 #   - 不正な入力と祝日データの欠落が exit 2 になり、診断が stderr に出る
 #   - タイムゾーンの採用経路 (--timezone / BIZDATE_TZ / local) ごとに、必要なデータが有れば成功し、
 #     無ければ exit 2 になる。--version はデータが無くても成功する
-#   - macOS: binary に署名がある (Apple Silicon は署名の無い binary を実行しない。native link で
-#     linker が ad-hoc 署名を付ける)
 # 記録すること (stdout と、設定されていれば GITHUB_STEP_SUMMARY):
 #   - Linux: 参照する GLIBC symbol version の最大値 (= 最低 glibc) と動的リンク先
 #   - macOS: load command に書かれた最低 macOS version、動的リンク先、署名の種別
@@ -99,6 +99,15 @@ expect_usage() {
     echo "ok (exit 0): $*"
 }
 
+# Apple Silicon は署名の無い binary を kernel が起動時に止めるため、下の起動の確認は理由を示さずに落ちる。
+# 最初の起動より前に署名を確かめ、失敗の原因を示す。codesign -dv は署名の情報を stderr に出し、
+# 署名が無ければ非 0 で終わる。出力は「runtime requirements」の記録に使う。
+if [ "$(uname -s)" = Darwin ]; then
+    echo "== code signature"
+    signature=$(codesign -dv "$bin" 2>&1) || fail "$bin has no code signature: $signature"
+    echo "ok: $bin has a code signature"
+fi
+
 echo "== help / version"
 expect_usage "$bin" --help
 expect_usage "$bin" first --help
@@ -183,8 +192,7 @@ record=$work/record.md
             [ -n "$minimum_macos" ] || fail "no minimum macOS version found in the load commands of $bin"
             echo "minimum macOS: $minimum_macos"
             echo "--- code signature (codesign -dv) ---"
-            # codesign -dv は署名の情報を stderr に出し、署名が無ければ非 0 で終わる。
-            signature=$(codesign -dv "$bin" 2>&1) || fail "$bin has no code signature: $signature"
+            # 署名の有無は最初の起動より前に確かめた (== code signature)。ここでは種別を記録する。
             printf '%s\n' "$signature"
             ;;
         *)
