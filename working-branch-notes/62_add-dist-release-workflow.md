@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `add-dist-release-workflow`
-- PR: （採番前）
+- PR: #62
 - 最終更新: 2026-09-23
 
 ## 目的
@@ -63,7 +63,7 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - [x] 0015 の再判断を記録する
 - [x] guideline / spec / Copilot 指示 / progress.md を更新する
 - [x] Compose で検証し、結果を記録する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] PR CI（CI と Release workflow）の結果を記録する
 
 ## 検証
