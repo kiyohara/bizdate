@@ -57,7 +57,7 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 - `run-issue-task` で #65 へ進む。cargo-about を prebuilt で導入し、PR での CI の二重実行をやめる。続いて #39 へ進める。
 - cloud session での agent 運用（#68〜#70）は配布準備と独立している。タスクは直列に消化するため、配布準備との順はユーザーが決める。表の中では #68 と #70 を先に、#69 を最後に進める。
-- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。実装は [#63](https://github.com/kiyohara/bizdate/issues/63) で行う（索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
+- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。設定は [#63](https://github.com/kiyohara/bizdate/issues/63) で入れ、merge 後の実動確認は [#73](https://github.com/kiyohara/bizdate/issues/73) で追う（いずれも索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
 - #36〜#40 と #64 / #65 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 
