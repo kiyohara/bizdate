@@ -85,11 +85,11 @@ Days since release : 35 (cooldown days 3)
 
 | 対象 | 採否 | 理由 | 実装 |
 |---|---|---|---|
-| Cargo の version updates | 採用 | 配布を始めると、依存の修正（TLS を担う `rustls` / `ring`、root store を埋め込む `webpki-roots` を含む）は再ビルドと再リリースでしか利用者に届かない（[0016](0016-distribution-contract.md) の TLS trust）。更新に気付く経路を自動化する価値が上がった。上の「検討内容」で挙げた検証負荷は、4 target の native CI（#37）と、PR ごとに archive と third-party 表記を検証する Release workflow（#38）で受け止められる。許可していないライセンスの依存が入れば build job の cargo-about が止まり、MSRV を超える更新は MSRV の toolchain で回す CI が止める | 別 Issue で行い、本件には含めない。grouping、open PR 上限、major 更新の扱い、更新 PR のレビュー観点はその Issue で決める |
+| Cargo の version updates | 採用 | 配布を始めると、依存の修正（TLS を担う `rustls` / `ring`、root store を埋め込む `webpki-roots` を含む）は再ビルドと再リリースでしか利用者に届かない（[0016](0016-distribution-contract.md) の TLS trust）。更新に気付く経路を自動化する価値が上がった。上の「検討内容」で挙げた検証負荷は、4 target の native CI（#37）と、PR ごとに archive と third-party 表記を検証する Release workflow（#38）で受け止められる。許可していないライセンスの依存が入れば build job の cargo-about が止まり、MSRV を超える更新は MSRV の toolchain で回す CI が止める | 別 Issue（[#63](https://github.com/kiyohara/bizdate/issues/63)）で行い、本件には含めない。grouping、open PR 上限、major 更新の扱い、更新 PR のレビュー観点はその Issue で決める |
 | Dependabot alerts | 採用 | 依存に既知の脆弱性が公表されたとき、現状は気付く経路が無い。alerts は通知だけで PR を作らないため、運用の負担が小さい | repository settings で有効にする。agent は settings を変えず、有効化はユーザーが行う |
 | Dependabot security updates | 採用 | 修正版への更新 PR を、version updates の cooldown と open PR 上限を待たずに作れる。配布 binary は修正を再リリースで届けるしかなく、着手までの時間を縮める | repository settings で有効にする（alerts が前提）。有効化はユーザーが行う。更新 PR は bot PR と同じ流れでレビューし、merge は人間が行う。grouping の要否は Cargo の version updates と同じ Issue で決める |
 
-Cargo の version updates の実装 Issue は、配布準備（#36〜#40）の依存にしない単発の作業である。`progress.md` の索引には載せない（#30 と同じ扱い）。
+Cargo の version updates の実装 Issue（#63）は、配布準備（#36〜#40）の依存にしない単発の作業である。`progress.md` の索引には載せない（#30 と同じ扱い）。
 
 ### `release.yml` と GitHub Actions の version updates
 

@@ -48,6 +48,7 @@ docker compose run --rm dev cargo test --locked
 - hook が `COMPOSE_FILE=compose.yaml:compose.cloud.yaml` を session に設定する。効いていない shell では `export COMPOSE_FILE=compose.yaml:compose.cloud.yaml` を先に実行するか、`docker compose -f compose.yaml -f compose.cloud.yaml run --rm dev ...` と書く。
 - `TZ` は sandbox で未設定のため container は UTC で動く。タイムゾーン依存の挙動は明示的に与える。
 - build したバイナリは container の中で実行する。`target/` は named volume にある。
+- 配布成果物の生成と確認に使う `release-tools` service（dist / cargo-about）は cloud session では使えない。`compose.cloud.yaml` に override を置いていないためである。該当する作業はローカルで行う（`doc/guidelines/development-command-guidelines.md` の「配布成果物の生成と確認」）。
 
 ## 検証結果の報告
 

@@ -31,7 +31,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。
+  # toolchain は Cargo.toml の rust-version (MSRV) と Dockerfile の FROM に揃える。release workflow の
+  # build job が使う .github/build-setup.yml の toolchain も同じ値にする。
   # 2 つの job で共有するため、値はここに 1 つだけ置く。
   RUST_TOOLCHAIN: "1.98"
 

@@ -18,7 +18,7 @@
 
 更新頻度、グループ化、version update の open PR 上限は `.github/dependabot.yml` を正とする。更新 PR は直列にレビューし、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合、CI の成功を確認してから人間が merge する。自動 merge は使わない。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
 
-`.github/workflows/release.yml` は dist の生成物であり、action の SHA は `dist-workspace.toml` の `github-action-commits` から入る。更新 PR が `release.yml` の action を変えると、Release workflow の `plan` job が設定との差分で失敗する。この場合は `github-action-commits` を更新後と同じ SHA と tag へ揃え、`dist generate --check` が通ることを確かめた commit を更新 PR に足してから merge する（コマンドは `doc/guidelines/development-command-guidelines.md` の「配布成果物の生成と確認」）。
+`.github/workflows/release.yml` は dist の生成物であり、action の SHA は `dist-workspace.toml` の `github-action-commits` から入る。更新 PR が `release.yml` の action を変えると、Release workflow の `plan` job が設定との差分で失敗する。この場合は `github-action-commits` を更新後と同じ SHA と tag へ揃え、`dist generate --check` が通ることを確かめた commit を更新 PR に足してから merge する（コマンドは `doc/guidelines/development-command-guidelines.md` の「配布成果物の生成と確認」。dist は Compose の `release-tools` で実行し、cloud session では使えないためローカルで行う）。
 
 ## 標準フロー
 

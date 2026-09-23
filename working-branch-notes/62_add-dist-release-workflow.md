@@ -12,7 +12,8 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 
 - 依存の #37（PR #61）は merge 済み。レビュー待ちの自分の PR は無く、直列消化の前提を満たす。
 - ローカル環境（Docker Desktop、arm64）で作業している。
-- 実装と文書更新を終え、Compose で検証した。PR #62 を作成し、note を採番した。head `5544cd5` の PR CI（CI と Release workflow）がすべて成功し、4 target の archive 検証の結果を記録した。次は review cycle（P2）。
+- 実装と文書更新を終え、Compose で検証した。PR #62 を作成し、note を採番した。head `5544cd5` の PR CI（CI と Release workflow）がすべて成功し、4 target の archive 検証の結果を記録した。
+- review cycle `claude-code-72767ff-20260923094145`（head `72767ff`）で指摘 9 件を受け、全件を採用して対応した（P4）。再確認（P5）が残る。
 
 ## 調査結果
 
@@ -53,7 +54,8 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - `pr-run-mode = "upload"`、`cache-builds = false`、`source-tarball = false`。
 - action は `github-action-commits` で SHA 固定。CI の `lint` job に `check-action-pins.sh` を追加。
 - ローカルは `Dockerfile` の `release-tools` stage と Compose の `release-tools` service（profile 付き）。dist は公開 binary を checksum 照合で、cargo-about は build job と同じ `install-cargo-about.sh` で入れる。
-- Dependabot: Cargo の version updates、Dependabot alerts、security updates をいずれも採用。実装は別 Issue（Issue の起票は計画担当の役割のため本 PR では起票しない）。alerts と security updates の有効化はユーザーが行う。`release.yml` は Dependabot の対象に残し、差分が出たら `github-action-commits` を揃える。
+- Dependabot: Cargo の version updates、Dependabot alerts、security updates をいずれも採用。実装は #63（ユーザーの指示で本 PR の review 対応中に起票した。索引には載せない単発 Issue）。alerts と security updates の有効化はユーザーが行う。`release.yml` は Dependabot の対象に残し、差分が出たら `github-action-commits` を揃える。
+- review 対応で決めたこと: `release-tools` は cloud session では使えないと明記する（`compose.cloud.yaml` に override を置かない。cloud で検証できないため）。tag の検査は PR 以外で常に行う（fail-closed）。`platform-check.sh` は macOS の最低 version（load command の値）も記録する。
 
 ## 次にやること
 
@@ -118,14 +120,15 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 ### 未検証
 
 - tag push での公開経路（`host` / `announce`）。tag の push と Release の作成はスコープ外で、公開は #40 の手順に従う。
-- cloud session での `release-tools` の build（GitHub の release asset への到達を含む）。
+- cloud session での `release-tools`。review 対応で「cloud session では使えない」と明記した（override を置いていない）。
+- `platform-check.sh` の macOS の最低 version の抽出は、host の `otool` が Xcode のライセンス未同意で使えないため、合成した `otool -l` の出力で parser を確かめた。実物の値は PR CI の macOS job で確かめる。
 
 ## リスク・ブロッカー
 
 - dist が生成する job は `contents: write` を継ぎ、build job に `GH_TOKEN` が渡る。dist の制約として 0022 に記録した。
 - PR ごとに Release workflow が 4 target の build と検証、CI の再実行を行うため、PR の CI 時間が増える。head `5544cd5` では Release workflow が約 9 分（うち `macos-15-intel` の cargo-about の install が約 5.5 分）、CI 単体は約 1.5 分だった。
 - `Dockerfile` と `compose.yaml` の変更により、cloud session の environment cache は drift 警告が出る。stub の貼り直しはユーザーの操作。
-- Dependabot の Cargo 運用の実装 Issue は未起票。
+- Dependabot の Cargo 運用の実装は #63 で行う（未着手）。
 
 ## セッションログ
 
@@ -134,3 +137,5 @@ Issue #38。`dist` 0.32.0 で配布成果物（4 target の `.tar.gz` と `.sha2
 - 2026-09-23: 0022 を新設し、0015 に再判断を追記。guideline / spec / Copilot 指示 / progress.md を更新し、Compose で検証した。
 - 2026-09-23: 最初の commit が 1Password の承認待ち（`failed to fill whole buffer`）で失敗し、guideline に従って中断した。ユーザーの指示で再実行して commit（`150b782`）。PR #62 を作成し、`number-working-branch-note` で note を採番（`5544cd5`）。`progress.md` の DIST-03 に PR 番号を反映。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）、PR description には該当なし。触らなかった stale 表現は 1 件（「現在の状況」の「PR の作成と、PR CI の結果の記録が残っている」。定型外の prose で完了要素と未完要素が混在するため採番 skill は触らず、この更新で書き換えた）。採番 skill は停止せず完走した。PR 本文は MCP の読み出しで `<...>` と引用符が sanitize されるため、置換は公開 API で読んだ本文に対して行い、読み戻しで一致を確かめた。
 - 2026-09-23: head `5544cd5` の CI（run 35842593579）と Release workflow（run 35842593797）がすべて success。PR では `host` / `announce` が skipped。4 target の archive の最低 glibc、動的リンク先、署名、build の所要時間を検証欄に記録した（sha256 は情報統制の観点で note に書かない）。
+- 2026-09-23: P2 review（cycle `claude-code-72767ff-20260923094145`、head `72767ff`）を subagent に委譲。subagent の GitHub への投稿が権限判定で止められたため、ユーザーの指示で subagent の review（inline 9 件と完了要約）を orchestrator が内容を変えずに代理投稿し、read-back で review 1 本・inline 9 件・conversation comment 0 件を確かめた。指摘は ask 2 / imo 4 / fyi 1 / nits 2、must 0。公開ゲートは成立と判定された。
+- 2026-09-23: P3 で 9 件の事実を確かめた（`check-action-pins.sh` の空入力と `.yaml` の素通り、checksum file の末尾の空行と macOS / coreutils 8.x の WARNING、`--strict` での失敗を再現）。Issue の起票はユーザーに確認し、「役割は固定していない」との指示で #63 を起票した。P4 で全件を採用して対応: `check-action-pins.sh` の fail-closed 化と `.yaml` 対応、tag 検査の fail-closed 化、`platform-check.sh` での最低 macOS version の記録、0022 に残るリスク 2 点と見直し条件、spec に checksum の警告と最低 macOS の記録、guideline / cloud guideline / 開発ループに cloud session での制約、MSRV 手順に `release-tools` の作り直し、`ci.yml` のコメント、`progress.md` / 0015 / index に #63。

@@ -22,7 +22,7 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 | release 成果物の生成と公開 | release workflow の build job（4 つの native runner）と `host` job | `dist` が対象 runner 上で archive と checksum を作る。公開は `v<version>` tag の push でだけ行う |
 | 配布 archive の検証 | release workflow の `release-verify` job（4 つの native runner） | 配る binary そのものを対象環境で起動して確かめる |
 
-CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 4 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）と動的リンク先を job の step summary に記録する。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
+CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 4 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）、最低 macOS version（macOS）、動的リンク先を job の step summary に記録する。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
 
 ```sh
 docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
@@ -91,6 +91,8 @@ docker compose build dev
 ```sh
 docker compose build release-tools
 ```
+
+cloud session（Claude Code on the web）では `release-tools` を使えない。`compose.cloud.yaml` の override（base image の mirror、proxy）を `dev` にだけ置いており、`release-tools` の build と外部からの取得が通らないためである。`release-tools` を要する作業（`dist generate` など）はローカルで行う。
 
 `release.yml` を設定から作り直す。`release.yml` は手で直さない。dist の設定（`dist-workspace.toml`、`.github/build-setup.yml`、`Cargo.toml` の `[package.metadata.dist]` と `[profile.dist]`）を変えたら作り直し、設定と一緒に commit する。
 
@@ -165,10 +167,11 @@ MSRV の値は 5 箇所に現れる。上げるときは 5 つを同時に更新
 
 `.github/build-setup.yml` だけ古いままにすると、CI が test した toolchain と異なる toolchain で配布 archive をビルドする。変えたら `dist generate` で `release.yml` を作り直す。
 
-5 箇所を更新したうえで image を作り直す。
+5 箇所を更新したうえで image を作り直す。`release-tools` の image も `dev` の上に作るため、あわせて作り直す。
 
 ```sh
 docker compose build dev
+docker compose build release-tools
 ```
 
 cloud session の environment cache は `Dockerfile` の変更を自動では追わない。MSRV を上げたら `.agents/scripts/cloud-session-setup.sh --print-stub` の出力を environment に貼り直す（`doc/guidelines/cloud-session-guidelines.md`）。

@@ -18,6 +18,8 @@ permissions:
 jobs:
   # 公開 trigger の tag が v<Cargo.toml の version> の形であることを確かめる。
   # version の不一致は plan job の dist も検出するが、tag の形 (v の有無など) は dist が許すため、ここで絞る。
+  # PR 以外では常に検査する (fail-closed)。dist の trigger 設定 (dispatch-releases / release-branch) を
+  # 変えて tag の push 以外で公開が走る構成になっても、tag でない ref では失敗させて host を止める。
   tag:
     name: release tag
     runs-on: ubuntu-22.04
@@ -30,17 +32,15 @@ jobs:
           persist-credentials: false
 
       - name: Check the release tag
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: github.event_name != 'pull_request'
         env:
           TAG: ${{ github.ref_name }}
         run: .github/scripts/check-release-tag.sh "$TAG"
 
       - name: Note that this run does not publish
-        if: ${{ !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) }}
-        env:
-          EVENT: ${{ github.event_name }}
+        if: github.event_name == 'pull_request'
         run: |
-          echo "not a tag push (event: ${EVENT}); the archives are verified but not published"
+          echo "pull request run: the archives are verified but not published"
 
   # build した archive を、build と同じ native runner で展開して検証する。matrix は dist の plan から取り、
   # build-local-artifacts と同じ target と runner の組にする。

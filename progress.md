@@ -40,7 +40,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 ## 次にやること
 
 - `run-issue-task` で #39 へ進む。Homebrew Formula 生成と更新連携を整備する。
-- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。実装は別 Issue で行う（未起票）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
+- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。実装は [#63](https://github.com/kiyohara/bizdate/issues/63) で行う（索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
 - #36〜#40 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 

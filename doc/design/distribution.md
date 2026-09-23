@@ -26,7 +26,7 @@
 | `aarch64-unknown-linux-gnu` | Linux / arm64 | glibc | 「libc 条件」に従う | `ubuntu-22.04-arm` |
 | `x86_64-unknown-linux-gnu` | Linux / x86_64 | glibc | 同上 | `ubuntu-22.04` |
 
-最低 macOS version は rustc の既定 deployment target である。`MACOSX_DEPLOYMENT_TARGET` は設定せず既定のままとする。
+最低 macOS version は rustc の既定 deployment target である。`MACOSX_DEPLOYMENT_TARGET` は設定せず既定のままとする。CI の `platform` job と release workflow の `release-verify` job は、binary の load command に書かれた最低 macOS version を step summary に記録する。
 
 native ビルドを要件とするのは、Apple Silicon が ad-hoc であっても署名済みバイナリしか実行しないためである。macOS runner 上で link すればリンカが ad-hoc 署名を付けるが、他 OS からのクロスビルドでは付かない。
 
@@ -95,6 +95,7 @@ tzdb をバイナリへ bundle する選択は取らない。システム側の�
 
 - `dist` の既定に従い `sha256` とする。archive ごとに `.sha256` ファイルを Release に添付する。
 - `sha256sum -c` で検証できる形式とする。
+- `dist` が作る checksum file は末尾に空行を含む。coreutils 8.x や macOS の `sha256sum -c` / `shasum -a 256 -c` は `WARNING: 1 line is improperly formatted` を出したうえで `OK` を返し、`--strict` を付けると失敗する。利用者向けの案内ではこの警告を扱う。
 - `dist` は加えて、全 archive の checksum をまとめた `sha256.sum` と、成果物の一覧である `dist-manifest.json` を Release に添付する。`sha256.sum` は checksum を有効にしている限り外せない。
 - ソースの tarball は `dist` では作らない。GitHub が Release に付ける source code archive で足りる。
 - 署名付き checksum、GPG 署名、sigstore は v1 では導入しない。

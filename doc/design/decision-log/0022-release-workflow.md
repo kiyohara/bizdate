@@ -35,6 +35,8 @@ dist 0.32.0 の release workflow テンプレートを読んだ。`plan-jobs` �
 
 `local-artifacts-jobs` は `build-local-artifacts` と並行して走り、`global-artifacts-jobs` は `build-local-artifacts` の後に走る。どちらの結果も `host` の条件に入り、失敗すれば `host` は走らない。
 
+`host` は `global-artifacts-jobs` の skipped も許す。tag push で `plan` が成功した場合に `global-artifacts-jobs` が skipped になるのは、build の matrix が空で `build-local-artifacts` が skipped になるときだけである。4 target を組む設定では起こらない。
+
 ### third-party 表記の生成場所（C / D）
 
 `include` に書いたファイルは `dist build` の時点で存在する必要がある。C は生成 job を `build-local-artifacts` より前に置くことになり、A の穴に当たる。
@@ -78,7 +80,7 @@ dist は build の toolchain を指定しない。`rust-toolchain-version` の�
 - dist の設定は `dist-workspace.toml`（`dist init` の既定の置き場所）に置く。`publish = false` を上書きする `dist = true` だけを `Cargo.toml` の `[package.metadata.dist]` に置く。
 - 公開を止める検査は `host` が結果を確かめる段階に置き、`plan-jobs` は使わない（B）。
   - `local-artifacts-jobs`: `ci.yml` を呼び、公開する commit で CI を通す（E）。
-  - `global-artifacts-jobs`: `release-verify.yml`。tag が `v<Cargo.toml の version>` であることを確かめ、4 target の native runner で archive を展開して検証する。検証は checksum、archive 名と構成（dist の plan と照合）、`README.md` / `LICENSE` の同一性、third-party 表記と依存の対応、binary の起動と実行時前提（`platform-check.sh`）である。
+  - `global-artifacts-jobs`: `release-verify.yml`。PR 以外の run では tag が `v<Cargo.toml の version>` であることを確かめ（tag でない ref では失敗させる）、4 target の native runner で archive を展開して検証する。検証は checksum、archive 名と構成（dist の plan と照合）、`README.md` / `LICENSE` の同一性、third-party 表記と依存の対応、binary の起動と実行時前提（`platform-check.sh`）である。
 - third-party 表記は各 build job で `dist build` の直前に生成し、配布対象の依存と対応していることを確かめる（D）。cargo-about は `cargo install --locked` で入れる。
 - PR では `pr-run-mode = "upload"` とし、`host` 以外の工程を通す（H）。
 - `[profile.dist]` は `release` を継ぐだけにする（J）。
@@ -106,13 +108,17 @@ profile と toolchain を CI に揃えるのは、配る binary を CI が E2E �
 - Dependabot が `release.yml` の action を更新した PR では、Release workflow の `plan` が生成結果との差分で失敗する。`dist-workspace.toml` の `github-action-commits` を揃える運用を [0015](0015-dependabot-updates.md) と `doc/guidelines/development-loop.md` に置く。
 - PR ごとの CI 時間が増える。Release workflow は 4 target の build と検証、CI の再実行を含む。
 - dist が生成する job の `contents: write` と、build job に渡る `GH_TOKEN` は dist の制約として残る。追加した custom job は `contents: read` に絞った。
-- `Dockerfile` と `compose.yaml` を変えたため、cloud session の environment cache は stub の貼り直しが要る。`release-tools` の build は cloud session では未検証である。
+- D を選んだため、`GH_TOKEN` を持つ build job で cargo-about 0.9.2 を `cargo install` して実行する。その依存の build script と proc-macro も同じ job で動き、信頼する範囲は、配る binary の依存に cargo-about の依存木を加えたものになる。version の固定と `--locked` で再現性は保つ。
+- dist が生成する `release.yml` は、`github.ref_name`（tag 名）を `run:` の shell へ直接展開する（`plan` の `dist host --steps=create --tag=...`、build と host の `--tag`、`gh release create`）。tag 名には `$(...)` や `;` を含められ、trigger の tag pattern もそれを通す。このため tag を push できる者は、`plan` 以降の job でコマンドを実行できる。`release-verify` の tag 検査は build の後に走るため、これを防がない。tag の push には contents の write 権限が要り、権限の拡大にはならない。生成物は手で直せないため、dist の制約として受け入れる。
+- `Dockerfile` と `compose.yaml` を変えたため、cloud session の environment cache は stub の貼り直しが要る。`compose.cloud.yaml` の override は `dev` にだけ置いており、cloud session では `release-tools` を使えない。`release-tools` を要する作業（`dist generate` など）はローカルで行う。
 - Homebrew の installer と tap の更新（Issue #39）は、この構成の `host` の後に dist の publish job として加わる。
 
 ## 後から見直す条件
 
 - dist が `plan-jobs` の結果を `host` の条件に含めるようになった場合。C へ戻し、third-party 表記の生成を 1 回にできる。
-- dist が job ごとの権限を設定できるようになった場合。build job の `contents: write` を外す。
+- dist が job ごとの権限を設定できるようになった場合、または tag 名を `run:` へ直接展開しなくなった場合。build job の `contents: write` を外し、残るリスクを読み直す。
+- dist の trigger 系の設定（`dispatch-releases` / `release-branch`）を変える場合。tag の push 以外で公開が走るため、`host` の条件、`release-verify` の tag 検査、`global-artifacts-jobs` の skipped を許す前提を読み直す。
+- cloud session で `release-tools` が必要になった場合。`compose.cloud.yaml` に `dev` と同じ override を足し、cloud session で確かめる。
 - dist の version を上げる場合。`release.yml` の差分に加え、custom job の `needs` と `host` の条件を読み直す。
 - PR ごとの CI 時間やレビュー待ちが問題になった場合。`pr-run-mode` と CI の二重実行を見直す。
 - cargo-about が `x86_64-apple-darwin` の prebuilt を出した場合。build job での install の時間を見直す。
