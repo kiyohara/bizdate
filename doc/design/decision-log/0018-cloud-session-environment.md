@@ -142,7 +142,7 @@ Issue #70。組み込みの GitHub MCP tool は用意された操作しかでき
 - artifact は MCP tool も URL を返すだけで、session からは取得できない。host 名が番号付きのため、足すなら `*.blob.core.windows.net` を許すことになり、Azure Blob 全体への外向き通信を開ける。environment は repository と branch をまたいで共有されるため、影響はこの repository に留まらない。
 - session で artifact を扱いたい場面は、release archive の中身の確認が主である。これは CI の `verify-release-archive.sh` が検証しており、session で開く必要は今のところ無い。
 
-agent の推奨は「追加しない（environment の Network access は既定の Trusted のまま）」である。environment の設定はユーザーが claude.ai の UI で行うものであり、agent は変えない。最終判断は #70 の PR の review でユーザーが行う。判断が変わった場合はこの節を更新する。
+結論: host を追加しない（environment の Network access は既定の Trusted のまま）。agent の推奨であり、ユーザーが #70 の PR（#74）の review で判断する。PR の merge をもってこの結論を採用とする。追加すると判断した場合は merge 前にこの節を書き換える。environment の設定はユーザーが claude.ai の UI で行うものであり、agent は変えない。
 
 ### 影響
 

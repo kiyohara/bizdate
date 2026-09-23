@@ -13,7 +13,7 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 | 開発コマンドは Compose 経由（`doc/guidelines/development-command-guidelines.md`） | docker CLI / daemon / compose は入っているが daemon は起動していない | SessionStart hook が daemon を起動し、開発用 image を用意する |
 | toolchain は MSRV に揃える | sandbox の rustup toolchain は MSRV より古く、crate を build できない | sandbox の `cargo` は使わない。Compose 経由を維持する |
 | 外向き通信 | 許可リスト方式で、直接接続は gateway が TLS を再終端する。container 内の CA では検証できない。Docker Hub の blob 配信元は許可されていない | container は sandbox の agent proxy を経由させ、base image は許可リスト内の mirror から取る（`compose.cloud.yaml`） |
-| GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` と `gh` が無く、MCP server は起動できない。組み込みの GitHub MCP tool は用意された操作しかできない | 組み込みの GitHub tool を第一選択にする。`gh` は setup script が入れ、MCP tool に無い操作だけ `gh api`（REST）で補う（同 guideline の「cloud session」） |
+| GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` が無く、MCP server は起動できない。`gh` は image に無い（setup script が入れる）。組み込みの GitHub MCP tool は用意された操作しかできない | 組み込みの GitHub tool を第一選択にする。`gh` は setup script が入れ、MCP tool に無い操作だけ `gh api`（REST）で補う（同 guideline の「cloud session」） |
 | Issue 記載のブランチ名で作業する（`doc/guidelines/issue-driven-task-execution.md`） | 作業ブランチは session 作成時に platform が決め、push はそのブランチにだけ許可される | session のブランチをそのまま使う（同 guideline と `doc/guidelines/git-operation-guidelines.md` の「cloud session」） |
 | commit 署名は 1Password（`doc/guidelines/git-operation-guidelines.md`） | 署名と author は platform 側で行われる | 署名の切り分け手順は適用しない（同 guideline の「cloud session」） |
 
@@ -110,7 +110,7 @@ sandbox での実測（2026-09-12、4 vCPU）。
 | hook（base image が snapshot にあり、image 無し） | 3〜6 秒（実環境で約 3 秒） |
 | hook（image あり） | 1 秒未満 |
 | 初回の `cargo test --locked`（named volume の作成と全 crate の build を含む） | 約 15 秒 |
-| `gh` の導入（`apt-get install`、package list あり。2026-09-23 に session 内で実測） | 約 3 秒 |
+| `gh` の導入（`apt-get install`、package list あり。2026-09-23 に session 内で実測） | 約 3 秒（`apt-get` の 3 段を各 45 秒で打ち切り、最悪 135 秒） |
 
 setup script は 5 分以内に終わる必要がある。`--provision` は 1 分以内に収まる。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
 

@@ -34,6 +34,7 @@
 - setup script の文脈（agent proxy が無い）での `apt-get` の到達は、この session では再現できず未検証。
 - `gh api` の read: repository、PR、review comment の取得が通った。`gh auth status` は GraphQL の 403 で「token が無効」と誤表示した（#70 の実測どおり）。
 - `git diff --check`: 問題なし。note の情報統制: 禁則の値なし。
+- review 対応後（P4）: hook は `gh` の有無を daemon の処理より先に表示し exit 0。`gh` を外した状態の `--provision` で導入して exit 0、2 回目も exit 0。`CLAUDE_CODE_REMOTE` 未設定では無出力。state file は元に戻した。
 
 ## リスク・ブロッカー
 
@@ -46,3 +47,7 @@
 - 2026-09-23T23:47Z PR #74 を作成（head `0d94607`）。PR 作成までの所要は着手から約 5 分。ユーザー確認で止まった箇所は無い。権限判定や proxy で拒否された操作は無い。
 - 2026-09-23T23:48Z `number-working-branch-note` の手順で note を採番した（`draft_` → `74_`）。完了として書き換えたタスク行: 0 件。触らなかった行: 「次にやること」の「script と文書の変更、検証、PR 作成、review cycle。」（完了要素と未完の review cycle が混在する複合行）、PR description の「（採番後に rename します）」（定型置換の対象外）。後者は orchestrator が skill の外で削除した。停止は無い。
 - `progress.md` の OPS-02 の PR 欄を #74 に更新した。
+- 2026-09-23T23:55Z PR CI（head `8df1fc4`）が全件 success。最初の job の開始から最後の job の完了まで約 7 分（23:48〜23:55Z）。
+- 2026-09-23T23:56Z P2 を subagent に委譲。review cycle `claude-code-8df1fc4-20260923235611`、指摘 7 件（must 2 / ask 1 / imo 3 / nits 1）。23:59Z に完了。
+- P3: 7 件すべて採用。progress.md の行のセル崩れ（must）、`apt-get` の timeout 合計が setup script の 5 分上限に抵触し得る点（must、各 45 秒・最悪 135 秒に短縮）、host 追加の結論の記録（ask、「merge をもって採用」と明記）、github-cli の禁止操作の補足、cloud-session の表の残存表現、編集対象の判定基準、hook の `gh` 表示位置。
+- 未収束（ユーザーへ報告）: 投稿の末尾に tool が footer を自動で付け、canonical metadata の 5 行が末尾にならない。本 PR では扱わず、#69 の判断事項として報告する。

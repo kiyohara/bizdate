@@ -288,6 +288,10 @@ report_gh() {
 # gh を Ubuntu archive から入れる。archive.ubuntu.com は既定の許可リストにあり、setup script の
 # 文脈 (agent proxy が無い) でも VM の system CA で届く。package list が古くて失敗したときだけ
 # update してやり直す。失敗しても session の起動は止めない。
+# setup script は 5 分以内に終わる必要があり、後に base image の pull (20〜35 秒) が続く。apt-get の
+# 3 段は gh_step_timeout ずつ、最悪でも合計 135 秒で打ち切る。
+gh_step_timeout=45
+
 ensure_gh() {
   if command -v gh >/dev/null 2>&1; then
     say "gh: $(gh_version) あり"
@@ -298,10 +302,10 @@ ensure_gh() {
     return 1
   fi
   say "gh: Ubuntu archive から導入する"
-  if DEBIAN_FRONTEND=noninteractive timeout 120 apt-get install -y -q --no-install-recommends gh \
+  if DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get install -y -q --no-install-recommends gh \
        >>"$log_file" 2>&1 </dev/null \
-     || { DEBIAN_FRONTEND=noninteractive timeout 120 apt-get update -q >>"$log_file" 2>&1 </dev/null \
-          && DEBIAN_FRONTEND=noninteractive timeout 120 apt-get install -y -q --no-install-recommends gh \
+     || { DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get update -q >>"$log_file" 2>&1 </dev/null \
+          && DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get install -y -q --no-install-recommends gh \
                >>"$log_file" 2>&1 </dev/null; }; then
     say "gh: $(gh_version) を導入した"
     return 0
@@ -422,9 +426,12 @@ fi
 
 export_compose_file
 
-# gh は daemon と独立しているため、daemon の起動に失敗しても入れる。
+# gh は daemon と独立しているため、daemon の起動に失敗しても入れる。hook は有無の表示だけを
+# daemon や image の成否より先に行う。
 if [ "$mode" = "provision" ]; then
   ensure_gh || true
+else
+  report_gh
 fi
 
 if ! start_daemon; then
@@ -448,7 +455,6 @@ if ! ensure_image; then
   exit 0
 fi
 
-report_gh
 check_drift || true
 say "開発コマンドは通常どおり docker compose run --rm dev cargo ... で実行する。詳細: doc/guidelines/cloud-session-guidelines.md"
 exit 0

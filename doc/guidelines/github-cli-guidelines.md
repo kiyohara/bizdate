@@ -38,7 +38,7 @@ cloud session の sandbox には `op` が無く、`gh` は environment の setup
 - proxy は REST だけを通す。`gh api`（REST）を基本とし、GraphQL を使う subcommand と `gh auth status` を使わない。詳細は `doc/guidelines/github-mcp-guidelines.md` の「cloud session」。
 - 認証エラーを疑うときは、`gh auth status` ではなく `gh api user` など REST の read で確かめる。
 - `gh` が無い session では、agent が `gh` の導入を試みない。組み込み tool だけで進め、足りない操作はユーザーに報告する。
-- 本ルールの「ユーザーの確認を得てから実行する操作」と「agent が実行しない操作」は cloud session でもそのまま適用する。
+- 本ルールの「ユーザーの確認を得てから実行する操作」と「agent が実行しない操作」は cloud session でもそのまま適用する。加えて、`APPROVE` / `REQUEST_CHANGES`、review thread の resolve、auto-merge の変更、API 経由の file push は、`gh api`（proxy の専用 route を含む）でも実行しない（`doc/guidelines/github-mcp-guidelines.md` の「Review event と resolve の制約」と「cloud session」）。
 
 ## 認証
 
