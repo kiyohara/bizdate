@@ -12,7 +12,7 @@
 #     無ければ exit 2 になる。--version はデータが無くても成功する
 # 記録すること (stdout と、設定されていれば GITHUB_STEP_SUMMARY):
 #   - Linux: 参照する GLIBC symbol version の最大値 (= 最低 glibc) と動的リンク先
-#   - macOS: 動的リンク先と署名の種別
+#   - macOS: load command に書かれた最低 macOS version、動的リンク先、署名の種別
 set -eu
 
 bin=${1:?usage: platform-check.sh <path to the bizdate binary>}
@@ -168,6 +168,19 @@ record=$work/record.md
             sw_vers
             echo "--- dynamic link (otool -L) ---"
             otool -L "$bin"
+            echo "--- minimum macOS (otool -l) ---"
+            # linker は deployment target を LC_BUILD_VERSION の minos に書く。古い deployment target
+            # では LC_VERSION_MIN_MACOSX の version に書く。どちらも無ければ記録が欠けるため失敗にする。
+            load_commands=$(otool -l "$bin")
+            # awk は途中で抜けずに最後まで読む。先に pipe を閉じると前段の printf が SIGPIPE を受けうる。
+            minimum_macos=$(printf '%s\n' "$load_commands" | awk '
+                $1 == "cmd" { kind = $2; next }
+                found == "" && kind == "LC_BUILD_VERSION" && $1 == "minos" { found = $2 }
+                found == "" && kind == "LC_VERSION_MIN_MACOSX" && $1 == "version" { found = $2 }
+                END { if (found != "") print found }
+            ')
+            [ -n "$minimum_macos" ] || fail "no minimum macOS version found in the load commands of $bin"
+            echo "minimum macOS: $minimum_macos"
             echo "--- code signature (codesign -dv) ---"
             # x86_64 は linker が署名しないため、未署名でも記録だけ残して失敗にしない。
             codesign -dv "$bin" 2>&1 || true

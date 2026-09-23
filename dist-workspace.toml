@@ -1,0 +1,62 @@
+# dist の設定。配布物の仕様は doc/design/distribution.md、release workflow の構成と採否理由は
+# doc/design/decision-log/0022-release-workflow.md を参照する。
+#
+# .github/workflows/release.yml はこの設定から dist が生成する。設定を変えたら次で作り直し、
+# 両方を commit する。release.yml を手で直さない (dist の plan / build / host が生成結果との
+# 差分を検出して止まる)。
+#
+#   docker compose run --rm release-tools dist generate
+[workspace]
+members = ["cargo:."]
+
+[dist]
+# release workflow が取得して実行する dist の version。Dockerfile の release-tools stage と揃える。
+cargo-dist-version = "0.32.0"
+ci = "github"
+hosting = "github"
+# installer は作らない。Homebrew は後続 (Issue #39) で足す。shell installer は提供しない。
+installers = []
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+unix-archive = ".tar.gz"
+checksum = "sha256"
+# README.md と LICENSE は auto-includes で入る。third-party 表記は build job が dist build の直前に
+# 生成して確かめる (.github/build-setup.yml)。
+include = ["THIRD-PARTY-LICENSES.md"]
+# 配る成果物は archive と checksum に限る。ソースは GitHub が Release に付ける source code archive で足りる。
+source-tarball = false
+# PR でも 4 target の archive を作り、release-verify job で検証する。公開 (host 以降) は tag push だけ。
+pr-run-mode = "upload"
+# 公開する build を cache に依存させない。
+cache-builds = false
+# build の直前に Rust toolchain を CI と揃え、Cargo.lock の一致を確かめ、third-party 表記を生成する。
+# path は .github/workflows/ からの相対。
+github-build-setup = "../build-setup.yml"
+# 公開を止める検査は、host が結果を確かめる段階に置く。plan 段階 (plan-jobs) に置くと、失敗したときに
+# 後続の build が skipped になり、skipped を許す host の条件が成立してしまうため使わない。
+# - local-artifacts-jobs: build と並行して、公開する commit で CI (.github/workflows/ci.yml) を回す
+# - global-artifacts-jobs: build の後に tag の形を確かめ、4 target の native runner で archive を検証する
+local-artifacts-jobs = ["./ci"]
+global-artifacts-jobs = ["./release-verify"]
+
+# dist が生成する job は workflow 全体の contents: write を継ぐ (dist の仕様で変えられない)。
+# 追加した job は読み取りだけに絞る。
+[dist.github-custom-job-permissions]
+ci = { contents = "read" }
+release-verify = { contents = "read" }
+
+# 配布仕様のビルド runner。すべて対象 architecture 上の native ビルドにする。
+[dist.github-custom-runners]
+global = "ubuntu-22.04"
+aarch64-apple-darwin = "macos-15"
+x86_64-apple-darwin = "macos-15-intel"
+aarch64-unknown-linux-gnu = "ubuntu-22.04-arm"
+x86_64-unknown-linux-gnu = "ubuntu-22.04"
+
+# release.yml が使う第三者 action を commit SHA で固定する。値は "<SHA> # <tag>" の形で書き、
+# dist が uses: の行末へそのまま出すため、release.yml でも他の workflow と同じ末尾 tag コメントになる。
+# Dependabot が release.yml の SHA を更新したら、ここと .github/build-setup.yml を同じ値へ揃える
+# (doc/guidelines/development-loop.md の「Dependabot が作成する更新 PR」)。
+[dist.github-action-commits]
+"actions/checkout" = "3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1"
+"actions/upload-artifact" = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1"
+"actions/download-artifact" = "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1"

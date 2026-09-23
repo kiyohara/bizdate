@@ -1,0 +1,34 @@
+# dist が生成する release.yml の build-local-artifacts job で、dist build の直前に走る step。
+# dist-workspace.toml の github-build-setup から参照する。変えたら dist generate で release.yml を
+# 作り直す (doc/guidelines/development-command-guidelines.md の「配布成果物の生成と確認」)。
+#
+# dist はこの file を YAML として読み、各値を引用符付きの文字列として release.yml へ書き出す。
+# - YAML の comment は release.yml へ残らない。
+# - uses: に action を書く場合、値に末尾 tag comment を含めると引用符の中に入って不正な参照になる。
+#   SHA だけを書く。
+
+# 公開する binary を、CI (.github/workflows/ci.yml の RUST_TOOLCHAIN) が test した toolchain でビルドする。
+# dist は toolchain を指定しないため、指定しないと runner に入っている stable が使われる。
+- name: Use the Rust toolchain that CI tests with
+  run: |
+    rustup toolchain install 1.98 --profile minimal --no-self-update
+    rustup default 1.98
+    rustc --version
+
+# dist build は cargo build に --locked を付けない。Cargo.lock が Cargo.toml と一致しない状態で
+# 黙って解決し直さないよう、先に --locked で取得して止める。
+- name: Check that Cargo.lock matches Cargo.toml
+  run: cargo fetch --locked
+
+# third-party 表記を生成し、配布対象の依存と対応していることを確かめる。dist-workspace.toml の include が
+# 指す位置 (repository root) に置き、dist build が archive へ入れる。commit はしない。
+# 生成は target ごとの build job で行う。事前の job に分けると、その job の失敗で build が skipped になり、
+# host の公開条件を素通りしてしまう (0022)。
+- name: Install cargo-about
+  run: .github/scripts/install-cargo-about.sh
+
+- name: Generate THIRD-PARTY-LICENSES.md
+  run: cargo about generate --locked --fail --output-file THIRD-PARTY-LICENSES.md about.hbs
+
+- name: Check THIRD-PARTY-LICENSES.md against the dependencies
+  run: .github/scripts/check-third-party-licenses.sh THIRD-PARTY-LICENSES.md

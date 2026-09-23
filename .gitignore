@@ -10,3 +10,6 @@
 
 # Rust build artifacts
 /target/
+
+# release build のたびに生成する third-party 表記 (about.toml)。commit しない (doc/design/distribution.md)。
+/THIRD-PARTY-LICENSES.md

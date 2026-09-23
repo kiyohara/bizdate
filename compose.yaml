@@ -4,6 +4,7 @@ services:
     # rust 公式 image を base に、rustfmt と clippy を足した image を使う。
     build:
       context: .
+      target: dev
     image: bizdate-dev:1.98
     working_dir: /work
     environment:
@@ -18,6 +19,26 @@ services:
       - cargo-git:/usr/local/cargo/git
       - target:/work/target
     # 単発の cargo 実行を `docker compose run --rm dev ...` で行うための待機用。
+    command: ["sleep", "infinity"]
+
+  # 配布成果物の生成と確認 (dist / cargo-about) に使う。dev image に 2 つの tool を足しただけで、
+  # toolchain と volume は dev と共有する。`docker compose run --rm release-tools ...` で使う。
+  # profile を付け、dev だけを扱う操作 (cloud session の hook など) の対象に入れない。
+  release-tools:
+    build:
+      context: .
+      target: release-tools
+    image: bizdate-release-tools:1.98
+    profiles: ["release-tools"]
+    working_dir: /work
+    environment:
+      - TZ
+      - BIZDATE_TZ
+    volumes:
+      - .:/work
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - target:/work/target
     command: ["sleep", "infinity"]
 
 volumes:

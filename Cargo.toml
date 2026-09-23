@@ -9,6 +9,11 @@ repository = "https://github.com/kiyohara/bizdate"
 # 公開ライブラリクレートとしては提供しない (doc/design/decision-log/0008-language-and-distribution.md)。
 publish = false
 
+# publish = false の package を dist は既定で配布対象から外す。bin を配るため package 単位で上書きする
+# (doc/design/distribution.md)。dist の他の設定は dist-workspace.toml に置く。
+[package.metadata.dist]
+dist = true
+
 [[bin]]
 name = "bizdate"
 path = "src/main.rs"
@@ -20,3 +25,8 @@ jiff = "0.2"
 csv = "1.4"
 ureq = { version = "3.4", default-features = false, features = ["rustls"] }
 encoding_rs = "0.8"
+
+# dist が配布 archive をビルドする profile。release と同じ設定にし、CI の platform job が
+# --release で E2E を通したものと同じ最適化の binary を配る (doc/design/decision-log/0022-release-workflow.md)。
+[profile.dist]
+inherits = "release"

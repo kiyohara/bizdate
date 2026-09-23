@@ -1,0 +1,79 @@
+# Release workflow (.github/workflows/release.yml。dist が生成する) が、build の後、host の前に呼ぶ
+# reusable workflow。dist-workspace.toml の global-artifacts-jobs から参照する。host (GitHub Release の
+# 作成) は、この workflow の job がすべて成功したときだけ走る。PR でも同じ検証を行うが、公開はしない。
+# 構成と採否理由は doc/design/decision-log/0022-release-workflow.md を参照する。
+name: Release verify
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        description: dist の plan (dist-manifest.json)。archive 名と構成、build の matrix を読む
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  # 公開 trigger の tag が v<Cargo.toml の version> の形であることを確かめる。
+  # version の不一致は plan job の dist も検出するが、tag の形 (v の有無など) は dist が許すため、ここで絞る。
+  # PR 以外では常に検査する (fail-closed)。dist の trigger 設定 (dispatch-releases / release-branch) を
+  # 変えて tag の push 以外で公開が走る構成になっても、tag でない ref では失敗させて host を止める。
+  tag:
+    name: release tag
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      # 第三者 action は commit SHA で固定する。末尾のコメントは固定時点の tag を示す。
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the release tag
+        if: github.event_name != 'pull_request'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: .github/scripts/check-release-tag.sh "$TAG"
+
+      - name: Note that this run does not publish
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "pull request run: the archives are verified but not published"
+
+  # build した archive を、build と同じ native runner で展開して検証する。matrix は dist の plan から取り、
+  # build-local-artifacts と同じ target と runner の組にする。
+  archive:
+    name: archive (${{ join(matrix.targets, ', ') }})
+    strategy:
+      # 1 つの target が落ちても、残りの target の結果を揃える。
+      fail-fast: false
+      matrix: ${{ fromJson(inputs.plan).ci.github.artifacts_matrix }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # build-local-artifacts が upload した、この runner の archive と checksum を取る。
+      # 公開済みの Release asset ではなく、この run の workflow artifact を検証する。
+      - name: Fetch the archive built on this runner
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: artifacts-build-local-${{ join(matrix.targets, '_') }}
+          path: ${{ runner.temp }}/distrib
+
+      # checksum、archive 名と構成 (plan と照合)、同梱物、展開した binary の起動と実行時前提を確かめ、
+      # 結果を step summary に記録する。
+      - name: Verify the archive
+        env:
+          PLAN: ${{ inputs.plan }}
+          TARGETS: ${{ join(matrix.targets, ' ') }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          for target in $TARGETS; do
+            .github/scripts/verify-release-archive.sh "$target" "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
+          done
