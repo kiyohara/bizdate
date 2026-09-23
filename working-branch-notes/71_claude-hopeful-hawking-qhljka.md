@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/hopeful-hawking-qhljka`
-- PR: （採番前）
+- PR: #71
 - 最終更新: 2026-09-23
 
 同じブランチ名で PR #67（merge 済み）を出している。cloud session ではブランチ名が session の作成時に固定されるため、PR #67 の merge 後に `origin/main` から切り直して再利用した。PR #67 の note は `67_claude-hopeful-hawking-qhljka.md` であり、この note とは別物である。
@@ -26,7 +26,7 @@
 
 ## 次にやること
 
-- PR を作成し、note を採番する。
+- PR を作成し、note を採番する。（完了）
 - merge はユーザーが行う。
 
 ## 検証
