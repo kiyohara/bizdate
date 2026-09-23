@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/enable-gh-in-cloud-session`
-- PR: 未作成
+- PR: #74
 - 最終更新: 2026-09-23
 
 ## 目的
