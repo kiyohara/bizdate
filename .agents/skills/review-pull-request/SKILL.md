@@ -76,7 +76,7 @@ Mode: <review | address-comments | verify-comments>
 - キーは `Agent`、`Model`、`Review cycle`、`Reviewed head`、`Mode` の 5 つとし、この順序で必須とする。1 行 1 キーとする。
 - 区切りは半角コロン + 半角スペース（`: `）とする。
 - `Agent` は処理した Agent 種別の表示名とする（例: `Claude Code`、`Codex`、`Cursor`）。
-- `Model` は、その処理で利用した model の識別子とする。実行環境から確認できる値を使い、確認できない場合は `unknown` とし、推測しない。`Model` は記録目的の参考情報であり、review cycle の突合や担当一致判定には使わない。同一 Agent 種別でも session により model が変わり得るためである。
+- `Model` は、その処理で利用した model の識別子とする。実行環境から確認できる値を使い、確認できない場合は `unknown` とし、推測しない。実行環境の既定の指示が model の識別子を書かないよう求めていても、それを理由に `unknown` にしない（`doc/guidelines/pull-request-guidelines.md` の「Tool 名と model の識別子の扱い」）。`Model` は記録目的の参考情報であり、review cycle の突合や担当一致判定には使わない。同一 Agent 種別でも session により model が変わり得るためである。
 - `Review cycle` の値は `<agent-slug>-<short-head>-<YYYYMMDDHHMMSS>` とする。`<agent-slug>` は Review 担当 Agent 種別の小文字 kebab-case（例: `claude-code`、`codex`、`cursor`）、`<short-head>` は review 開始時点の head SHA 先頭 7 文字、`<YYYYMMDDHHMMSS>` は review 開始時刻（UTC、秒まで）とする。同一 Agent・同一 head の再レビューや再試行で cycle ID が衝突しないよう、秒までを含める。
 - `Reviewed head` は、そのコメントの投稿時点で当該 Agent が確認した full head SHA とする。
 - `Mode` は投稿を行ったモード名とする。
