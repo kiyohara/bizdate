@@ -14,10 +14,11 @@ Issue #64。配布対象から Intel Mac（`x86_64-apple-darwin`）を外し、`
 - cloud session（Claude Code on the web）で作業している。GitHub 操作は組み込み tool、開発コマンドは Compose 経由。`drive-issue-to-reviewed-pr` の P1 として進めている。
 - 実装と文書更新を終え、Compose（cloud session）で検証した。PR #67 を作成した。head `ee5d285` の PR CI（CI と Release workflow）はすべて成功し、`release-tools` を要する検証をその結果で代えた。所要時間と macOS job 数を PR #62 の最終 push と比べた。
 - 後続 Issue（#39 / #40 / #63）の本文を 3 target の前提へ同期した。
+- note を PR #67 で採番した。P1 を終え、P2（review）へ進む。
 
 ## 調査結果
 
-- `.github/workflows/release.yml` に target 固有の記述は無い。build の matrix と runner は `plan` job の `dist plan` が実行時に決める（`artifacts_matrix`）。`dist-workspace.toml` の `targets` と `github-custom-runners` から `x86_64-apple-darwin` を外しても、`dist generate` の出力は変わらない見込みである。
+- `.github/workflows/release.yml` に target 固有の記述は無い。build の matrix と runner は `plan` job の `dist plan` が実行時に決める（`artifacts_matrix`）。`dist-workspace.toml` の `targets` と `github-custom-runners` から `x86_64-apple-darwin` を外しても、`dist generate` の出力は変わらない見込みだった。PR CI の `plan` job で `release.yml` と設定の一致の検査が通り、作り直しが要らないことを確かめた（「検証」の「PR CI」）。
 - `THIRD-PARTY-LICENSES.md` の crate 集合: Compose（cloud session、dev service）で `cargo tree --locked -e normal,build --target <t>`（bizdate を除く）を 4 target それぞれに実行した。4 target とも同じ 50 crate で、3 target の和集合も 4 target の和集合と同一だった。`x86_64-apple-darwin` だけが持つ依存は無く、表記の crate 集合は変わらない。
 - `.github/scripts/` の Intel Mac 由来の分岐:
   - `verify-release-archive.sh`: target と `uname -sm` の対応表の `x86_64-apple-darwin` 行。
@@ -119,3 +120,4 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - 2026-09-23: Issue #64 を読み、依存（#38 / PR #62 merge 済み）と open PR 無しを確認。cloud session のブランチ `claude/hopeful-hawking-qhljka` で着手。`release.yml` に target 固有の記述が無いこと、4 target の依存が同一であることを確かめた。
 - 2026-09-23: 設定、CI、script、spec、decision log（0016 追記と index）、guideline、Copilot 指示、`progress.md` を改めた。Compose で fmt / clippy / test / release build / `platform-check.sh` / `check-action-pins.sh` を通し、macOS 分岐の変更を合成入力で確かめた。
 - 2026-09-23: PR #67 を作成した。head `ee5d285` の CI（run 35873618462）と Release workflow（run 35873618982）がすべて success。所要時間、macOS job 数、archive の検証結果、cargo-about の install 時間を記録した。#39 / #40 / #63 の本文を同期し、読み戻しで一致を確かめた。
+- 2026-09-23: `number-working-branch-note` で note を PR #67 で採番した（`aaf480f`。先行の `3897cd1` と同じ push で反映）。PR description の note 参照を 1 箇所置換し、読み戻しで一致を確かめた。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）で、PR description には該当なし。触らなかった stale 表現は note の 1 件（「調査結果」の「`dist generate` の出力は変わらない見込みである」。定型外のため採番 skill は触らなかった。PR CI の `plan` job で確かめ済みのため、この更新で書き換えた）で、PR description には該当なし。採番 skill は停止せず完走した。
