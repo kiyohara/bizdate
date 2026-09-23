@@ -16,19 +16,19 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 
 | 実行 | 場所 | 理由 |
 |---|---|---|
-| macOS 向けの native ビルド | CI の `platform` job（`macos-15` / `macos-15-intel`） | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
-| 配布対象 4 target での実行確認 | CI の `platform` job（4 つの native runner） | 対象 OS / architecture 上でしか実行成功を確認できない |
+| macOS 向けの native ビルド | CI の `platform` job（`macos-15`） | Compose は Linux コンテナで、macOS バイナリを作れない。Apple Silicon は native link でリンカが付ける ad-hoc 署名を要求する |
+| 配布対象 3 target での実行確認 | CI の `platform` job（3 つの native runner） | 対象 OS / architecture 上でしか実行成功を確認できない |
 | 最低 glibc の実測 | CI の `platform` job（Linux runner） | 配布に使うバイナリそのものを測る必要がある |
-| release 成果物の生成と公開 | release workflow の build job（4 つの native runner）と `host` job | `dist` が対象 runner 上で archive と checksum を作る。公開は `v<version>` tag の push でだけ行う |
-| 配布 archive の検証 | release workflow の `release-verify` job（4 つの native runner） | 配る binary そのものを対象環境で起動して確かめる |
+| release 成果物の生成と公開 | release workflow の build job（3 つの native runner）と `host` job | `dist` が対象 runner 上で archive と checksum を作る。公開は `v<version>` tag の push でだけ行う |
+| 配布 archive の検証 | release workflow の `release-verify` job（3 つの native runner） | 配る binary そのものを対象環境で起動して確かめる |
 
-CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 4 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）、最低 macOS version（macOS）、動的リンク先を job の step summary に記録する。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
+CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 3 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）、最低 macOS version（macOS）、動的リンク先を job の step summary に記録し、macOS では binary に署名があることも確かめる。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
 
 ```sh
 docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
 ```
 
-原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、4 target の実行確認、最低 glibc の実測、release 成果物の生成と検証）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
+原則は変えない。ローカルで行う検証は Compose 経由を正とする。表の CI 側の実行（native ビルド、3 target の実行確認、最低 glibc の実測、release 成果物の生成と検証）の結果を報告するときは、Compose 経由の結果と区別し、どの runner で実行したかを書く。
 
 ## cloud session（Claude Code on the web）
 
@@ -134,10 +134,10 @@ Compose で確かめられるのは、Linux コンテナと同じ target の arc
 | job | 内容 | PR | tag の push |
 |---|---|---|---|
 | `plan` | `dist plan`（tag の push では `dist host --steps=create`）で成果物を決め、`release.yml` と設定の一致を検査する | 走る | 走る |
-| `build-local-artifacts` | 4 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
+| `build-local-artifacts` | 3 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
 | `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す | 走る | 走る |
 | `build-global-artifacts` | 全 archive の checksum をまとめた `sha256.sum` を作る | 走る | 走る |
-| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、4 target の archive を検証する | 走る | 走る |
+| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する | 走る | 走る |
 | `host` | GitHub Release を作り、成果物を添付する | 走らない | 上の job がすべて成功したときだけ走る |
 | `announce` | dist の後処理 | 走らない | `host` の成功後に走る |
 

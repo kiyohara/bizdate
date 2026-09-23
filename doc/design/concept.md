@@ -22,7 +22,7 @@
 - CLI・入出力・exit code の詳細は `cli-interface.md`。経緯は [0007](decision-log/0007-cli-shape.md)
 - 実装言語は Rust（pure Rust / rustls、Docker でビルド再現、CI で fmt・clippy・test）。Homebrew は後続視野。経緯は [0008](decision-log/0008-language-and-distribution.md)
 - 公開ライセンスは MIT とする。`LICENSE` は設置済み。経緯は [0013](decision-log/0013-license-selection.md)
-- 配布は GitHub Releases を起点とし、macOS / Linux の arm64 / amd64 の 4 target を native ビルドで配る。Homebrew は既存の個人 tap に Formula を置く。詳細は `distribution.md`。経緯は [0016](decision-log/0016-distribution-contract.md)
+- 配布は GitHub Releases を起点とし、macOS の arm64（Apple Silicon）と Linux の arm64 / amd64 の 3 target を native ビルドで配る。Intel Mac には配らない。Homebrew は既存の個人 tap に Formula を置く。詳細は `distribution.md`。経緯は [0016](decision-log/0016-distribution-contract.md)
 
 ## 関連仕様
 

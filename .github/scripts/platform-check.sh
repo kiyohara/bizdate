@@ -5,6 +5,8 @@
 #   docker compose run --rm dev sh -c 'cargo build --locked --release && .github/scripts/platform-check.sh target/release/bizdate'
 #
 # 確認すること (失敗したら exit 1):
+#   - macOS: binary に署名がある (Apple Silicon は署名の無い binary を実行しない。native link で
+#     linker が ad-hoc 署名を付ける)。起動の確認より前に確かめる
 #   - help / version が stdout に出て exit 0 になる
 #   - fixture を使った first / last が yes / no を返し、--quiet は stdout だけを消す (exit 0 / 1)
 #   - 不正な入力と祝日データの欠落が exit 2 になり、診断が stderr に出る
@@ -97,6 +99,15 @@ expect_usage() {
     echo "ok (exit 0): $*"
 }
 
+# Apple Silicon は署名の無い binary を kernel が起動時に止めるため、下の起動の確認は理由を示さずに落ちる。
+# 最初の起動より前に署名を確かめ、失敗の原因を示す。codesign -dv は署名の情報を stderr に出し、
+# 署名が無ければ非 0 で終わる。出力は「runtime requirements」の記録に使う。
+if [ "$(uname -s)" = Darwin ]; then
+    echo "== code signature"
+    signature=$(codesign -dv "$bin" 2>&1) || fail "$bin has no code signature: $signature"
+    echo "ok: $bin has a code signature"
+fi
+
 echo "== help / version"
 expect_usage "$bin" --help
 expect_usage "$bin" first --help
@@ -169,21 +180,20 @@ record=$work/record.md
             echo "--- dynamic link (otool -L) ---"
             otool -L "$bin"
             echo "--- minimum macOS (otool -l) ---"
-            # linker は deployment target を LC_BUILD_VERSION の minos に書く。古い deployment target
-            # では LC_VERSION_MIN_MACOSX の version に書く。どちらも無ければ記録が欠けるため失敗にする。
+            # linker は deployment target を LC_BUILD_VERSION の minos に書く。配布対象の macOS は
+            # Apple Silicon だけで、deployment target は 11.0 以上になる。無ければ記録が欠けるため失敗にする。
             load_commands=$(otool -l "$bin")
             # awk は途中で抜けずに最後まで読む。先に pipe を閉じると前段の printf が SIGPIPE を受けうる。
             minimum_macos=$(printf '%s\n' "$load_commands" | awk '
                 $1 == "cmd" { kind = $2; next }
                 found == "" && kind == "LC_BUILD_VERSION" && $1 == "minos" { found = $2 }
-                found == "" && kind == "LC_VERSION_MIN_MACOSX" && $1 == "version" { found = $2 }
                 END { if (found != "") print found }
             ')
             [ -n "$minimum_macos" ] || fail "no minimum macOS version found in the load commands of $bin"
             echo "minimum macOS: $minimum_macos"
             echo "--- code signature (codesign -dv) ---"
-            # x86_64 は linker が署名しないため、未署名でも記録だけ残して失敗にしない。
-            codesign -dv "$bin" 2>&1 || true
+            # 署名の有無は最初の起動より前に確かめた (== code signature)。ここでは種別を記録する。
+            printf '%s\n' "$signature"
             ;;
         *)
             echo "no recorder for this OS"
