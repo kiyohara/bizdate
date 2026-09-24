@@ -14,9 +14,21 @@
 
 ### Dependabot が作成する更新 PR
 
-上記の Issue 起点の手順は、人間・AI agent が開始する作業に適用する。Dependabot が定期的に作成する GitHub Actions の更新 PR は bot による保守として別に扱い、起点 Issue、working branch note、`progress.md` への登録を要求しない。設定の導入・変更や、更新に伴う仕様変更・機能改修は通常の Issue 駆動タスクとする。
+上記の Issue 起点の手順は、人間・AI agent が開始する作業に適用する。Dependabot が作成する GitHub Actions と Cargo の更新 PR（version updates と security updates）は bot による保守として別に扱い、起点 Issue、working branch note、`progress.md` への登録を要求しない。設定の導入・変更や、更新に伴う仕様変更・機能改修は通常の Issue 駆動タスクとする。
 
-更新頻度、グループ化、version update の open PR 上限は `.github/dependabot.yml` を正とする。更新 PR は直列にレビューし、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合、CI の成功を確認してから人間が merge する。自動 merge は使わない。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
+更新頻度、グループ化、version update の open PR 上限は `.github/dependabot.yml` を正とする。更新 PR は直列にレビューし、下記の観点と CI の成功を確認してから人間が merge する。自動 merge は使わない。採否理由は [0015](../design/decision-log/0015-dependabot-updates.md) を参照する。
+
+GitHub Actions の更新 PR では、各 action の変更内容、40 桁 SHA の固定、末尾 tag コメントとの整合を確認する。日付を末尾コメントへ追記せず、固定時点は SHA と Git 履歴から辿る。
+
+Cargo の更新 PR では次を確認する。
+
+- CI: lint と、3 target（`platform` job）の test / release build がすべて成功していること。
+- Release workflow: 3 target の archive の build と検証、third-party 表記の生成と照合が成功していること。`about.toml` の `accepted` に無いライセンスしか選べない依存が入ると、build job の third-party 表記の生成で止まる。その場合はライセンスの条件を確かめ、受け入れるなら `accepted` に足す commit を更新 PR に加える。受け入れないなら merge せず、Issue を起こして扱いを決める。
+- `Cargo.lock` の差分: 変わった crate と version が PR の説明と一致すること。意図しない crate の追加や削除が無いこと。追加された crate は出所（crates.io）とライセンスを確かめる。`Cargo.toml` の要求が変わった場合は、その理由（既存の要求が新しい version を許さない）を確かめる。
+- 互換の無い更新（major。Cargo の規則では `0.y` の `y` の変化も含む）: 上流の changelog で破壊的変更を確かめ、コードの修正が要る場合は更新 PR に commit を加えるか、Issue を起こして別 PR で行う。
+- MSRV: CI は MSRV と同じ toolchain で回るため、MSRV を超える crate が入ると cargo が `rust-version` の不足で失敗する。Dependabot の更新先は `rust-version` 付きの manifest を cargo が解決した結果で決まるため、MSRV を超える更新は PR が出ない形で現れることもある（[0015](../design/decision-log/0015-dependabot-updates.md) の「MSRV を超える更新」）。CI が MSRV の不足で落ちた更新 PR は merge せず、MSRV を上げる Issue を起こして `doc/guidelines/development-command-guidelines.md` の「MSRV を上げるとき」に従い別 PR で上げる。更新 PR に MSRV の変更を足さない。MSRV を上げた後は、次の schedule の実行を待つか、`@dependabot rebase` をコメントして更新 PR を rebase させ、CI を回し直す。
+- MSRV 待ちで更新が止まる場合: 更新 PR が open PR 上限を塞ぐ場合、または group の PR に MSRV を超える更新が混ざって互換のある他の更新まで止まる場合は、該当の依存を `.github/dependabot.yml` の `ignore` へ理由のコメント付きで足す PR を出し、MSRV を上げたら速やかに外す。`ignore` は security updates にも効くため、`versions` で該当 version の範囲に絞り、`update-types` での除外にしない。`@dependabot ignore` のコメントは設定がリポジトリに残らないため使わない。
+- security updates の PR: 対応する Dependabot alert の内容（影響する version の範囲、修正版）と、PR の更新先が修正版以上であることを確かめる。open PR 上限と cooldown を受けずに出るため、version updates の PR と同じ crate を変える場合は、先に merge する方を決め、他方は Dependabot の rebase を待つ。
 
 `.github/workflows/release.yml` は dist の生成物であり、action の SHA は `dist-workspace.toml` の `github-action-commits` から入る。更新 PR が `release.yml` の action を変えると、Release workflow の `plan` job が設定との差分で失敗する。この場合は `github-action-commits` を更新後と同じ SHA と tag へ揃え、`dist generate --check` が通ることを確かめた commit を更新 PR に足してから merge する（コマンドは `doc/guidelines/development-command-guidelines.md` の「配布成果物の生成と確認」。dist は Compose の `release-tools` で実行し、cloud session では使えないためローカルで行う）。
 

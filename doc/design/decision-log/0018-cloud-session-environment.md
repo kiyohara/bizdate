@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-12
-- 最終更新日: 2026-09-12
-- 関連: `doc/guidelines/cloud-session-guidelines.md`, `doc/guidelines/development-command-guidelines.md`, `doc/guidelines/agent-configuration-management.md`, `doc/guidelines/github-mcp-guidelines.md`, `doc/guidelines/git-operation-guidelines.md`, `doc/guidelines/issue-driven-task-execution.md`, `doc/design/decision-log/0011-ai-agent-lineup.md`, `doc/design/decision-log/0014-dependency-crates-and-toolchain.md`
+- 最終更新日: 2026-09-23
+- 関連: `doc/guidelines/cloud-session-guidelines.md`, `doc/guidelines/development-command-guidelines.md`, `doc/guidelines/agent-configuration-management.md`, `doc/guidelines/github-mcp-guidelines.md`, `doc/guidelines/github-cli-guidelines.md`, `doc/guidelines/git-operation-guidelines.md`, `doc/guidelines/issue-driven-task-execution.md`, `doc/design/decision-log/0011-ai-agent-lineup.md`, `doc/design/decision-log/0014-dependency-crates-and-toolchain.md`
 
 ## 背景
 
@@ -99,3 +99,59 @@ Compose を維持すれば、検証の正が 1 つのまま cloud session を扱
 - Codex / Cursor の cloud 環境を使い始め、同じ script を呼ぶ入口が必要になった場合。
 - 組み込み GitHub tool の構成が変わり、guideline の境界で禁止を維持できなくなった場合。
 - Docker Hub の配信元が許可リストに入り、mirror が不要になった場合。
+
+## 追記 (2026-09-23): `gh` の利用
+
+Issue #70。組み込みの GitHub MCP tool は用意された操作しかできず、inline review comment の編集など作業に必要な操作の一部が欠けていた（#69）。session に `gh` を入れて実測した結果は #70 の本文を正とし、ここには判断に要る要点だけを残す。
+
+- 認証は platform が用意している。`GH_TOKEN` / `GITHUB_TOKEN` には placeholder が入り、GitHub proxy が request ごとに実際の credential へ差し替える。token は VM に入らない。欠けていたのは `gh` 本体だけで、公式ドキュメントが preinstall とする `gh` は image に無かった。
+- `apt-get install gh` で Ubuntu archive の 2.45.0 が入る。`archive.ubuntu.com` は既定の許可リストにある。session 内での導入は auto mode の権限判定に左右され、当てにできない。
+- proxy は REST だけを通す。GraphQL（`gh` の主要な subcommand と `gh auth status` が内部で使う）、検索 API、未接続の repository と repository の外の path、Actions の一部の path は拒否される。
+- `gh api` の REST で、MCP tool に無い read（任意 commit の check run、issue の timeline、compare、label・milestone の一覧、ruleset）と write（inline review comment の編集など）ができる。PR #67 の返信 4 件の `Model:` 行を `gh api -X PATCH` で書き戻し、MCP tool の read で反映を確かめた。
+- GitHub App の権限外（branch protection、repository 設定、secrets）は `gh` でもできない。
+
+### 候補
+
+- G1: `--provision` で Ubuntu archive から `gh` を入れる。environment cache に載る。
+- G2: hook で毎 session `gh` を入れる。
+- G3: 必要なときに agent が session 内で入れる。
+- G4: PAT を environment の環境変数に置き、`gh` を GitHub API へ直接向ける（外部記事の方式）。
+- G5: 公式の apt repository（`cli.github.com`）から新しい版を入れる。
+
+### 検討内容
+
+- G1 は 0018 の「処理は repo の script、UI は stub」に沿い、導入が 1 度で済む。script の digest が変わるため、既存の drift 検出が stub の貼り直しを促す。失敗しても exit 0 を保てば session の起動を妨げない。
+- G2 は cache が古い間も `gh` が使えるが、session 開始が遅れ、導入経路が 2 本になる。hook は有無の表示だけにした。
+- G3 は権限判定で拒否されることがあり、session ごとに挙動が変わる。
+- G4 は token が environment の利用者から読め、placeholder と proxy による差し替えの経路を捨てることになる。最小権限の PAT にできる利点はあるが、秘密情報を environment に置く方が損失が大きい。
+- G5 は `cli.github.com` が既定の許可リストに無く、届くかも確かめていない。REST が中心なら 2.45.0 で足りる。
+- `gh` を入れると、規約で止めている操作（merge、resolve、auto-merge、workflow の実行など）への経路が 1 本増える。組み込み tool のときと同じく、tool の可視性ではなく guideline の境界で禁止を維持する。規約が MCP の tool 名で書かれている箇所には `gh` の経路を足す。
+
+### 決定
+
+- G1 を採る。`--provision` が Ubuntu archive から `gh` を入れ、失敗しても exit 0 で続ける。hook と `--doctor` は `gh` の有無を表示するだけで、導入しない。
+- `GH_TOKEN` / `GITHUB_TOKEN` や PAT を environment の環境変数に置かない（G4 を採らない）。
+- cloud session の GitHub 操作は、組み込み GitHub tool を第一選択とする決定を維持する。`gh` は MCP tool に無い操作だけを `gh api`（REST）で補い、GraphQL を使う subcommand と `gh auth status` を使わない。禁止と要承認の操作は `gh` の経路でも同じとする。線引きの正本は `doc/guidelines/github-mcp-guidelines.md` の「cloud session」、実行形式は `doc/guidelines/github-cli-guidelines.md` の「cloud session」。
+- `gh` が無い session では agent が導入を試みず、組み込み tool だけで進める。
+
+### network の許可リストへの host の追加
+
+実測では、GitHub Actions の job log の配信元（`results-receiver.actions.githubusercontent.com`）と artifact の配信元（`productionresultssa*.blob.core.windows.net`）への接続が許可リスト外として拒否された。
+
+- job log は組み込み tool の `get_job_logs` で取れる。host を足す必要は低い。
+- artifact は MCP tool も URL を返すだけで、session からは取得できない。host 名が番号付きのため、足すなら `*.blob.core.windows.net` を許すことになり、Azure Blob 全体への外向き通信を開ける。environment は repository と branch をまたいで共有されるため、影響はこの repository に留まらない。
+- session で artifact を扱いたい場面は、release archive の中身の確認が主である。これは CI の `verify-release-archive.sh` が検証しており、session で開く必要は今のところ無い。
+
+結論: host を追加しない（environment の Network access は既定の Trusted のまま）。agent の推奨であり、ユーザーが #70 の PR（#74）の review で判断する。PR の merge をもってこの結論を採用とする。追加すると判断した場合は merge 前にこの節を書き換える。environment の設定はユーザーが claude.ai の UI で行うものであり、agent は変えない。
+
+### 影響
+
+- `.agents/scripts/cloud-session-setup.sh` に `gh` の導入（`--provision`）と有無の表示（hook / `--doctor`）を足した。script の digest が変わるため、merge 後に `--print-stub` の出力を environment の setup script へ貼り直す必要がある。
+- `doc/guidelines/github-mcp-guidelines.md`、`github-cli-guidelines.md`、`cloud-session-guidelines.md` の cloud session の記述を改め、`.claude/rules/` の shim を揃えた。
+
+### 後から見直す条件
+
+- platform が `gh` を preinstall するようになった場合（`--provision` の導入を外す）。
+- proxy が GraphQL の一部を通すようになった、または REST の遮断範囲が変わった場合。
+- REST で足りず、新しい版の `gh` が必要になった場合（G5 の再検討）。
+- session で artifact を扱う必要が出た場合（host の追加の再検討）。

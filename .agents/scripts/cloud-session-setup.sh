@@ -9,14 +9,17 @@
 #   開発用 image が無ければ build して、その前提を満たす。cloud 固有の差分 (container を
 #   agent proxy 経由にする、base image を mirror から取る) は compose.cloud.yaml に置き、
 #   COMPOSE_FILE で重ねる。
+#   あわせて、GitHub MCP tool に無い操作を補うための gh (GitHub CLI) を `--provision` で入れる。
+#   認証は platform の GitHub proxy が request ごとに差し替えるため、token は扱わない
+#   (doc/guidelines/github-mcp-guidelines.md の「cloud session」)。
 #
 # 呼び出し元:
 #   - .claude/settings.json の SessionStart hook (startup|resume)。既定 mode。
 #     CLAUDE_CODE_REMOTE=true 以外では何も出力せず exit 0 する。
 #   - environment の setup script (claude.ai/code の UI 設定): `--provision`。
 #     `--print-stub` が生成した stub を UI に貼る。setup script は agent proxy が立つ前に
-#     走るため container 内から外へは出られない。そこで base image の pull (重い部分) と
-#     state file の記録だけを行い、image の build は試みず hook に任せる。environment は
+#     走るため container 内から外へは出られない。そこで gh の導入 (Ubuntu archive)、base image の
+#     pull (重い部分)、state file の記録だけを行い、image の build は試みず hook に任せる。environment は
 #     repository や branch をまたいで共有されるため、stub は script が無ければ何もせず exit 0 する。
 #
 # 安全策:
@@ -46,9 +49,9 @@ Claude Code on the web の cloud session で Docker daemon を起動し、開発
 
 options:
   --force       CLAUDE_CODE_REMOTE=true でなくても hook と同じ動作を行う
-  --provision   environment の setup script 用。base image を pull し、state file を書き、
-                自分で起動した daemon を止める。image の build は hook に任せる
-  --doctor      daemon / image / environment cache の状態を表示し、cache が古ければ exit 1
+  --provision   environment の setup script 用。gh を導入し、base image を pull し、state file を
+                書き、自分で起動した daemon を止める。image の build は hook に任せる
+  --doctor      daemon / image / gh / environment cache の状態を表示し、cache が古ければ exit 1
   --print-stub  environment の setup script に貼る stub を生成する
   -h, --help    この help を表示する
 USAGE
@@ -270,6 +273,48 @@ ensure_image() {
   return 1
 }
 
+gh_version() { gh --version 2>/dev/null | head -n 1 | cut -d' ' -f3; }
+
+# gh の有無を 1 行で示す。hook では導入しない (session 開始を遅らせず、導入経路を
+# environment cache の 1 本に揃える)。
+report_gh() {
+  if command -v gh >/dev/null 2>&1; then
+    say "gh: $(gh_version) あり (GitHub MCP tool に無い操作だけ gh api で行う。詳細: doc/guidelines/github-mcp-guidelines.md)"
+  else
+    say "gh: 無し (environment の setup script の --provision で入る)"
+  fi
+}
+
+# gh を Ubuntu archive から入れる。archive.ubuntu.com は既定の許可リストにあり、setup script の
+# 文脈 (agent proxy が無い) でも VM の system CA で届く。package list が古くて失敗したときだけ
+# update してやり直す。失敗しても session の起動は止めない。
+# setup script は 5 分以内に終わる必要があり、後に base image の pull (20〜35 秒) が続く。apt-get の
+# 3 段は gh_step_timeout ずつ、最悪でも合計 135 秒で打ち切る。
+gh_step_timeout=45
+
+ensure_gh() {
+  if command -v gh >/dev/null 2>&1; then
+    say "gh: $(gh_version) あり"
+    return 0
+  fi
+  if [ "$(id -u)" -ne 0 ] || ! command -v apt-get >/dev/null 2>&1; then
+    say "gh: root の apt-get が使えないため導入しない"
+    return 1
+  fi
+  say "gh: Ubuntu archive から導入する"
+  if DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get install -y -q --no-install-recommends gh \
+       >>"$log_file" 2>&1 </dev/null \
+     || { DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get update -q >>"$log_file" 2>&1 </dev/null \
+          && DEBIAN_FRONTEND=noninteractive timeout "$gh_step_timeout" apt-get install -y -q --no-install-recommends gh \
+               >>"$log_file" 2>&1 </dev/null; }; then
+    say "gh: $(gh_version) を導入した"
+    return 0
+  fi
+  say "gh: 導入に失敗した (session は続行する。GitHub 操作は MCP tool で行う)"
+  tail -n 3 "$log_file" 2>/dev/null | cut -c1-200 | sed "s/^/$self:   /"
+  return 1
+}
+
 # COMPOSE_FILE を session 全体へ渡す。CLAUDE_ENV_FILE は SessionStart hook が後続の
 # shell へ環境変数を渡すための file。無い文脈 (setup script、手動実行) では export 文を示す。
 export_compose_file() {
@@ -352,6 +397,7 @@ doctor() {
   else
     say "image: ${image:-?} 無し"
   fi
+  report_gh
   if [ -f "$state_file" ]; then
     say "state: $(sed -n 's/^built_at=//p' "$state_file") に作成"
   else
@@ -379,6 +425,14 @@ if ! is_cloud_sandbox; then
 fi
 
 export_compose_file
+
+# gh は daemon と独立しているため、daemon の起動に失敗しても入れる。hook は有無の表示だけを
+# daemon や image の成否より先に行う。
+if [ "$mode" = "provision" ]; then
+  ensure_gh || true
+else
+  report_gh
+fi
 
 if ! start_daemon; then
   say "WARNING: Docker daemon を起動できなかった。sandbox の cargo で代替せず、実行できない検証は未実施として報告する。"

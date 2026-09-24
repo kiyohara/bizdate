@@ -49,15 +49,15 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
-| OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | todo | なし | model の識別子を記載してよい範囲と、review metadata の `Model` の扱いを明文化する | - |
-| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | todo | なし | cloud session で `gh` を使えるようにする。network の許可リストへの host の追加も判断する | - |
+| OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | done | なし | 完了。model の識別子の禁止を PR title に限り、review metadata の `Model` は PR / review のコメントが実行環境の指示の対象外なら `unknown` にしないと定めた（0023） | [#72](https://github.com/kiyohara/bizdate/pull/72) |
+| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | done | なし | 完了。`--provision` が `gh` を入れ、MCP tool に無い操作だけ `gh api` で補う線引きを規約と 0018 に置いた。許可リストへの host 追加は見送り | [#74](https://github.com/kiyohara/bizdate/pull/74) |
 | OPS-03 | [#69](https://github.com/kiyohara/bizdate/issues/69) | todo | #68 | cloud session で review の canonical metadata を規定どおりに書けるようにする。#70 の後なら `gh` の利用を前提に書ける | - |
 
 ## 次にやること
 
 - `run-issue-task` で #65 へ進む。cargo-about を prebuilt で導入し、PR での CI の二重実行をやめる。続いて #39 へ進める。
 - cloud session での agent 運用（#68〜#70）は配布準備と独立している。タスクは直列に消化するため、配布準備との順はユーザーが決める。表の中では #68 と #70 を先に、#69 を最後に進める。
-- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。実装は [#63](https://github.com/kiyohara/bizdate/issues/63) で行う（索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
+- #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。設定は [#63](https://github.com/kiyohara/bizdate/issues/63) で入れ、merge 後の実動確認は [#73](https://github.com/kiyohara/bizdate/issues/73) で追う（いずれも索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
 - #36〜#40 と #64 / #65 は配布準備であり、実際の初回公開を完了扱いにしない。公開は #40 で整える手順に従ってユーザー承認後に進め、公開後の実動確認と未確認事項を記録する。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 
