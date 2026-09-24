@@ -214,16 +214,23 @@ emulation で動かした結果を native の確認としない。cloud session 
 ```sh
 v=<version>
 dir=$(mktemp -d ./release-check.XXXXXX)
-for f in sha256.sum dist-manifest.json bizdate.rb \
-    bizdate-aarch64-apple-darwin.tar.gz bizdate-aarch64-apple-darwin.tar.gz.sha256 \
-    bizdate-aarch64-unknown-linux-gnu.tar.gz bizdate-aarch64-unknown-linux-gnu.tar.gz.sha256 \
-    bizdate-x86_64-unknown-linux-gnu.tar.gz bizdate-x86_64-unknown-linux-gnu.tar.gz.sha256; do
-    (cd "$dir" && curl -fsSLO "https://github.com/kiyohara/bizdate/releases/download/v$v/$f") || break
-done
-(cd "$dir" && sha256sum -c sha256.sum && for s in *.sha256; do sha256sum -c "$s" || exit 1; done)
+(
+    cd "$dir" || exit 1
+    for f in sha256.sum dist-manifest.json bizdate.rb \
+        bizdate-aarch64-apple-darwin.tar.gz bizdate-aarch64-apple-darwin.tar.gz.sha256 \
+        bizdate-aarch64-unknown-linux-gnu.tar.gz bizdate-aarch64-unknown-linux-gnu.tar.gz.sha256 \
+        bizdate-x86_64-unknown-linux-gnu.tar.gz bizdate-x86_64-unknown-linux-gnu.tar.gz.sha256; do
+        curl -fsSLO "https://github.com/kiyohara/bizdate/releases/download/v$v/$f" || exit 1
+    done
+    sha256sum -c sha256.sum || exit 1
+    for a in bizdate-aarch64-apple-darwin.tar.gz bizdate-aarch64-unknown-linux-gnu.tar.gz bizdate-x86_64-unknown-linux-gnu.tar.gz; do
+        awk -v a="$a" '{ sub(/^\*/, "", $2) } $2 == a { found = 1 } END { exit !found }' sha256.sum || { echo "$a is not in sha256.sum" >&2; exit 1; }
+        sha256sum -c "$a.sha256" || exit 1
+    done
+) && echo "ok: 9 assets fetched and verified"
 ```
 
-macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使う。
+取得できない asset が 1 件でもあれば、その時点で非 0 で終わる。`sha256.sum` に 3 つの archive の行があることも確かめ、各 archive の `.sha256` は名前を指定して検査するため、asset が欠けていれば通らない。最後に `ok:` の行が出れば、9 件の取得と checksum の確認が済んでいる。macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使う。
 
 Linux（container の architecture の target。cloud session では x86_64、Apple Silicon の Mac では arm64）:
 
