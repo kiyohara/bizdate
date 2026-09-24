@@ -5,7 +5,7 @@
 - 状態: decided
 - 作成日: 2026-09-24
 - 最終更新日: 2026-09-24
-- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `dist-workspace.toml`, `.github/workflows/publish-homebrew.yml`, `.github/workflows/release-verify.yml`, `.github/scripts/prepare-homebrew-formula.sh`, `.github/scripts/verify-homebrew-formula.sh`, `.github/scripts/publish-homebrew-formula.sh`, [Issue #39](https://github.com/kiyohara/bizdate/issues/39)
+- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `dist-workspace.toml`, `.github/workflows/publish-homebrew.yml`, `.github/workflows/release-verify.yml`, `.github/scripts/prepare-homebrew-formula.sh`, `.github/scripts/verify-homebrew-formula.sh`, `.github/scripts/publish-homebrew-formula.sh`, [Issue #39](https://github.com/kiyohara/bizdate/issues/39), [Issue #80](https://github.com/kiyohara/bizdate/issues/80)
 
 ## 背景
 
@@ -89,3 +89,35 @@ tap への push に要るのは、tap の Contents の書き込みだけであ�
 - dist が Formula の test や、tap の version を見た書き込みに対応した場合。builtin の publish job へ戻せるかを検討する。
 - GitHub の runner image から Homebrew が外れた場合。runner で Homebrew を入れるか、その target の install の検証をどう扱うかを決め直す。
 - tap の運用（slapex 側の自動化や branch 保護）が変わった場合。push の方法と、変更を `Formula/bizdate.rb` に限る検査を読み直す。
+
+## 2026-09-24 追記: secret の名前を slapex と揃える
+
+Issue #80。同じ tap（`kiyohara/homebrew-tap`）へ書く slapex は、GoReleaser の設定（`.goreleaser.yaml` と `.github/workflows/release.yml`）で Actions secret `HOMEBREW_TAP_GITHUB_TOKEN` を参照している（2026-09-24 に HEAD `08e4ba1` を read-only で確認）。同じ tap へ書く token の secret 名がリポジトリごとに違うと、登録と更新の管理が煩雑になる。
+
+### 候補
+
+上の候補（A〜H）と区別するため、I から続ける。
+
+- secret の名前: I dist の慣例の `HOMEBREW_TAP_TOKEN` を続ける / J slapex と同じ `HOMEBREW_TAP_GITHUB_TOKEN` にする
+
+### 検討内容
+
+`HOMEBREW_TAP_TOKEN` を固定で読むのは dist の builtin の publish job（A）であり、上の「決定」で使わないとした。custom の publish job（B）は secret を名前で参照するだけで、名前は bizdate 側で選べる。dist の生成物（`release.yml`）は publish job へ `secrets: inherit` で secret を渡すだけで、名前を持たない。
+
+J にすると、2 つのリポジトリで同じ名前の secret を登録・更新すればよくなる。user account には organization secret が無いため、登録がリポジトリごとに要る点は変わらない。
+
+### 決定
+
+- secret の名前は slapex と同じ `HOMEBREW_TAP_GITHUB_TOKEN` にする（J）。上の「検討内容」の「secret の名前は dist の慣例どおり `HOMEBREW_TAP_TOKEN` のままでよい」と、「決定」の `HOMEBREW_TAP_TOKEN` を、この追記で置き換える。推奨する token の種類（H）は変えない。
+
+### 影響
+
+- `.github/workflows/publish-homebrew.yml` の参照と未設定時のエラー文、`doc/design/distribution.md` の「tap への書き込みの認証」、`dist-workspace.toml` のコメントを新しい名前に揃えた。
+- 旧名で登録した secret は publish job から見えない。登録はユーザーが行う。
+- [0016](0016-distribution-contract.md) の本文にある `HOMEBREW_TAP_TOKEN`（3 か所）は当時の名前である。
+- #40（リリース手順と案内）の Issue 本文を、新しい名前と fine-grained PAT の推奨（H）へ同期し、「依存」に #80 を足した。
+
+### 後から見直す条件
+
+- dist の builtin の publish job へ戻す場合（上の「後から見直す条件」の 2 番目）。builtin の job は `HOMEBREW_TAP_TOKEN` を固定で読むため、secret の名前も戻すか、両方の名前で登録する。
+- slapex が secret の名前を変えた場合。
