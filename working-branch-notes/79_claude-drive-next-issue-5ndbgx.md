@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/drive-next-issue-5ndbgx`
-- PR: 未作成
+- PR: #79
 - 最終更新: 2026-09-24
 
 ## 目的
@@ -28,7 +28,7 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 - [ ] PR CI で、3 target の Formula の検査と install / `brew test` / 配置を確かめる
 - [ ] `distribution.md`、decision log 0025 と index、`development-command-guidelines.md`、Copilot 指示を更新する
 - [ ] `progress.md` の DIST-04 を更新する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 
 ## 検証
 
@@ -37,7 +37,6 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 ## リスク・ブロッカー
 
 - 公開 tap からの `brew install` / `upgrade`、tap への実 push、`HOMEBREW_TAP_TOKEN` の設定は未実施（スコープ外。#40 の初回公開で確かめる）。
-- Ubuntu の arm64 runner に Homebrew が無い場合、`aarch64-unknown-linux-gnu` の install は確かめられない。
 
 ## セッションログ
 

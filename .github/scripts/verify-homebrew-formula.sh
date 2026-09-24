@@ -49,14 +49,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "== brew style"
-brew style --formula --except-cops FormulaAudit/Homepage,FormulaAudit/Desc "$formula"
-
-echo "== install from a local tap"
-# Homebrew は tap に無い Formula を install しない。一時的な tap に置き、url をこの run の archive
-# (file://) へ差し替える。sha256 は変えないため、Formula の checksum と archive の一致も install で確かめる。
+# Homebrew は tap に無い Formula を style の対象にも install の対象にもしない。一時的な tap に置く。
 brew tap-new --no-git "$tap" > /dev/null
 tap_dir=$(brew --repository "$tap")
+
+echo "== brew style"
+# url を差し替える前の、tap へ書くものと同じ Formula を対象にする。
+cp "$formula" "$tap_dir/Formula/bizdate.rb"
+brew style --formula --except-cops FormulaAudit/Homepage,FormulaAudit/Desc "$tap/bizdate"
+
+echo "== install from a local tap"
+# url をこの run の archive (file://) へ差し替える。sha256 は変えないため、Formula の checksum と archive の
+# 一致も install で確かめる。
 sed "s|https://github.com/kiyohara/bizdate/releases/download/v[^/]*/|file://$dist_dir/|" "$formula" \
     > "$tap_dir/Formula/bizdate.rb"
 brew install --formula "$tap/bizdate"

@@ -205,7 +205,7 @@ release workflow の `release-verify` は、PR でも dist で Formula を生成
 - `brew test` が通る。
 - `bizdate` が `bin`、`README.md` と `LICENSE` が doc、`THIRD-PARTY-LICENSES.md` が `pkgshare` に入り、archive の file と同一である。
 
-これは公開前成果物での確認であり、公開 tap からの `brew install` / `upgrade` の確認ではない。Homebrew の無い runner（Ubuntu の arm64 runner）では、`aarch64-unknown-linux-gnu` の install を確かめられず、その旨を step summary に記録する。
+これは公開前成果物での確認であり、公開 tap からの `brew install` / `upgrade` の確認ではない。
 
 ### tap の更新
 

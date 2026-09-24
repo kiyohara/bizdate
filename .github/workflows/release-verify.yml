@@ -152,9 +152,8 @@ jobs:
           name: artifacts-build-local-${{ join(matrix.targets, '_') }}
           path: ${{ runner.temp }}/distrib
 
-      # macOS の runner は brew が PATH にある。Ubuntu の x86_64 runner は /home/linuxbrew に入っているが
-      # PATH に無い。Homebrew の無い runner (Ubuntu の arm64 runner) では install を確かめられないため、
-      # その target に限って step summary に記録して終える。それ以外の runner で brew が無ければ失敗させる。
+      # macOS の runner は brew が PATH にある。Ubuntu の runner (x86_64 / arm64) は /home/linuxbrew に
+      # 入っているが PATH に無い。brew が見つからなければ verify-homebrew-formula.sh が失敗する。
       - name: Install and test the Formula
         env:
           TARGETS: ${{ join(matrix.targets, ' ') }}
@@ -163,11 +162,5 @@ jobs:
             eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           fi
           for target in $TARGETS; do
-            if ! command -v brew > /dev/null 2>&1 && [ "$target" = aarch64-unknown-linux-gnu ]; then
-              echo "### verify-homebrew-formula: $target" >> "$GITHUB_STEP_SUMMARY"
-              echo "not verified: this runner has no Homebrew (the Formula was checked by prepare-homebrew-formula.sh)" \
-                | tee -a "$GITHUB_STEP_SUMMARY"
-              continue
-            fi
             .github/scripts/verify-homebrew-formula.sh "$target" "$RUNNER_TEMP/formula/bizdate.rb" "$RUNNER_TEMP/distrib"
           done
