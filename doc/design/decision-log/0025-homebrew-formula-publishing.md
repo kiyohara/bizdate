@@ -92,7 +92,7 @@ tap への push に要るのは、tap の Contents の書き込みだけであ�
 
 ## 2026-09-24 追記: secret の名前を slapex と揃える
 
-Issue #80。同じ tap（`kiyohara/homebrew-tap`）へ書く slapex は、GoReleaser の設定（`.goreleaser.yaml` と `.github/workflows/release.yml`）で Actions secret `HOMEBREW_TAP_GITHUB_TOKEN` を参照している（2026-09-24 に read-only で確認）。同じ tap へ書く token の secret 名がリポジトリごとに違うと、登録と更新の管理が煩雑になる。
+Issue #80。同じ tap（`kiyohara/homebrew-tap`）へ書く slapex は、GoReleaser の設定（`.goreleaser.yaml` と `.github/workflows/release.yml`）で Actions secret `HOMEBREW_TAP_GITHUB_TOKEN` を参照している（2026-09-24 に HEAD `08e4ba1` を read-only で確認）。同じ tap へ書く token の secret 名がリポジトリごとに違うと、登録と更新の管理が煩雑になる。
 
 ### 候補
 
@@ -114,6 +114,8 @@ J にすると、2 つのリポジトリで同じ名前の secret を登録・�
 
 - `.github/workflows/publish-homebrew.yml` の参照と未設定時のエラー文、`doc/design/distribution.md` の「tap への書き込みの認証」、`dist-workspace.toml` のコメントを新しい名前に揃えた。
 - 旧名で登録した secret は publish job から見えない。登録はユーザーが行う。
+- [0016](0016-distribution-contract.md) の本文にある `HOMEBREW_TAP_TOKEN`（3 か所）は当時の名前である。
+- #40（リリース手順と案内）の Issue 本文を、新しい名前と fine-grained PAT の推奨（H）へ同期し、「依存」に #80 を足した。
 
 ### 後から見直す条件
 
