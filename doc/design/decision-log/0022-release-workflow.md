@@ -173,6 +173,7 @@ PR の run では、直接の CI と Release workflow の `custom-ci` が、同�
 - 上の「影響」のうち、build job で cargo-about を `cargo install` し、その依存の build script と proc-macro が動くという記述は、upstream の prebuilt を固定した sha256 と照合して実行する形に変わる。
 - cargo-about の version を上げるときは、3 つの asset の sha256 を取り直す（`doc/guidelines/development-command-guidelines.md` の「tool と action の version を上げるとき」）。upstream が build runner に合う asset を配らなくなると、その runner の build job は止まる。
 - PR の run では、`custom-ci` の `platform`（macOS 1 本を含む 3 job）が skipped になる。push 1 回あたりの macOS job は 3 本（CI 1 本、Release workflow 2 本）になる。
+- PR #76 の初回 push（head `dbcf7b9`、[run 35936143855](https://github.com/kiyohara/bizdate/actions/runs/35936143855)）で、Release workflow は 1 分 44 秒になった（上の #67 の 3 分 37 秒から）。3 つの build job は 48〜58 秒で、cargo-about の step は 1 秒以下だった。
 - `doc/design/distribution.md`、`doc/guidelines/development-command-guidelines.md`、`.github/build-setup.yml` と `.github/workflows/ci.yml` のコメント、`.github/copilot-instructions.md` を改めた。
 - tag push の経路は PR では走らない。tag push で `platform` が回ることは条件式の review で確かめた。実動は初回の公開で確かめる。
 - 上の「後から見直す条件」のうち、「cargo-about が `x86_64-apple-darwin` の prebuilt を出した場合」は、#64 で対象から外したため適用しない。「PR ごとの CI 時間やレビュー待ちが問題になった場合」は、CI の二重実行をこの追記で見直した。`pr-run-mode` は維持した。

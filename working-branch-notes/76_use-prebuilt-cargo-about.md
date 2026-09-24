@@ -12,6 +12,7 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 
 - 依存の #64（PR #67）は merge 済み。着手時点で open PR は無い。
 - ローカル（macOS host の Docker Desktop）で作業している。`drive-issue-to-reviewed-pr` の P1 として進めている。
+- PR #76 を作成し、note を採番した。PR CI（head `dbcf7b9` と `192844f`）で CI と Release workflow はすべて success となり、`custom-ci` の `platform` は skipped になった。所要時間を PR #67 の初回 push と比べた（「検証」の「PR CI」）。
 - ユーザーの補足（2026-09-24）: 並列実行の試行中で、#68 / #70 / #63 を cloud session が同時に進めている。直列の確認は今回に限り例外として承認済みで、他の session のブランチと PR には触れない。`progress.md` は DIST-03b の行だけを更新する。decision log は 0022 への追記を優先し、新しいログが要る場合は 0026 を使う。review metadata の `Model` には実行環境で確認した識別子を書く。
 
 ## 調査結果
@@ -35,9 +36,9 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - [x] decision log（0022 追記、index）を更新する
 - [x] `distribution.md` / guideline / `build-setup.yml` と `ci.yml` のコメント / Copilot 指示を改める
 - [x] Compose で検証する（`release-tools` の作り直し、`dist generate --check`、表記の生成と照合、ソースビルドとの byte 比較、stub での失敗経路）
-- [x] `progress.md` の DIST-03b の行を更新する（PR 欄は採番後）
+- [x] `progress.md` の DIST-03b の行を更新する（採番後に PR 欄へ #76 を反映した）
 - [x] PR を作成し、note を採番する
-- [ ] PR CI の結果と所要時間を記録し、PR #67 の実測と比べる
+- [x] PR CI の結果と所要時間を記録し、PR #67 の実測と比べる
 
 ## 検証
 
@@ -68,6 +69,28 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - `git diff --check`: clean。
 - 実物の macOS（`Darwin arm64`）での取得と実行は Compose では確かめられない。PR CI の `build-local-artifacts (aarch64-apple-darwin)`（`macos-15`）で確かめる。
 
+### PR CI（PR #76）
+
+所要時間は、PR #67 の note と同じく run の `run_started_at` から `updated_at` までで数えた。job と step の時間は job の API の時刻（秒単位）から数えた。
+
+| 項目 | PR #67 の初回 push（head `ee5d285`） | 本 PR の初回 push（head `dbcf7b9`） |
+|---|---|---|
+| Release workflow | 3 分 37 秒（run 35873618982） | 1 分 44 秒（run 35936143855） |
+| build `aarch64-apple-darwin`（`macos-15`） | 2 分 40 秒（うち cargo-about 109 秒） | 58 秒（うち cargo-about 1 秒） |
+| build `aarch64-unknown-linux-gnu`（`ubuntu-22.04-arm`） | 2 分 17 秒（うち 93 秒） | 48 秒（うち 1 秒未満） |
+| build `x86_64-unknown-linux-gnu`（`ubuntu-22.04`） | 2 分 48 秒（うち 109 秒） | 48 秒（うち 1 秒未満） |
+| `custom-ci` の job | `lint` と `platform` 3 job | `lint`（19 秒）だけ。`platform` は skipped |
+| push 1 回あたりの macOS job | 4 本（CI 1、Release workflow 3） | 3 本（CI 1、Release workflow 2） |
+| 直接の CI（参考。本 PR は job を変えていない） | 52 秒（run 35873618462） | 31 秒（run 35936143642） |
+
+- 採番の push（head `192844f`）でも同じ結果だった。Release workflow は 1 分 58 秒（run 35936207846）、build job は 1 分 3 秒 / 48 秒 / 53 秒、直接の CI は 36 秒（run 35936207687）。
+- 両 head とも、CI（`fmt / clippy` と 3 target の `test / build`）と Release workflow（`plan`、3 target の build、`custom-ci / fmt / clippy`、`build-global-artifacts`、`custom-release-verify` の `release tag` と 3 target の `archive`）が success。`custom-ci / test / build (${{ matrix.target }})` は skipped で、matrix を展開する前に省かれた。`host` と `announce` は skipped。
+- `custom-ci` の呼び出し側の job は check run に現れない。`custom-ci` を `needs` に持つ `build-global-artifacts` と `custom-release-verify` が走って success になったこと、run が success で終わったことから、`custom-ci` は success で終わったと判断した。
+- 直接の CI では、3 target の `platform` がすべて回った（`inputs.plan` が空の run では省かれない）。
+- `build-local-artifacts (aarch64-apple-darwin)` の log: `install-cargo-about: ok: sha256 ae72…c3e cargo-about-0.9.2-aarch64-apple-darwin.tar.gz` と `cargo-about 0.9.2` を出し、step は約 0.5 秒だった。実物の macOS（`macos-15`、macOS 15.7）で asset の選択、照合、実行が通った。
+- 3 つの build job で、表記の生成と照合が通った（`ok: 50 crates for aarch64-apple-darwin aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu`）。archive の検証（`release-verify`）も 3 target で通った。
+- 検証した archive はその run の workflow artifact であり、公開された Release asset ではない。
+
 ### 条件式の review（tag push の経路）
 
 `platform` の `if: ${{ !(github.event_name == 'pull_request' && inputs.plan) }}` を run の種類ごとに読んだ。呼ばれた workflow の `github` context は呼び出し側のもので、`release-verify.yml` の `github.event_name == 'pull_request'` の分岐も同じ前提で PR #62 / #67 の run を通っている。
@@ -91,3 +114,5 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 
 - 2026-09-24: Issue #65 を読み、依存（#64 / PR #67 merge 済み）と open PR 無しを確認。ブランチ `use-prebuilt-cargo-about` で着手。cargo-about 0.9.2 の asset と sha256 を確かめた。
 - 2026-09-24: `install-cargo-about.sh`、Dockerfile、`ci.yml`、`build-setup.yml` のコメント、`distribution.md`、development-command guideline、Copilot 指示、decision log（0022 追記と index）、`progress.md` の DIST-03b を改めた。Compose で `release-tools` を作り直し、`dist generate --check` / `dist plan`、表記の生成と照合、ソースビルドとの byte 比較、stub での失敗経路を確かめた。
+- 2026-09-24: PR #76 を作成した（head `dbcf7b9`）。`number-working-branch-note` で note を PR #76 で採番した（`192844f`）。PR description の note 参照を 1 箇所置換し、公開 API の読み戻しで意図した本文と byte 単位で一致することを確かめた。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）で、PR description には該当なし。触らなかった行は note の 1 件（「`progress.md` の DIST-03b の行を更新する（PR 欄は採番後）」。完了要素と未完要素（PR 欄の反映）が混在する行で、採番 skill は `progress.md` を更新しない）で、この後の P1 で PR 欄を反映し括弧書きを改めた。PR description の「PR CI の結果と所要時間は、完了後にこの節へ追記する」は定型外で採番 skill は触らず、P1 で CI の結果に置き換えた。採番 skill は停止せず完走した。
+- 2026-09-24: PR CI（head `dbcf7b9` と `192844f`）の結果と所要時間を記録し、PR #67 の初回 push と比べた。0022 の追記の「影響」に実測を足した。`progress.md` の DIST-03b の PR 欄に #76 を反映した。
