@@ -301,7 +301,7 @@ brew test kiyohara/tap/bizdate
 
 初回公開で初めて確かめるもの（PR の run では確かめられない）:
 
-- tag push の run でだけ走る job: `custom-ci / test / build (<target>)` の 3 job、`custom-release-verify / release tag`、`host`、`custom-publish-homebrew / formula`、`announce`
+- tag push の run でだけ行われるもの: `custom-ci / test / build (<target>)` の 3 job、`custom-release-verify / release tag` の tag の検査（PR の run でも job は success になるが、検査の step は走らない）、`host`、`custom-publish-homebrew / formula`、`announce`
 - tap への実際の書き込み（secret の名前と権限を含む）
 - 公開 asset の取得、checksum、展開、各 target での起動
 - 公開 tap からの `brew install` と Formula の version
