@@ -1,0 +1,16 @@
+---
+description: bizdate の version を公開するとき（リリース準備 PR、公開前確認、承認、tag の push、公開の監視と復旧、公開後確認、リリース台帳の更新）、または release workflow の job を変えるときに読むリリース手順の共通正本への入口
+globs:
+  - .github/workflows/release.yml
+  - .github/workflows/release-verify.yml
+  - .github/workflows/publish-homebrew.yml
+alwaysApply: false
+---
+
+# リリース手順
+
+- 詳細は `doc/guidelines/release-guidelines.md`
+- version の公開に関わる前に共通正本を読む。実行の順序は `.agents/skills/run-release/SKILL.md`。
+- tag の push、PR の merge、secrets の操作は agent が行わない。公開の承認はユーザーの文言で受ける。
+- 既存の tag を付け替えない。失敗した job を確認なしに再実行しない。やり直すときは version を上げる。
+- release workflow の job 名を変えたら、共通正本の「監視」と「公開前確認」の job の一覧も揃える。

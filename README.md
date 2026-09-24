@@ -4,7 +4,80 @@
 
 主用途は、cron やシェルから月次処理のゲートとして使うことです。業務日は、月曜日から金曜日のうち、日本の祝日・振替休日・国民の休日と、利用者が指定した休日を除いた日です。会社固有の休日や、元日以外の年末年始休暇は自動では除外しません。
 
-現在、配布用バイナリは提供していません。インストール方法は、配布手段が固まってから追記します。以下は `bizdate` を実行できる環境での利用方法です。
+配布用バイナリは、最初のリリースの公開後に GitHub Releases と Homebrew で提供します。手順は「インストール（公開予定）」にまとめています。
+
+## インストール（公開予定）
+
+**この節は、最初のリリースを公開する前に用意した予定の手順です。** 公開を確認するまで、以下の URL と `brew install` は使えません。公開の状況は [GitHub Releases](https://github.com/kiyohara/bizdate/releases) で確認してください。
+
+### 対応環境
+
+| OS | architecture | 条件 | target |
+|---|---|---|---|
+| macOS | Apple Silicon（arm64） | macOS 11.0 以降 | `aarch64-apple-darwin` |
+| Linux | arm64 | glibc 2.34 以降 | `aarch64-unknown-linux-gnu` |
+| Linux | x86_64 | glibc 2.34 以降 | `x86_64-unknown-linux-gnu` |
+
+macOS は Apple Silicon のみ対応しています。Windows には対応していません。
+
+実行には次が必要です。
+
+- タイムゾーンのデータ（IANA time zone database）: `first` / `last` は、採用するタイムゾーンのデータを読みます。`--timezone` または `BIZDATE_TZ` を指定した場合はその名前のデータを読み、どちらも指定しない場合は local timezone を解決します。読めない場合や解決できない場合は exit code `2` になります。tzdata を含まない最小構成のコンテナなどでは、tzdata を追加してください。
+- Linux では `libc.so.6` と `libgcc_s.so.1` を使います（一般的な glibc の環境には含まれています）。
+- ネットワークは `fetch-holidays` だけが使います。TLS の証明書は `bizdate` に組み込んであり、システムの CA store は使いません。
+
+### Homebrew でインストールする
+
+macOS と Linux の Homebrew で使えます。
+
+```sh
+brew install kiyohara/tap/bizdate
+```
+
+更新する場合は次を実行します。
+
+```sh
+brew update
+brew upgrade kiyohara/tap/bizdate
+```
+
+### GitHub Releases の archive からインストールする
+
+Homebrew を使わない場合は、archive を取得して展開します。`target` は対応環境の表の値に置き換えてください。
+
+```sh
+target=x86_64-unknown-linux-gnu
+curl -fsSLO "https://github.com/kiyohara/bizdate/releases/latest/download/bizdate-${target}.tar.gz"
+curl -fsSLO "https://github.com/kiyohara/bizdate/releases/latest/download/bizdate-${target}.tar.gz.sha256"
+sha256sum -c "bizdate-${target}.tar.gz.sha256"
+```
+
+macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使います。`OK` と表示されれば、checksum が一致しています。環境によっては `WARNING: 1 line is improperly formatted` も表示されますが、`OK` が表示されていれば問題ありません。`--strict` を付けると失敗するため、付けないでください。
+
+展開して、PATH の通ったディレクトリに置きます。次の例では `~/.local/bin` に置きます。
+
+```sh
+mkdir -p bizdate ~/.local/bin
+tar -xzf "bizdate-${target}.tar.gz" -C bizdate --strip-components=1
+install -m 0755 bizdate/bizdate ~/.local/bin/bizdate
+bizdate --version
+```
+
+更新する場合は、同じ手順で新しい archive を取得して置き換えます。
+
+macOS でブラウザから archive をダウンロードすると、Gatekeeper の確認が表示されます。`bizdate` は署名と notarization をしていないためです。Homebrew か `curl` での取得をおすすめします。
+
+archive には、`bizdate` のほかに `README.md`、`LICENSE`、依存するクレートのライセンス表記 `THIRD-PARTY-LICENSES.md` が入っています。Homebrew でインストールした場合、`THIRD-PARTY-LICENSES.md` は `$(brew --prefix)/share/bizdate/` に入ります。
+
+### インストール後の準備
+
+判定の前に、判定を実行するユーザーで祝日データを取得してください（「祝日データの準備・更新」）。
+
+```sh
+bizdate fetch-holidays
+```
+
+cron から実行する場合は、cron と同じユーザー・`HOME`・`XDG_DATA_HOME` で取得し、`bizdate` を絶対 path で指定してください（「シェル・cron から使う」）。Homebrew でインストールした場合の path は `$(brew --prefix)/bin/bizdate` です。
 
 ## 祝日データの準備・更新
 

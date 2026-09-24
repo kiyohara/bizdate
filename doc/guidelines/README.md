@@ -20,6 +20,7 @@
 | `github-cli-guidelines.md` | `gh` の実行範囲と承認が必要な操作 |
 | `one-password-integration-guidelines.md` | 1Password 連携を伴う操作の扱い。前段ゲートを置かず、承認待ちで失敗したら中断して選択肢を提示する |
 | `pull-request-guidelines.md` | PR title / description / 検証記載 |
+| `release-guidelines.md` | version の公開の作業手順。公開後確認 Issue、リリース準備 PR、公開前後の確認、承認と tag の push、復旧、リリース台帳 |
 | `working-branch-notes-handling.md` | 作業メモの性質・整合性スコープ・ライフサイクル・ファイル名規約 |
 | `working-branch-notes-security.md` | 作業メモの情報統制（秘密情報・個人情報の禁則） |
 | `decision-log-guidelines.md` | 方針決定ログの作成・更新・index 管理 |
