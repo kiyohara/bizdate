@@ -78,6 +78,8 @@ P1 から始める場合、着手前に次を確認する。Issue 依存の確�
 | 読むべき path | `.agents/skills/review-pull-request/SKILL.md` と該当モードの reference の repo 相対 path（再利用時は省略してよい） |
 | 追加の review 観点 | 対象 Issue 番号と、その回で特に確認してほしい点。Issue 番号は `--from-pr` から始めた場合は PR description の `Closes #<番号>` から取る。索引登録や進捗整理のように起点 Issue を持たない PR では `なし` と明記する。判別できない場合はユーザーに確認する |
 
+**可視 metadata の値と書き方は brief で指示しない。** subagent は `review-pull-request` の「可視 metadata の canonical フォーマット」に従い、`Agent` と `Model` を自分で確かめて書く。brief に `Model` の値を書いたり、`unknown` にする、置き場所を変えるなど skill と異なる書き方を指示したりしない。review cycle ID と head SHA は上表のとおり渡すが、subagent は投稿前に同 skill の「投稿前の確認と誤りの訂正」で確かめ直す。
+
 **skill は名前ではなく path で渡す。** subagent の skill 一覧に載っている保証は無く、同じ session で追加・変更した skill は特に載らない。brief には「この path を読んでから始めること」と明示する。
 
 brief の形:
@@ -94,6 +96,8 @@ mode: <review | verify-comments>
 review cycle ID: <新規に作る | 元 review の ID>
 関連 Issue: #<番号>
 特に確認してほしい点: <観点>
+
+可視 metadata（Agent / Model を含む）は SKILL.md の規定どおり自分で確かめて書くこと。
 
 完了後、次を報告すること。
 <「返させるもの」の各項目>

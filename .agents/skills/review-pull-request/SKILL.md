@@ -63,7 +63,7 @@ tool routing の正本は `doc/guidelines/github-mcp-guidelines.md` とする。
 
 ### 可視 metadata の canonical フォーマット
 
-可視 metadata を含める投稿の末尾に次の 5 行を置く。これは複数の agent 実装が書くだけでなく parse して review cycle を突合する前提の正規フォーマットであり、キー名・順序・区切りを次のとおり固定する。
+可視 metadata を含める投稿の末尾に次の 5 行を置く。実行環境が投稿の末尾に署名行（footer）を付ける場合、または agent に付けるよう求める場合は、footer の直前に置く。これは複数の agent 実装が書くだけでなく parse して review cycle を突合する前提の正規フォーマットであり、キー名・順序・区切りを次のとおり固定する。
 
 ```text
 Agent: <Agent 種別>
@@ -73,15 +73,55 @@ Reviewed head: <head SHA>
 Mode: <review | address-comments | verify-comments>
 ```
 
-- キーは `Agent`、`Model`、`Review cycle`、`Reviewed head`、`Mode` の 5 つとし、この順序で必須とする。1 行 1 キーとする。
+- キーは `Agent`、`Model`、`Review cycle`、`Reviewed head`、`Mode` の 5 つとし、この順序で必須とする。1 行 1 キーとし、5 行を空行を挟まず連続させる。各行はキーで始め、前に記号や空白を付けない。
 - 区切りは半角コロン + 半角スペース（`: `）とする。
+- 1 つの投稿に置く metadata は 1 組とする。本文で他の投稿の metadata を行ごと引用しない。参照が要る場合は review cycle ID などの値だけを書く。
+- parse は投稿内の位置ではなく、5 つのキーがこの順で連続する 5 行を探して行う。後ろに footer が続くかどうかと、footer の内容には依存しない。
+- footer の直前に置く場合は、5 行と footer の間に空行を 1 行置く。footer が `---` で始まる場合、直前の行が空行でないと Markdown では `Mode` の行が見出しとして表示されるためである。
 - `Agent` は処理した Agent 種別の表示名とする（例: `Claude Code`、`Codex`、`Cursor`）。
-- `Model` は、その処理で利用した model の識別子とする。実行環境から確認できる値を使い、確認できない場合は `unknown` とし、推測しない。実行環境の指示が model の識別子の記載を禁じていても、PR と review のコメントがその対象外と確認できる場合は、それを理由に `unknown` にしない。コメントへの記載まで禁じている場合、または対象外と確認できない場合は `unknown` とし、上位の指示で記載を控えた旨を本文に 1 行残す（`doc/guidelines/pull-request-guidelines.md` の「Tool 名と model の識別子の扱い」）。`Model` は記録目的の参考情報であり、review cycle の突合や担当一致判定には使わない。同一 Agent 種別でも session により model が変わり得るためである。
+- `Model` は、その処理で利用した model の識別子とする。実行環境から確認できる値を使い、確認できない場合は `unknown` とし、推測しない。実行環境の指示が model の識別子の記載を禁じていても、PR と review のコメントがその対象外と確認できる場合は、それを理由に `unknown` にしない。コメントへの記載まで禁じている場合、または対象外と確認できない場合は `unknown` とし、上位の指示で記載を控えた旨を本文に 1 行残す（`doc/guidelines/pull-request-guidelines.md` の「Tool 名と model の識別子の扱い」）。`Model` は記録目的の参考情報であり、review cycle の突合や担当一致判定には使わない。同一 Agent 種別でも session により model が変わり得るためである。確認の手段は下記「`Model` の確認手段」に従う。
 - `Review cycle` の値は `<agent-slug>-<short-head>-<YYYYMMDDHHMMSS>` とする。`<agent-slug>` は Review 担当 Agent 種別の小文字 kebab-case（例: `claude-code`、`codex`、`cursor`）、`<short-head>` は review 開始時点の head SHA 先頭 7 文字、`<YYYYMMDDHHMMSS>` は review 開始時刻（UTC、秒まで）とする。同一 Agent・同一 head の再レビューや再試行で cycle ID が衝突しないよう、秒までを含める。
 - `Reviewed head` は、そのコメントの投稿時点で当該 Agent が確認した full head SHA とする。
 - `Mode` は投稿を行ったモード名とする。
 - `address-comments` の返信と `verify-comments` の完了要約では、`Review cycle` に対象 review cycle の ID（元 review の値）をそのまま使い、新しい ID を作らない。同じ cycle を追跡可能に保つためである。
 - HTML comment などの非表示 marker は取得経路によって欠落し得るため、併用してよいが、非表示 marker だけに依存しない。
+
+### `Model` の確認手段
+
+`Model` の値は、投稿する Agent 自身が実行環境から確かめる。他の Agent（orchestrator など）から伝えられた値を確かめずに写さない。委譲する側も `Model` の値を指示しない。
+
+| 投稿する Agent | 確認手段 | 書く値 |
+| --- | --- | --- |
+| cloud session（Claude Code on the web）の session 本体 | claude-code-remote MCP の `get_session` を `session_id` を省略して呼ぶ | `external_metadata.last_served_model`。無い場合は `session_context.model` |
+| subagent（cloud session を含む） | 自身の system prompt が示す model の識別子 | その識別子 |
+| 上記以外（ローカルの Claude Code、Codex、Cursor など） | system prompt など実行環境が示す model の識別子 | その識別子 |
+
+- cloud session で `last_served_model` を使うのは、実際に応答した model を表すためである。設定された model（`session_context.model`、`configured_model`）とは、fallback などで異なり得る。
+- subagent は `get_session` の値を使わない。`get_session` が示すのは session の model であり、subagent が別の model で起動されている場合がある。
+- どの手段でも値を確認できない場合は `unknown` とする。session ID など `get_session` の他の値は書かない。
+
+### 投稿前の確認と誤りの訂正
+
+metadata を含む投稿の前に、次を確かめる。
+
+- 5 行がキーの順に連続し、末尾（footer が付く場合はその直前）にあること。
+- `Agent` と `Model` が、それぞれ上記の手段で確かめた値であること。
+- `Review cycle` が、`review` では新しく作った ID、それ以外では元 review の ID と一致すること。
+- `Reviewed head` が、投稿の直前に `pull_request_read(get)` で取り直した head SHA と一致すること。
+- `Mode` が、実行中のモードであること。
+
+投稿後の read-back では、5 行が崩れずに残っていることも確かめる。
+
+誤りに気付いた場合は、訂正のための新しい投稿をせず、その投稿を編集する。1 投稿 1 組と、完了要約 1 本を保つためである。編集してよいのは、同じ Agent 種別が投稿したと `Agent` 行で確認できる投稿に限る。編集は本文全体の置き換えになるため、読み戻した本文の metadata の行だけを直し、footer を含む他の部分は変えない。編集後は read-back で反映を確かめる。
+
+| 対象 | 編集の手段 |
+| --- | --- |
+| PR conversation comment（完了要約など） | MCP の `update_issue_comment`（cloud session の組み込み tool）。ローカルの `github-op-integrated` は allowlist に無いため、`gh api -X PATCH repos/{owner}/{repo}/issues/comments/{id}` |
+| inline comment とその返信 | `gh api -X PATCH repos/{owner}/{repo}/pulls/comments/{id}`。MCP tool に編集の手段は無い |
+| 提出済み review の本文 | `gh api -X PUT repos/{owner}/{repo}/pulls/{number}/reviews/{id}`。MCP tool に編集の手段は無い |
+
+- `gh` の実行形式は `doc/guidelines/github-cli-guidelines.md`、cloud session で `gh` で補う範囲は `doc/guidelines/github-mcp-guidelines.md` の「cloud session」に従う。
+- `gh` が使えない場合（cloud session で導入されていない、など）は、agent が `gh` の導入を試みない。削除と再投稿もしない。対象の URL、誤っている行、正しい値をユーザーへ報告し、GitHub の UI での編集を依頼する。working branch note にも残す。
 
 ### verify-comments の担当一致
 

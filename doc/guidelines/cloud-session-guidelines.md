@@ -16,6 +16,7 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 | GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` が無く、MCP server は起動できない。`gh` は image に無い（setup script が入れる）。組み込みの GitHub MCP tool は用意された操作しかできない | 組み込みの GitHub tool を第一選択にする。`gh` は setup script が入れ、MCP tool に無い操作だけ `gh api`（REST）で補う（同 guideline の「cloud session」） |
 | Issue 記載のブランチ名で作業する（`doc/guidelines/issue-driven-task-execution.md`） | 作業ブランチは session 作成時に platform が決め、push はそのブランチにだけ許可される | session のブランチをそのまま使う（同 guideline と `doc/guidelines/git-operation-guidelines.md` の「cloud session」） |
 | commit 署名は 1Password（`doc/guidelines/git-operation-guidelines.md`） | 署名と author は platform 側で行われる | 署名の切り分け手順は適用しない（同 guideline の「cloud session」） |
+| review の canonical metadata は投稿の末尾に置き、`Model` は実行環境から確かめる（`.agents/skills/review-pull-request/SKILL.md`） | harness が GitHub への投稿の末尾に footer を付けるよう agent に求め、付けなければ server が付ける。model は `get_session` で確かめるよう求めており、設定された model と実際に応答した model は異なり得る | metadata は footer の直前に置く。session 本体は `get_session` の `last_served_model` を、subagent は自身の system prompt の識別子を書く（同 skill の「可視 metadata の canonical フォーマット」） |
 
 ## 設定ファイル
 

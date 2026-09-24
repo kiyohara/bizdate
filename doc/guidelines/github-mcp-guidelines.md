@@ -61,7 +61,7 @@ proxy は REST だけを通し、GraphQL、検索 API、session に接続して�
 | 区分 | 操作 | 扱い |
 | --- | --- | --- |
 | read | main など任意の commit の check run、issue の timeline、commit の比較（compare）、label・milestone の一覧、ruleset | agent が実行してよい |
-| write | inline review comment の編集、提出済み review の本文の編集、reaction | agent が実行してよい。編集は、同じ Agent 種別が投稿したと canonical metadata の `Agent` 行（`.agents/skills/review-pull-request/SKILL.md`）で確認できる comment / review に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない |
+| write | inline review comment の編集、提出済み review の本文の編集、reaction | agent が実行してよい。review の canonical metadata の誤りの訂正に使う（`.agents/skills/review-pull-request/SKILL.md` の「投稿前の確認と誤りの訂正」）。編集は、同じ Agent 種別が投稿したと canonical metadata の `Agent` 行（`.agents/skills/review-pull-request/SKILL.md`）で確認できる comment / review に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない |
 | write | label・milestone の作成と編集 | 一括変更はユーザーの承認を得る（`doc/guidelines/github-cli-guidelines.md`） |
 | write | comment の削除、release の作成と編集、commit status の作成 | ユーザーの承認を得る（同上）。commit status は CI の結果と見分けにくく、merge 判断を誤らせ得る |
 
