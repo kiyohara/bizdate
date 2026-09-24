@@ -51,7 +51,7 @@ global-artifacts-jobs = ["./release-verify"]
 [dist.github-custom-job-permissions]
 ci = { contents = "read" }
 release-verify = { contents = "read" }
-# tap へは HOMEBREW_TAP_TOKEN で push する。GITHUB_TOKEN の書き込み権限は要らない。
+# tap へは HOMEBREW_TAP_GITHUB_TOKEN で push する。GITHUB_TOKEN の書き込み権限は要らない。
 publish-homebrew = { contents = "read" }
 
 # 配布仕様のビルド runner。すべて対象 architecture 上の native ビルドにする。

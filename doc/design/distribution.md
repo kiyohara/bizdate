@@ -227,12 +227,12 @@ tap への書き込みは、`host`（GitHub Release の公開）の後に走る 
 
 ### tap への書き込みの認証
 
-- 認証には、このリポジトリの Actions secret `HOMEBREW_TAP_TOKEN` を使う。job の `GITHUB_TOKEN` は `contents: read` に絞り、tap への書き込みには使わない。
+- 認証には、このリポジトリの Actions secret `HOMEBREW_TAP_GITHUB_TOKEN` を使う。名前は、同じ tap へ書く slapex と揃える（[`decision-log/0025-homebrew-formula-publishing.md`](decision-log/0025-homebrew-formula-publishing.md) の追記）。job の `GITHUB_TOKEN` は `contents: read` に絞り、tap への書き込みには使わない。
 - token は `kiyohara/homebrew-tap` だけを対象にした fine-grained personal access token（Repository permissions の Contents を read and write）を推奨する。classic token の `repo` scope でも動くが、持ち主が書ける全リポジトリに書ける。
 - token の発行と secret の登録はユーザーが行う。AI agent は secrets を操作しない。secret が無い場合、publish job は token を使う前に失敗し、未設定であることを示す。
 - 手順は次のとおりとする。
   1. GitHub の Settings → Developer settings → Personal access tokens → Fine-grained tokens で、Resource owner を `kiyohara`、Repository access を `kiyohara/homebrew-tap` だけ、Repository permissions の Contents を read and write にして token を発行する。
-  2. `kiyohara/bizdate` の Settings → Secrets and variables → Actions で、Repository secret `HOMEBREW_TAP_TOKEN` に登録する。
+  2. `kiyohara/bizdate` の Settings → Secrets and variables → Actions で、Repository secret `HOMEBREW_TAP_GITHUB_TOKEN` に登録する。
   3. token の有効期限が切れる前に作り直し、同じ名前で登録し直す。
 - 公開の作業手順の中での位置づけ（いつ設定と確認をするか）は、リリース guideline（#40）で扱う。
 

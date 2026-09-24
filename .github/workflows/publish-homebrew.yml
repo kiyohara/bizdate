@@ -3,7 +3,8 @@
 # host が走らないため呼ばれない。prerelease では、dist が生成する呼び出し側の条件で skipped になる。
 # dist の builtin の Homebrew publish job を使わない理由は doc/design/decision-log/0025-homebrew-formula-publishing.md。
 #
-# tap (kiyohara/homebrew-tap) への push には、このリポジトリの secret HOMEBREW_TAP_TOKEN を使う。
+# tap (kiyohara/homebrew-tap) への push には、このリポジトリの secret HOMEBREW_TAP_GITHUB_TOKEN を使う。
+# 名前は同じ tap へ書く slapex と揃えている (dist の builtin の job が読む HOMEBREW_TAP_TOKEN ではない)。
 # 設定はユーザーが行う (doc/design/distribution.md の「Homebrew」)。
 name: Publish Homebrew formula
 
@@ -51,10 +52,10 @@ jobs:
 
       - name: Check that the tap token is set
         env:
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: |
-          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "::error::the secret HOMEBREW_TAP_TOKEN is not set; set it and re-run this job (the GitHub Release is already published)"
+          if [ -z "$HOMEBREW_TAP_GITHUB_TOKEN" ]; then
+            echo "::error::the secret HOMEBREW_TAP_GITHUB_TOKEN is not set; set it and re-run this job (the GitHub Release is already published)"
             exit 1
           fi
 
@@ -63,7 +64,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: kiyohara/homebrew-tap
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
           path: homebrew-tap
           persist-credentials: true
 
