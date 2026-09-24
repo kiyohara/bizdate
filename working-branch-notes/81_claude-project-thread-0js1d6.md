@@ -27,7 +27,7 @@ Issue #80。tap（`kiyohara/homebrew-tap`）への書き込みに使う Actions 
 - [x] publish job、`dist-workspace.toml` のコメント、`distribution.md` を新しい名前に揃える
 - [x] 0025 に追記し、index を揃える
 - [x] PR を作成し、note を採番する
-- [ ] #40 の本文の secret の記述を同期する
+- [x] #40 の本文の secret の記述を同期する
 - [ ] review cycle を回す
 
 ## 検証
@@ -49,3 +49,4 @@ Issue #80。tap（`kiyohara/homebrew-tap`）への書き込みに使う Actions 
 ## セッションログ
 
 - 2026-09-24: ユーザーの確認依頼を受けて #80 を起こし、着手した。publish job、spec、0025 と index を新しい名前に揃え、上の検証を通した。
+- 2026-09-24: PR #81 を draft で作成し、`number-working-branch-note` の手順で note を採番した（完了として書き換えたタスク行: note の「PR を作成し、note を採番する」の 1 行、PR description は 0 行。触らなかった stale 表現・タスク行: 0 件）。#40 の本文の「#36 の決定（同期）」を新しい名前と fine-grained PAT の推奨に同期し、read-back で意図した本文と一致することを確かめた。
