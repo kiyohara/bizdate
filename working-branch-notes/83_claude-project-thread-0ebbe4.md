@@ -11,7 +11,7 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 ## 現在の状況
 
 - cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めた。review cycle `claude-code-3576a17-20260924134440` は 2 周で収束した。P2 の指摘 11 件は 1 周目の P5 で resolve 可となり、1 周目の P5 の完了要約にあった thread 外の 3 件は、2 周目の P5 で解消を確かめた（新たな指摘は 0 件）。
-- 11 thread の resolve と draft の解除はユーザーが行った。ユーザーの依頼で Codex がクロスレビューを行い（cycle `codex-b458bf3-20260924221223`）、指摘 1 件（must 1）に address-comments で対応した。残りは、Review 担当の Codex による再確認と、merge の判断である。
+- 11 thread の resolve と draft の解除はユーザーが行った。ユーザーの依頼で Codex がクロスレビューを行い（cycle `codex-b458bf3-20260924221223`）、1 周目の指摘 1 件（must 1）は Codex の再確認で resolve 可となり、完了要約にあった新たな指摘 1 件（must 1）に 2 周目の address-comments で対応した。残りは、Codex による 2 周目の再確認と、merge の判断である。
 - 依存の #39（PR #79）と #80（PR #81）は merge 済み。レビュー待ちの自分の PR は無い。
 - 手順の正本 `doc/guidelines/release-guidelines.md`、skill `run-release`（雛形 `references/post-release-issue.md`）、Cursor と Claude Code の入口、decision log 0026 を置き、AGENTS.md、guideline の一覧、`development-loop.md`、`maintain-progress`、`run-issue-task`、README、`progress.md`、`distribution.md` の参照、Copilot 用の指示を揃えた。
 
@@ -64,6 +64,7 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 | PR の CI（head `de0d0f3`、`ffa117e`） | どちらも CI と Release workflow は success 18 件で、skipped 4 件は PR の run の想定どおり。`de0d0f3` は run 36011288168 と 36011288864、`ffa117e` は run 36014578886 と 36014579196 |
 | P4 の修正（2 周目） | `git diff --check`（`de0d0f3..ffa117e`）OK。追加行に「です・ます」の文末は無い。guideline に書いた PR の run での表示名（`custom-ci / test / build (${{ matrix.target }})`、`custom-publish-homebrew`）は、run 36014579196 の check run の名前と一致する |
 | 公開後確認の取得と checksum（Codex の指摘） | 旧手順は、最後の `.sha256` が 404 でも exit 0 になり、指摘を再現した（`sha256.sum` に archive の行が欠けても exit 0）。新手順は、local の HTTP server に置いた模擬の Release で、全件そろえば exit 0 と `ok:` の行、`.sha256` の欠落、`sha256.sum` の行の欠落、archive の破損ではいずれも exit 1 になった（dash と bash）。awk の式は mawk と nawk で同じ結果。guideline の shell の code block 6 件は `sh -n` と `bash -n` を通る。zsh は環境に無く未実施（単語分割と glob に頼らない形にした） |
+| 公開後確認の `.sha256` の file 名（Codex の 2 周目） | `ec182c9` の手順は、x86_64 の `.sha256` が arm64 の archive の行を記しても、別の行が足されていても exit 0 になり、指摘を再現した。file 名の検査を足した手順は、この 2 つで exit 1 になり、既存の 4 つ（全件そろう、`.sha256` の欠落、`sha256.sum` の行の欠落、archive の破損）の結果は変わらない（dash と bash）。file 名を読む awk の式は `verify-release-archive.sh` と同じで、mawk と nawk で同じ結果。guideline の shell の code block 6 件は `sh -n` と `bash -n` を通る |
 | note の情報統制 | 確認済み。秘密情報、個人情報、ローカルの絶対 path、署名付き URL を書いていない |
 
 ## リスク・ブロッカー
@@ -85,3 +86,4 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 - 2026-09-24: P5（2 周目）。同じ subagent が head `ffa117e` で verify-comments を行い、thread 外の 3 件とも解消とした。新たな指摘は 0 件で、11 thread の resolve 可は維持された。
 - 2026-09-24: P6。追加の対応は不要と判断し、review cycle は 2 周で収束した。人間に残る作業は、11 thread の resolve、draft の解除、merge の判断である。
 - 2026-09-24: ユーザーが 11 thread を resolve し、draft を解除した。Codex のクロスレビュー（cycle `codex-b458bf3-20260924221223`、head `b458bf3`）で指摘 1 件（must 1: 公開後確認の asset の取得が、最後の `.sha256` を取得できなくても通る）。address-comments で採用し、取得に失敗したら止まり、`sha256.sum` の行と各 `.sha256` を名前で確かめる形に直した。
+- 2026-09-24: Codex の再確認（1 周目）で指摘の thread は resolve 可となった。完了要約に新たな指摘 1 件（must 1: 各 `.sha256` が対象の archive を指すかを確かめていない）があり、2 周目の address-comments で採用した。`.sha256` が記す file 名を `verify-release-archive.sh` と同じ読み方で確かめる検査を足した。

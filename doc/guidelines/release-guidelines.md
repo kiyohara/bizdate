@@ -225,12 +225,13 @@ dir=$(mktemp -d ./release-check.XXXXXX)
     sha256sum -c sha256.sum || exit 1
     for a in bizdate-aarch64-apple-darwin.tar.gz bizdate-aarch64-unknown-linux-gnu.tar.gz bizdate-x86_64-unknown-linux-gnu.tar.gz; do
         awk -v a="$a" '{ sub(/^\*/, "", $2) } $2 == a { found = 1 } END { exit !found }' sha256.sum || { echo "$a is not in sha256.sum" >&2; exit 1; }
+        [ "$(awk 'NF { sub(/^\*/, "", $2); print $2 }' "$a.sha256")" = "$a" ] || { echo "$a.sha256 does not name $a" >&2; exit 1; }
         sha256sum -c "$a.sha256" || exit 1
     done
 ) && echo "ok: 9 assets fetched and verified"
 ```
 
-取得できない asset が 1 件でもあれば、その時点で非 0 で終わる。`sha256.sum` に 3 つの archive の行があることも確かめ、各 archive の `.sha256` は名前を指定して検査するため、asset が欠けていれば通らない。最後に `ok:` の行が出れば、9 件の取得と checksum の確認が済んでいる。macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使う。
+取得できない asset が 1 件でもあれば、その時点で非 0 で終わる。`sha256.sum` に 3 つの archive の行があることと、各 archive の `.sha256` が記す file 名がその archive だけであること（`verify-release-archive.sh` と同じ読み方）も確かめるため、asset が欠けていたり、`.sha256` が別の archive を指していたりすれば通らない。最後に `ok:` の行が出れば、9 件の取得と checksum の確認が済んでいる。macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使う。
 
 Linux（container の architecture の target。cloud session では x86_64、Apple Silicon の Mac では arm64）:
 
