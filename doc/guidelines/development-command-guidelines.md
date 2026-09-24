@@ -21,6 +21,7 @@ Compose は Linux コンテナ 1 種類の実行環境であり、配布対象�
 | 最低 glibc の実測 | CI の `platform` job（Linux runner） | 配布に使うバイナリそのものを測る必要がある |
 | release 成果物の生成と公開 | release workflow の build job（3 つの native runner）と `host` job | `dist` が対象 runner 上で archive と checksum を作る。公開は `v<version>` tag の push でだけ行う |
 | 配布 archive の検証 | release workflow の `release-verify` job（3 つの native runner） | 配る binary そのものを対象環境で起動して確かめる |
+| Homebrew Formula での install と `brew test` | release workflow の `release-verify` job の `homebrew`（Homebrew のある native runner） | Compose の container には Homebrew が無い。cloud session の sandbox では Homebrew の portable Ruby を取得できない |
 
 CI（`.github/workflows/ci.yml`）は、`fmt` / `clippy` を Linux で 1 回だけ回す `lint` job と、配布対象 3 target をそれぞれの native runner で回す `platform` job から成る。`platform` job は runner の host triple が対象 target と一致することを確かめてから、`cargo test --locked`（unit / CLI E2E）、`cargo build --locked --release`、release バイナリに対する CLI E2E、`.github/scripts/platform-check.sh` による起動確認の順に進む。`platform-check.sh` が最低 glibc（Linux）、最低 macOS version（macOS）、動的リンク先を job の step summary に記録し、macOS では binary に署名があることも確かめる。同じ script は Compose でも実行でき、Linux コンテナ上の結果が得られる。
 
@@ -137,11 +138,12 @@ Compose で確かめられるのは、Linux コンテナと同じ target の arc
 | `build-local-artifacts` | 3 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
 | `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す。PR では直接の CI と重複する `platform` を省く | `lint` だけ走る | 全 job が走る |
 | `build-global-artifacts` | 全 archive の checksum をまとめた `sha256.sum` を作る | 走る | 走る |
-| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する | 走る | 走る |
+| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する。dist が生成した Homebrew Formula を検査して test を足し、公開前の archive で install と `brew test` を行う | 走る | 走る |
 | `host` | GitHub Release を作り、成果物を添付する | 走らない | 上の job がすべて成功したときだけ走る |
-| `announce` | dist の後処理 | 走らない | `host` の成功後に走る |
+| `custom-publish-homebrew` | `.github/workflows/publish-homebrew.yml`。検査した Formula を tap の `Formula/bizdate.rb` へ書く（`doc/design/distribution.md` の「tap の更新」） | 走らない | `host` の成功後に走る。prerelease では skipped |
+| `announce` | dist の後処理 | 走らない | `host` と `custom-publish-homebrew` の後に走る |
 
-検証の結果（archive 名、sha256、構成、`platform-check.sh` の記録）は `custom-release-verify` の各 job の step summary に残る。PR で確かめた archive はその run の workflow artifact であり、公開された Release asset ではない。
+検証の結果（archive 名、sha256、構成、`platform-check.sh` の記録、Homebrew での install の記録）は `custom-release-verify` の各 job の step summary に残る。PR で確かめた archive はその run の workflow artifact であり、公開された Release asset ではない。
 
 ### tool と action の version を上げるとき
 
