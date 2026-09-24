@@ -1,7 +1,7 @@
 #!/bin/sh
 # dist が生成した Homebrew Formula を検査し、起動テスト (test do) を足した Formula を書き出す。
-# release workflow の release-verify (PR でも走る) と publish-homebrew (tag push で tap へ書く) の両方が
-# 同じ script を通すため、PR で確かめた Formula と tap へ書く Formula は同じ手順で作られる。
+# release workflow の release-verify (PR でも走る) が呼ぶ。publish-homebrew (tag push で tap へ書く) は、
+# release-verify がこの script と install で確かめた Formula をそのまま書く。
 #
 #   .github/scripts/prepare-homebrew-formula.sh <dist の Formula> <archive と checksum のある dir> <dist plan の JSON> <出力先>
 #

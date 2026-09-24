@@ -1,12 +1,12 @@
 #!/bin/sh
 # prepare-homebrew-formula.sh が書き出した Formula に brew style --fix をかけ、自動修正後に違反が
 # 残らないことを確かめて、同じ file へ書き戻す。dist の template は brew style の自動修正できる違反
-# (入れ子の if、定数の freeze、hash の整列など) を含むため。release workflow の release-verify と
-# publish-homebrew の両方が prepare の直後に呼ぶ。
+# (入れ子の if、定数の freeze、hash の整列など) を含むため。release workflow の release-verify が
+# prepare の直後に呼ぶ。publish-homebrew はこの結果を install で確かめたものを tap へ書く。
 #
 #   .github/scripts/fix-homebrew-formula-style.sh <Formula>
 #
-# 除く cop は dist の builtin の publish job と同じく、利用者が書く desc と homepage の 2 つだけにする
+# dist の builtin の publish job が除く 3 つの cop のうち、利用者が書く desc と homepage の 2 つだけを除く
 # (FormulaAuditStrict は除かない)。自動修正できない違反が残れば exit 1 で、Formula は書き換えない。
 set -eu
 

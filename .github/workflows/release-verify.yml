@@ -78,13 +78,18 @@ jobs:
             .github/scripts/verify-release-archive.sh "$target" "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
           done
 
-  # Homebrew Formula を生成して検査し、起動テストを足して brew style の自動修正をかける
-  # (tag push で tap へ書くものと同じ script)。
+  # Homebrew Formula を生成して検査し、起動テストを足して brew style の自動修正をかける。
+  # ここで作って homebrew job が install と brew test を通した Formula を、tag push の publish-homebrew が
+  # そのまま tap へ書く。
   # この workflow は build-global-artifacts (Formula を作る job) と並行して走り、その artifact を待てないため、
   # plan job が保存した同じ dist で、同じ入力 (全 target の archive と checksum) から Formula を作り直す。
   # 名前を artifacts-* にしない。host は artifacts-* を Release へ添付するため。
+  # prerelease では job ごと skipped にする (homebrew も needs で skipped)。Formula は prerelease を扱わず
+  # tap も更新しないが、GitHub Release の公開 (host) は止めない。reusable workflow 内の skipped は host の
+  # 条件で成功扱いになる。
   homebrew-formula:
     name: homebrew formula
+    if: ${{ !fromJson(inputs.plan).announcement_is_prerelease }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:

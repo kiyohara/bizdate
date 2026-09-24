@@ -18,7 +18,8 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 
 - tap への書き込みは dist の builtin の publish job（`publish-jobs = ["homebrew"]`）を使わず、custom の publish job（`.github/workflows/publish-homebrew.yml`）で行う。builtin は Formula に test を足せず、`brew style --fix ... || true` で失敗を隠し、tap の Formula の version を見ずに上書きする（非線形な release で巻き戻る）ため。Formula 自体は dist の installer が生成したものを使う。経緯は decision log 0025。
 - PR でも tag push でも、Formula は `prepare-homebrew-formula.sh` で同じく検査して `test do` を足し、`fix-homebrew-formula-style.sh` で `brew style --fix` をかけて違反が残らないことを確かめる。PR では `release-verify` の `homebrew` job が、url をこの run の archive へ差し替えて native runner で install と `brew test` を行う。
-- `release-verify`（global-artifacts-jobs）は dist の `build-global-artifacts` と並行して走り、Formula の artifact を待てない（初回 push の CI で判明）。`release-verify` の `homebrew-formula` job が、plan job の `cargo-dist-cache`（同じ dist）と全 target の archive から `dist build --artifacts=global` で Formula を作り直す。publish job は `build-global-artifacts` の Formula（Release にも添付されるもの）を使う。
+- `release-verify`（global-artifacts-jobs）は dist の `build-global-artifacts` と並行して走り、Formula の artifact を待てない（初回 push の CI で判明）。`release-verify` の `homebrew-formula` job が、plan job の `cargo-dist-cache`（同じ dist）と全 target の archive から `dist build --artifacts=global` で Formula を作り直す。publish job は、同じ run の `release-verify` が install と `brew test` まで通した Formula の artifact をそのまま書く（review 対応で変更。当初は `build-global-artifacts` の Formula に同じ script をかけ直していた）。
+- prerelease の tag では `release-verify` の `homebrew-formula`（と `homebrew`）を skipped にし、GitHub Release の公開を止めない（review 対応）。
 - 3 つの runner（`macos-15`、`ubuntu-22.04`、`ubuntu-22.04-arm`）すべてに Homebrew がある（Ubuntu は `/home/linuxbrew`、PATH 外）ため、install の検証を全 target で必須にした。
 - `Cargo.toml` に `homepage` を足した（dist が Formula の `homepage` に使う。無いと WARN）。
 - cloud session で `release-tools` service は使えない（`compose.cloud.yaml` に override が無く、container 内の curl が proxy の CA を検証できない）。代わりに、host で dist 0.32.0 と cargo-about 0.9.2 の公開 binary を取得し、`Dockerfile` / `install-cargo-about.sh` と同じ固定 sha256 と照合してから dev container へ read-only で mount して実行した。repo の設定は変えていない。
@@ -30,7 +31,7 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 - [x] PR CI で、3 target の Formula の検査と install / `brew test` / 配置を確かめる
 - [x] `distribution.md`、decision log 0025 と index、`development-command-guidelines.md`、Copilot 指示を更新する
 - [x] `progress.md` の DIST-04 を更新する（PR 欄に #79）
-- [ ] review cycle を回す（`drive-issue-to-reviewed-pr` の P2 以降）
+- [ ] review cycle を回す（`drive-issue-to-reviewed-pr` の P2 以降。P2 と P4 は済み、P5 の再確認が残る）
 - [x] PR を作成し、note を採番する
 
 ## 検証
@@ -62,3 +63,4 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 
 - 2026-09-24: #39 に着手。dist の Homebrew 設定と custom publish job、Formula の検査・test 追加・install 検証・publish の script を追加した。
 - 2026-09-24: PR #79 を draft で作成し、`number-working-branch-note` の手順で note を採番した（完了として書き換えたタスク行: 「PR を作成し、note を採番する」の 1 行。触らなかった stale 表現・タスク行: 0 件。PR description に旧 note 名の参照は無かった）。PR CI の失敗 3 回を直し、head `7e90272` で全 job が green になった。
+- 2026-09-24: P2。review cycle `claude-code-69f95c0-20260924050758`（head `69f95c0`）で指摘 3 件（must 1 / imo 1 / nits 1）。P3 で 3 件とも採用。P4 で対応した: prerelease の tag で `homebrew-formula` を skipped にする（must）、publish job は検証済みの artifact をそのまま書き、version を plan と照合する（imo）、`fix-homebrew-formula-style.sh` の冒頭コメントを直す（nits）。あわせて `distribution.md`、0025、index を揃えた。

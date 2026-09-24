@@ -193,7 +193,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 | 依存 | 無い |
 | test | `bizdate --version` が `bizdate <version>` を出すこと、`pkgshare` に `THIRD-PARTY-LICENSES.md` があること |
 
-- Formula は dist の Homebrew installer が生成し、`.github/scripts/prepare-homebrew-formula.sh` が上の値を検査してから `test do` を足す。dist の template は test を持たないためである。続けて `.github/scripts/fix-homebrew-formula-style.sh` が `brew style --fix` をかけ、違反が残らないことを確かめる（desc と homepage の cop だけ除く）。PR の release workflow と、tap へ書く publish job は同じ 2 つの script を通す。
+- Formula は dist の Homebrew installer が生成し、`.github/scripts/prepare-homebrew-formula.sh` が上の値を検査してから `test do` を足す。dist の template は test を持たないためである。続けて `.github/scripts/fix-homebrew-formula-style.sh` が `brew style --fix` をかけ、違反が残らないことを確かめる（desc と homepage の cop だけ除く）。この 2 つは release workflow の `release-verify` が PR でも tag push でも実行し、tap へ書く publish job は `release-verify` が次の検証まで通した Formula をそのまま使う（作り直さない）。
 - 祝日データは install 時に取得しない。`first` / `last` の前に利用者が `bizdate fetch-holidays` で用意する既存仕様（[`business-day.md`](business-day.md)）を変えない。Formula の test も祝日データを要しない。
 
 ### 公開前の検証
@@ -207,11 +207,14 @@ release workflow の `release-verify` は、PR でも dist で Formula を生成
 
 これは公開前成果物での確認であり、公開 tap からの `brew install` / `upgrade` の確認ではない。
 
+prerelease の tag では、Formula の生成と検証を job ごと skipped にする。Formula は prerelease を扱わず tap も更新しないためで、GitHub Release の公開は止めない。
+
 ### tap の更新
 
 tap への書き込みは、`host`（GitHub Release の公開）の後に走る custom の publish job（`.github/workflows/publish-homebrew.yml`）が行う。dist の builtin の publish job は使わない。
 
 - tag push でだけ走る。PR では `host` が走らないため呼ばれない。
+- 書くのは、同じ run の `release-verify` が install と `brew test` を通した Formula である。version が plan と一致しなければ書かずに失敗する。job を再実行しても書く内容は変わらない。
 - prerelease の tag では job ごと skipped になる。`dist-workspace.toml` の `publish-prereleases` は既定（false）のままとする。
 - 次の場合は tap を変えずに失敗する。
   - Formula の version が prerelease である。

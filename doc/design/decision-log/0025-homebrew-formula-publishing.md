@@ -59,8 +59,10 @@ tap への push に要るのは、tap の Contents の書き込みだけであ�
 ## 決定
 
 - tap への書き込みは custom の publish job（B）で行う。`dist-workspace.toml` は `installers = ["homebrew"]`、`tap = "kiyohara/homebrew-tap"`、`publish-jobs = ["./publish-homebrew"]` とし、job の `GITHUB_TOKEN` は `contents: read` に絞る。dist の WARN は想定どおりとして受け入れる。
-- Formula の検査と `test do` の追加（C）は `.github/scripts/prepare-homebrew-formula.sh` 1 本にまとめ、PR の `release-verify` と tag push の `publish-homebrew` の両方が通す。検査は、class 名、desc / homepage / license と `Cargo.toml` の一致、version と plan の一致（prerelease は止める）、OS / CPU の分岐が配布対象 3 target と一致すること（Intel Mac の分岐が無いこと）、各 url と sha256 が Release asset と `.sha256` に一致すること、生成物に `test do` が無いことである。
-- dist の template は `brew style` の自動修正できる違反（入れ子の `if`、定数の freeze、hash の整列など）を含む（PR #79 の CI で確認）。builtin の job のように失敗を捨てず、`.github/scripts/fix-homebrew-formula-style.sh` で `brew style --fix` をかけた後、違反が残らないことを確かめる。除く cop は利用者が書く desc と homepage の 2 つだけで、builtin の job が除く `FormulaAuditStrict` は除かない。PR と tag push が同じ script を通す。
+- Formula の検査と `test do` の追加（C）は `.github/scripts/prepare-homebrew-formula.sh` 1 本にまとめ、`release-verify` が PR でも tag push でも通す。検査は、class 名、desc / homepage / license と `Cargo.toml` の一致、version と plan の一致（prerelease は止める）、OS / CPU の分岐が配布対象 3 target と一致すること（Intel Mac の分岐が無いこと）、各 url と sha256 が Release asset と `.sha256` に一致すること、生成物に `test do` が無いことである。
+- dist の template は `brew style` の自動修正できる違反（入れ子の `if`、定数の freeze、hash の整列など）を含む（PR #79 の CI で確認）。builtin の job のように失敗を捨てず、`.github/scripts/fix-homebrew-formula-style.sh` で `brew style --fix` をかけた後、違反が残らないことを確かめる。除く cop は利用者が書く desc と homepage の 2 つだけで、builtin の job が除く `FormulaAuditStrict` は除かない。`release-verify` が PR でも tag push でも通す。
+- tap へ書くのは、同じ run の `release-verify` が検査・style の修正・install・`brew test` まで通した Formula の artifact そのものとする。publish job で作り直すと、検証した内容と書く内容の一致が保証されず、job の再実行時に runner の Homebrew の version が変わると `brew style --fix` の出力が変わって「同じ version の内容違い」で止まりうるため（PR #79 の review cycle `claude-code-69f95c0-20260924050758` の指摘）。
+- prerelease の tag では `release-verify` の Formula の生成と検証を job ごと skipped にする。Formula は prerelease を拒否するため、走らせると `custom-release-verify` が失敗して `host` が止まり、prerelease の GitHub Release まで出せなくなる（同 review cycle の指摘）。
 - PR でも Formula で install する（F）。`release-verify` は dist の `build-global-artifacts`（Formula を作る job）と並行して走り、その artifact を待てない。このため `release-verify` の `homebrew-formula` job が、plan job が保存した同じ dist と同じ入力（全 target の archive と checksum）から Formula を作り直して検査する。`homebrew` job が、build と同じ native runner で `brew style`、local tap からの install、`brew test`、配置（bin、doc、`pkgshare` の third-party 表記）と archive の同一性を確かめる。runner に Homebrew が無ければ失敗させる。
 - tap へ書く条件は `.github/scripts/publish-homebrew-formula.sh` に置く。prerelease、tap の version のほうが新しい場合（巻き戻し）、同じ version で内容が異なる場合、`Formula/bizdate.rb` 以外の変更が出る場合は書かずに失敗させる。同じ version が同じ内容で既にあれば何もせず成功させ、push 済みの後の再実行を安全にする。
 - `HOMEBREW_TAP_TOKEN` は `kiyohara/homebrew-tap` だけに絞った fine-grained PAT（Contents の read and write）を推奨する（H）。classic PAT の `repo` scope でも動く。設定はユーザーが行う。
@@ -69,7 +71,7 @@ tap への push に要るのは、tap の Contents の書き込みだけであ�
 ## 理由
 
 - 起動テストと巻き戻しの抑止は Issue の完了条件であり、dist の builtin の job では満たせない。Formula の生成は dist に任せたまま、書き込みの前後だけを自前にすれば、dist の template の更新も引き続き受けられる。
-- 検査と test の追加を 1 本の script にまとめ、PR と tag push で同じものを通すことで、PR で install した Formula と tap へ書く Formula が同じ手順で作られる。
+- 検査と test の追加を 1 本の script にまとめて PR と tag push で同じものを通し、tag push では検証した artifact をそのまま書く。PR で install した Formula と tap へ書く Formula が同じ手順で作られ、tag push では検証したものと書くものが一致する。
 - 失敗を fail-closed にし、同じ内容の再実行だけを成功にすれば、「同じ version を作り直さず version を上げる」（0016）を job 自身が守り、かつ publish の失敗から job の再実行で復旧できる。
 
 ## 影響

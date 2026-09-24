@@ -29,25 +29,25 @@ jobs:
         with:
           persist-credentials: false
 
-      # build-global-artifacts が作った Formula (Release にも添付されるもの) を、release-verify の
-      # homebrew-formula job と同じ script で検査し、test を足す。
-      - name: Fetch the Formula and the archives
+      # release-verify が同じ run で作り、3 つの native runner で install と brew test を通した Formula を
+      # そのまま書く。作り直さないため、検証した内容と書く内容が一致し、この job を再実行しても内容は変わらない。
+      - name: Fetch the verified Formula
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: artifacts-build-*
-          path: ${{ runner.temp }}/distrib
-          merge-multiple: true
+          name: release-verify-homebrew-formula
+          path: ${{ runner.temp }}/formula
 
-      - name: Prepare the Formula
+      - name: Check the Formula version against the plan
         env:
           PLAN: ${{ inputs.plan }}
         run: |
-          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
-          .github/scripts/prepare-homebrew-formula.sh "$RUNNER_TEMP/distrib/bizdate.rb" "$RUNNER_TEMP/distrib" \
-            "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/bizdate.rb"
-
-      - name: Fix the Formula style
-        run: .github/scripts/fix-homebrew-formula-style.sh "$RUNNER_TEMP/bizdate.rb"
+          want=$(printf '%s' "$PLAN" | jq --raw-output '.releases[] | select(.app_name == "bizdate") | .app_version')
+          have=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$RUNNER_TEMP/formula/bizdate.rb")
+          if [ -z "$want" ] || [ "$have" != "$want" ]; then
+            echo "::error::the verified Formula has version '$have', not '$want' from the plan"
+            exit 1
+          fi
+          echo "ok: bizdate $have"
 
       - name: Check that the tap token is set
         env:
@@ -75,4 +75,4 @@ jobs:
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-        run: .github/scripts/publish-homebrew-formula.sh "$RUNNER_TEMP/bizdate.rb" homebrew-tap
+        run: .github/scripts/publish-homebrew-formula.sh "$RUNNER_TEMP/formula/bizdate.rb" homebrew-tap
