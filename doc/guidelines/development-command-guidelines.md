@@ -135,7 +135,7 @@ Compose で確かめられるのは、Linux コンテナと同じ target の arc
 |---|---|---|---|
 | `plan` | `dist plan`（tag の push では `dist host --steps=create`）で成果物を決め、`release.yml` と設定の一致を検査する | 走る | 走る |
 | `build-local-artifacts` | 3 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
-| `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す | 走る | 走る |
+| `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す。PR では直接の CI と重複する `platform` を省く | `lint` だけ走る | 全 job が走る |
 | `build-global-artifacts` | 全 archive の checksum をまとめた `sha256.sum` を作る | 走る | 走る |
 | `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する | 走る | 走る |
 | `host` | GitHub Release を作り、成果物を添付する | 走らない | 上の job がすべて成功したときだけ走る |
@@ -148,7 +148,7 @@ Compose で確かめられるのは、Linux コンテナと同じ target の arc
 | 対象 | 箇所 | 注意 |
 |---|---|---|
 | dist | `dist-workspace.toml` の `cargo-dist-version`、`Dockerfile` の `release-tools` stage（version と checksum） | 上げたら `dist generate` で `release.yml` を作り直す。2 箇所がずれると `dist generate` が version の不一致で止まる |
-| cargo-about | `.github/scripts/install-cargo-about.sh` | `Dockerfile` と release workflow の build job が同じ script で入れる |
+| cargo-about | `.github/scripts/install-cargo-about.sh`（version と 3 つの asset の sha256） | upstream の prebuilt を入れる。上げたら 3 つの asset を取得して sha256 を計算し、同じ release の `.sha256` と一致することを確かめてから固定する。`Dockerfile` と release workflow の build job が同じ script で入れるため、`release-tools` の image も作り直す |
 | `release.yml` の第三者 action | `dist-workspace.toml` の `github-action-commits` | 値は `"<SHA> # <tag>"` の形で書き、`dist generate` で作り直す。Dependabot の更新 PR が `release.yml` を変えた場合の扱いは `doc/guidelines/development-loop.md` を参照する |
 
 ## MSRV を上げるとき

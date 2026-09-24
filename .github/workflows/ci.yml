@@ -11,12 +11,13 @@ on:
     branches:
       - main
   # release workflow (.github/workflows/release.yml) が、公開する commit でも同じ検査を通すために呼ぶ
-  # (dist-workspace.toml の local-artifacts-jobs)。dist は custom job へ plan を渡すため、受け口だけを置く。
-  # 中身は使わない。
+  # (dist-workspace.toml の local-artifacts-jobs)。tag push では全 job を回す。PR の run では lint だけを
+  # 回し、直接の CI と重複する platform を省く (platform の if)。dist は custom job へ plan を渡すため、
+  # 受け口を置く。中身は使わず、release workflow から呼ばれた run であることの判定にだけ使う。
   workflow_call:
     inputs:
       plan:
-        description: dist の plan。CI では使わない
+        description: dist の plan。中身は使わず、release workflow から呼ばれた run の判定にだけ使う
         required: false
         type: string
 
@@ -75,6 +76,12 @@ jobs:
   # emulation と cross-build は使わない。runner の選定理由は doc/design/distribution.md を参照する。
   platform:
     name: test / build (${{ matrix.target }})
+    # release workflow が PR の run で呼んだときだけ省く。同じ commit の platform は、PR で直接走る CI が回す。
+    # 条件は省く場合だけを書き、それ以外 (直接の CI、tag push で release workflow が呼ぶ run) では必ず回す。
+    # 呼ばれた run の github.event_name は呼び出し側の event であり、plan は呼ばれた run にだけ渡る。
+    # lint は省かないため、呼び出し側の custom-ci は success で終わり、それを待つ build-global-artifacts と
+    # custom-release-verify は skipped にならない。経緯は doc/design/decision-log/0022-release-workflow.md。
+    if: ${{ !(github.event_name == 'pull_request' && inputs.plan) }}
     strategy:
       # 1 つの target が落ちても、残りの target の結果を揃える。
       fail-fast: false

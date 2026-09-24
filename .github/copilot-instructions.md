@@ -8,6 +8,7 @@ I want to review in Japanese.
 - 本リポジトリは v1 の CLI 実装を完了している。実装言語は Rust で、`src/` に実装と unit test、`tests/` に実バイナリを起動する統合テストがある。
 - CI（GitHub Actions）が PR ごとに、`cargo fmt --check` / `clippy`（warning を error 扱い）/ 第三者 action の SHA 固定を Linux で、`test`（unit / CLI E2E）/ release `build` / release バイナリの起動確認を配布対象 3 target（macOS arm64、Linux arm64 / x86_64）の native runner で検査する。フォーマット違反、clippy の lint、ビルドエラー、対象 OS でのテスト失敗は CI が検出するため指摘しない。
 - Release workflow（`.github/workflows/release.yml`）も PR ごとに走り、3 target の配布 archive を作って、checksum、archive の構成、third-party 表記と依存の対応、展開した binary の起動を検証する。公開（GitHub Release の作成）は `v<version>` tag の push でだけ行う。
+- Release workflow は `custom-ci` として `ci.yml` を呼ぶ。PR の run では直接の CI と重複する `platform` を省いて `lint` だけを回し、tag push では全 job を回す。build job の cargo-about は、upstream の prebuilt を `.github/scripts/install-cargo-about.sh` に固定した sha256 と照合して入れる。どちらも decision log 0022 で決定済みであり、PR で `custom-ci` の `platform` が skipped になることと、cargo-about をソースからビルドしないことは指摘しない。`ci.yml` の `platform` の条件が、省く場合（PR の run で release workflow から呼ばれたとき）だけを列挙する形から外れ、tag push で省かれうる変更は指摘する。
 - 配布仕様は `doc/design/distribution.md` で決定済みで、配布対象 3 target の CI と release workflow は導入済みである。Homebrew Formula とインストール手順が無いことは指摘しない。
 - macOS は Apple Silicon だけを配布対象とする。Intel Mac（`x86_64-apple-darwin`）は `doc/design/distribution.md` の「対象外」で決定済み（経緯は decision log 0016）であり、その CI、archive、手動ビルドの手順が無いことは指摘しない。
 

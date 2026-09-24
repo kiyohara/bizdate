@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-23
-- 最終更新日: 2026-09-23
-- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `dist-workspace.toml`, `.github/workflows/release.yml`, [Issue #38](https://github.com/kiyohara/bizdate/issues/38)
+- 最終更新日: 2026-09-24
+- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `dist-workspace.toml`, `.github/workflows/release.yml`, `.github/workflows/ci.yml`, `.github/scripts/install-cargo-about.sh`, [Issue #38](https://github.com/kiyohara/bizdate/issues/38), [Issue #65](https://github.com/kiyohara/bizdate/issues/65)
 
 ## 背景
 
@@ -123,3 +123,62 @@ profile と toolchain を CI に揃えるのは、配る binary を CI が E2E �
 - PR ごとの CI 時間やレビュー待ちが問題になった場合。`pr-run-mode` と CI の二重実行を見直す。
 - cargo-about が `x86_64-apple-darwin` の prebuilt を出した場合。build job での install の時間を見直す。
 - MSRV を上げる場合。`.github/build-setup.yml` の toolchain も同時に上げる。
+
+## 2026-09-24 追記: cargo-about を prebuilt で入れ、PR での CI の二重実行をやめる
+
+Issue #65。上の「後から見直す条件」の「PR ごとの CI 時間やレビュー待ちが問題になった場合」に当たる。あわせて、候補 D で cargo-about を `cargo install` で入れた前提（`x86_64-apple-darwin` の prebuilt が無い）は、#64 で配布対象から `x86_64-apple-darwin` を外したことで失われた（[0016](0016-distribution-contract.md) の 2026-09-23 追記）。
+
+### 候補
+
+上の候補（A〜N）と区別するため、O から続ける。
+
+- cargo-about の導入方法: O `cargo install` を続ける / P upstream の prebuilt を、repository に固定した sha256 と照合して入れる / Q prebuilt を、同じ release の `.sha256` と照合して入れる / R `cargo install` の結果を cache する
+- PR での CI の二重実行: S 維持する / T PR の run では、`custom-ci` から `platform` を省く / U PR の run では、`custom-ci` の全 job を省く
+
+### 検討内容
+
+#64 の PR（#67）の初回 push（head `ee5d285`、[run 35873618982](https://github.com/kiyohara/bizdate/actions/runs/35873618982)）で、Release workflow は 3 分 37 秒だった。3 つの build job（2 分 17 秒〜2 分 48 秒）のうち 93〜109 秒を、cargo-about の `cargo install` が占めた。
+
+残る 3 target の build runner には、cargo-about 0.9.2 の upstream の prebuilt がすべてある。`macos-15` は `aarch64-apple-darwin`、`ubuntu-22.04` は `x86_64-unknown-linux-musl`、`ubuntu-22.04-arm` は `aarch64-unknown-linux-musl` を使う。Linux の 2 つは musl の静的 binary で、runner の glibc に依存しない。Compose の `release-tools`（Linux の x86_64 / arm64）も同じ asset で賄える。
+
+P の prebuilt と、ソースからビルドした同じ version（O）は、同じ `THIRD-PARTY-LICENSES.md` を生成する。Compose の `release-tools`（Linux arm64）で両方を実行し、出力が byte 単位で一致することを確かめた。
+
+Q の `.sha256` は asset と同じ release に置かれ、asset と一緒に差し替えられうる。改竄を検知するには、repository に固定した値と照合する（P）必要がある。`Dockerfile` が dist を入れる方式と同じである。
+
+R の cache は、公開する tag の run で効く保証が無く、上の「決定」の「公開する build を cache に依存させない」方針とも合わない。P は cache を使わずに、tag の run も同じだけ短くする。
+
+信頼する範囲も変わる。O では、`GH_TOKEN` を持つ build job で cargo-about の依存木をビルドし、その build script と proc-macro を実行していた。P ではそれらを実行せず、upstream が release に添付した binary 1 つを実行する。信頼の対象は、crates.io 上の依存木のソースから、upstream の release の成果物へ移る。sha256 を固定するため、固定した時点の binary 以外は実行しない。
+
+PR の run では、直接の CI と Release workflow の `custom-ci` が、同じ commit で `lint` と `platform` を 2 回ずつ回す（上の E で受け入れた二重実行）。push 1 回あたりの macOS job 4 本のうち 2 本は `platform` である。一方 tag push では、`custom-ci` が公開する commit の CI を示す唯一の経路であり、省けない。
+
+`custom-ci` の結果は、`build-global-artifacts` と `custom-release-verify` の `needs` に入る。`custom-ci` が skipped になると両者も skipped になり、PR で archive を検証しなくなる。dist が生成する `custom-ci` の条件と `needs` は手で変えられないため、呼ばれる側の `ci.yml` で job を選ぶ。U では `custom-ci` の job がすべて skipped になり、`custom-ci` が success で終わることを当てにできない。T は `lint`（1 分未満）を残すため、`custom-ci` は success で終わる。
+
+呼ばれた workflow の `github` context は呼び出し側のものであり、`github.event_name` は PR の run で `pull_request`、tag push で `push` になる。dist は custom job へ `plan` を渡すため、`plan` の有無で直接の CI と区別できる。
+
+### 決定
+
+- cargo-about は upstream の prebuilt を入れる（P）。version は 0.9.2 のままとし、`.github/scripts/install-cargo-about.sh` を正とする。実行環境の OS / architecture から asset を選び、script に固定した sha256 と照合する。対応外の platform と sha256 の不一致では止める（fail-closed）。`Dockerfile` の `release-tools` stage も同じ script を `--root` 付きで使う。上の「決定」の「cargo-about は `cargo install --locked` で入れる」を、この追記で置き換える。
+- PR の run では、`custom-ci` から `platform` を省き、`lint` だけを回す（T）。tag push では `ci.yml` の全 job を回す。`ci.yml` の `platform` の条件は、省く場合（呼び出し側の event が `pull_request` で、`plan` が渡されている）だけを列挙する形とし、それ以外の run では必ず回す。上の「理由」の「PR での二重実行は、公開経路を PR ごとに検証できることと引き換えに受け入れる」を、この追記で置き換える。
+- cache は使わない（R は採らない）。`cache-builds = false` と `pr-run-mode = "upload"` は維持する。
+
+### 理由
+
+- prebuilt にすれば、3 つの build job から cargo-about のビルド（93〜109 秒）が消える。cache を使わないため、公開する tag の run も同じだけ短くなり、公開する build を cache に依存させない方針と両立する。
+- sha256 を repository に固定すれば、固定した後に asset が差し替えられても、実行する前に止まる。
+- PR で `custom-ci` の `platform` が回す検査は、直接の CI の `platform` と同じ commit の同じ検査である。tag push では、公開する commit の CI を同じ run で示すという E の理由がそのまま残るため、全 job を回す。
+- 条件を、省く場合だけを列挙する形にするのは、tag push や後から足す trigger で `platform` が黙って省かれる構成を避けるためである。
+
+### 影響
+
+- 上の「影響」のうち、build job で cargo-about を `cargo install` し、その依存の build script と proc-macro が動くという記述は、upstream の prebuilt を固定した sha256 と照合して実行する形に変わる。
+- cargo-about の version を上げるときは、3 つの asset の sha256 を取り直す（`doc/guidelines/development-command-guidelines.md` の「tool と action の version を上げるとき」）。upstream が build runner に合う asset を配らなくなると、その runner の build job は止まる。
+- PR の run では、`custom-ci` の `platform`（macOS 1 本を含む 3 job）が skipped になる。push 1 回あたりの macOS job は 3 本（CI 1 本、Release workflow 2 本）になる。
+- PR #76 の初回 push（head `dbcf7b9`、[run 35936143855](https://github.com/kiyohara/bizdate/actions/runs/35936143855)）で、Release workflow は 1 分 44 秒になった（上の #67 の 3 分 37 秒から）。3 つの build job は 48〜58 秒で、cargo-about の step は 1 秒以下だった。
+- `doc/design/distribution.md`、`doc/guidelines/development-command-guidelines.md`、`.github/build-setup.yml` と `.github/workflows/ci.yml` のコメント、`.github/copilot-instructions.md` を改めた。
+- tag push の経路は PR では走らない。tag push で `platform` が回ることは条件式の review で確かめた。`platform` が省かれても `custom-ci` は `lint` だけで success になり、`host` は公開へ進むため、失敗として表に出ない。実動は、初回公開の tag push の run で `custom-ci / test / build (<target>)` の 3 job が skipped でなく success で走ったことで確かめる。この確認は #40 の公開後チェックへ引き継いだ。
+- 上の「後から見直す条件」のうち、「cargo-about が `x86_64-apple-darwin` の prebuilt を出した場合」は、#64 で対象から外したため適用しない。「PR ごとの CI 時間やレビュー待ちが問題になった場合」は、CI の二重実行をこの追記で見直した。`pr-run-mode` は維持した。
+
+### 後から見直す条件
+
+- cargo-about の version を上げる場合、または build runner を変える場合。runner に合う prebuilt があるかを確かめ、無ければ導入方法を見直す。
+- dist の version を上げる場合（上の条件）。custom job へ `plan` を渡す形が変わっていないかも確かめる。`platform` を省く条件がこれを前提にしている。

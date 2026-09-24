@@ -24,6 +24,8 @@
 # 指す位置 (repository root) に置き、dist build が archive へ入れる。commit はしない。
 # 生成は target ごとの build job で行う。事前の job に分けると、その job の失敗で build が skipped になり、
 # host の公開条件を素通りしてしまう (0022)。
+# cargo-about はソースからビルドせず、upstream の prebuilt を script に固定した sha256 と照合して入れる。
+# runner に合う asset が無い場合と sha256 が一致しない場合は、ここで止まる。
 - name: Install cargo-about
   run: .github/scripts/install-cargo-about.sh
 

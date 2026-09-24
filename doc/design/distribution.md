@@ -131,7 +131,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 要件は次のとおりとする。
 
 - `THIRD-PARTY-LICENSES.md` を生成し、archive に同梱する。crate 名、version、ライセンス識別子、ライセンス本文を含める。
-- 生成には `cargo-about` を使う。採用 version は 0.9.2 とする。`cargo install` する場合は `--features cli` が要る。
+- 生成には `cargo-about` を使う。採用 version は 0.9.2 とする。upstream の release が配る prebuilt binary を、repository に固定した sha256 と照合して入れる（`.github/scripts/install-cargo-about.sh`）。ソースから `cargo install` する場合は `--features cli` が要る。
 - 対象は 3 target すべてを合わせた集合とする。platform ごとに別ファイルへ分けない。
 - 生成物はリポジトリに commit せず、release build のたびに生成する。依存の追加・更新で内容が古くなる事故を避けるためである。
 - 検証は、生成が成功し、かつ `cargo-about` が未許可ライセンスを検出せずに終了することをもって行う。許可するライセンス識別子は生成設定に列挙し、依存追加時に見直す。
