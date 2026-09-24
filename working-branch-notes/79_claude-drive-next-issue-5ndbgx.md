@@ -58,6 +58,7 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 ## リスク・ブロッカー
 
 - 公開 tap からの `brew install` / `upgrade`、tap への実 push、`HOMEBREW_TAP_TOKEN` の設定は未実施（スコープ外。#40 の初回公開で確かめる）。
+- publish job が同じ run の `release-verify-homebrew-formula` artifact を取得できること、prerelease の tag で `homebrew-formula` が skipped になり `host` が走ることは、tag push の run でしか確かめられない（PR では publish job も prerelease の plan も走らない）。条件式と dist の生成物の読み合わせまで。
 
 ## セッションログ
 
