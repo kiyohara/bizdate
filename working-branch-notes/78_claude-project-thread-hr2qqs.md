@@ -25,7 +25,7 @@
 
 - skill、guideline、decision log の改訂。（完了）
 - 検証、PR 作成、review cycle（本 PR 自身の cycle で新規定の読み戻しを確かめる）。
-- merge 後、ユーザーが inline thread を resolve する。
+- ユーザーが 7 thread を目視確認して resolve し、merge を判断する。
 
 ## 検証
 
@@ -53,3 +53,5 @@
 - 2026-09-24T04:22Z P4: 修正を push（head `da30cce`）し、7 thread へ処置を返信（MCP）。返信の metadata は session 本体として投稿直前の `get_session` の `last_served_model` を使い、footer は自分で書いた（空行 1 行を挟む）。read-back で 5 行と footer の関係を確かめた。
 - 2026-09-24T04:25Z P5 を同じ subagent に委譲。7 thread すべて resolve 可。返信 7 件と完了要約の metadata が新規定を満たすことを read-back で確認（Issue の検証 1 を満たした）。追加は [nits] 1 件（「`gh` が使えない場合は編集しない」が、`gh` なしで編集できる cloud session の conversation comment と食い違う）と [fyi] 1 件（PR description が da30cce を反映していない）。
 - P6: 2 件とも採用。nits は対象を `gh` を使う編集に絞って直し、PR description の「主な変更」を更新した。2 周目の P4 → P5 で確認する。
+- 2026-09-24T04:27Z 2 周目の P4: nits を直して push（head `f9df54d`）、PR description を更新し、処置を conversation comment に残した。
+- 2026-09-24T04:29Z 2 周目の P5: 2 件とも対応を確認、追加の指摘なし。review cycle は 2 周目で収束した（上限内）。未収束の指摘は 0 件。残るのは人間による 7 thread の resolve と merge。
