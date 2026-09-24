@@ -73,3 +73,7 @@ review metadata の `Model`:
 
 - code や文書の本文に識別子が書かれ、陳腐化や混乱が実際に問題になったとき。
 - harness の指示が PR と review のコメントにも及ぶよう変わり、理由付きの `unknown` が増えて `Model` が記録として使えなくなったとき。
+
+## 追記 (2026-09-24): 確認の手段
+
+「決定」で Issue #69 に送った `Model` の確認の手段は、`doc/design/decision-log/0024-review-metadata-in-cloud-session.md` で決めた。cloud session の session 本体は `get_session` の `external_metadata.last_served_model`、subagent は自身の system prompt が示す識別子を書く。本ログの決定（記載範囲と `unknown` の扱い）は変わらない。

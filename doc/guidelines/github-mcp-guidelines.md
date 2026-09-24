@@ -61,7 +61,7 @@ proxy は REST だけを通し、GraphQL、検索 API、session に接続して�
 | 区分 | 操作 | 扱い |
 | --- | --- | --- |
 | read | main など任意の commit の check run、issue の timeline、commit の比較（compare）、label・milestone の一覧、ruleset | agent が実行してよい |
-| write | inline review comment の編集、提出済み review の本文の編集、reaction | agent が実行してよい。編集は、同じ Agent 種別が投稿したと canonical metadata の `Agent` 行（`.agents/skills/review-pull-request/SKILL.md`）で確認できる comment / review に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない |
+| write | inline review comment の編集、提出済み review の本文の編集、reaction | agent が実行してよい。review の canonical metadata の誤りの訂正に使う（`.agents/skills/review-pull-request/SKILL.md` の「投稿前の確認と誤りの訂正」）。編集は、同じ Agent 種別が投稿したと canonical metadata の `Agent` 行（`.agents/skills/review-pull-request/SKILL.md`）で確認できる comment / review に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない |
 | write | label・milestone の作成と編集 | 一括変更はユーザーの承認を得る（`doc/guidelines/github-cli-guidelines.md`） |
 | write | comment の削除、release の作成と編集、commit status の作成 | ユーザーの承認を得る（同上）。commit status は CI の結果と見分けにくく、merge 判断を誤らせ得る |
 
@@ -81,6 +81,7 @@ proxy は REST だけを通し、GraphQL、検索 API、session に接続して�
 | PR review の作成 | `pull_request_review_write` / `add_comment_to_pending_review` | pending review 作成 → inline comment 追加 → submit の順。 |
 | Inline review comment への返信 | `add_reply_to_pull_request_comment` | write 後に thread を再取得して反映を確認する。 |
 | PR conversation comment | `add_issue_comment` | PR 番号を `issue_number` として渡す。 |
+| comment / review 本文の編集 | conversation comment: `update_issue_comment`（cloud session の組み込み tool）。`github-op-integrated` の allowlist には無いため、ローカルでは `gh api -X PATCH .../issues/comments/{id}`。inline comment とその返信、提出済み review の本文: `gh api`（MCP tool に編集の手段が無い） | 同じ Agent 種別が投稿したと canonical metadata の `Agent` 行で確認できる投稿に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない。用途と手順は `.agents/skills/review-pull-request/SKILL.md` の「投稿前の確認と誤りの訂正」。 |
 | PR の作成・更新 | `create_pull_request` / `update_pull_request` | failure 後は read-back し、二重実行を防ぐ。 |
 | PR の check 状態 | `pull_request_read(get_check_runs / get_status)` | CI の成否を PR 単位で見るときの第一選択。 |
 | workflow / run / job / artifact の一覧 | `actions_list` | `method` は `list_workflows` / `list_workflow_runs` / `list_workflow_jobs` / `list_workflow_run_artifacts`。 |
