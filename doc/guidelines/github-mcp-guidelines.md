@@ -81,6 +81,7 @@ proxy は REST だけを通し、GraphQL、検索 API、session に接続して�
 | PR review の作成 | `pull_request_review_write` / `add_comment_to_pending_review` | pending review 作成 → inline comment 追加 → submit の順。 |
 | Inline review comment への返信 | `add_reply_to_pull_request_comment` | write 後に thread を再取得して反映を確認する。 |
 | PR conversation comment | `add_issue_comment` | PR 番号を `issue_number` として渡す。 |
+| comment / review 本文の編集 | conversation comment: `update_issue_comment`（cloud session の組み込み tool）。`github-op-integrated` の allowlist には無いため、ローカルでは `gh api -X PATCH .../issues/comments/{id}`。inline comment とその返信、提出済み review の本文: `gh api`（MCP tool に編集の手段が無い） | 同じ Agent 種別が投稿したと canonical metadata の `Agent` 行で確認できる投稿に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない。用途と手順は `.agents/skills/review-pull-request/SKILL.md` の「投稿前の確認と誤りの訂正」。 |
 | PR の作成・更新 | `create_pull_request` / `update_pull_request` | failure 後は read-back し、二重実行を防ぐ。 |
 | PR の check 状態 | `pull_request_read(get_check_runs / get_status)` | CI の成否を PR 単位で見るときの第一選択。 |
 | workflow / run / job / artifact の一覧 | `actions_list` | `method` は `list_workflows` / `list_workflow_runs` / `list_workflow_jobs` / `list_workflow_run_artifacts`。 |

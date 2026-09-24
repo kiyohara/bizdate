@@ -45,3 +45,7 @@
 - 2026-09-24T04:40Z PR #78 を draft で作成（head `9391c2f`）。レビュアーの指定は、PR の作成者と同じ account のため GitHub に拒否された（assignee は設定済み）。
 - `number-working-branch-note` の手順で note を採番した（`draft_` → `78_`）。完了として書き換えたタスク行: 「次にやること」の「skill、guideline、decision log の改訂。」の 1 件（note 本文）。PR description は 0 件。触らなかった行: 「次にやること」の「検証、PR 作成、review cycle（…）」（完了要素と未完の review cycle が混在する複合行）。停止は無い。
 - `progress.md` の OPS-03 を done にし、PR 欄を #78 に更新した（別 commit）。
+- 2026-09-24T04:15Z PR CI（head `061bf5d`）が success 14 / skipped 3。
+- 2026-09-24T04:17Z P2 を subagent に委譲。review cycle `claude-code-061bf5d-20260924041749`、指摘 7 件（imo 5 / nits 2）。04:21Z に完了。
+- P2 の metadata の read-back（subagent の報告）: 5 行は review body の最後に連続し、subagent は footer を書かず、server が空行 1 行を挟んで footer を付けた。`Model` は subagent の system prompt の exact model ID（`claude-opus-5-5`）。新規定を満たした。
+- P3: 7 件すべて採用。footer を書かない agent の書き方と確かめ方、`Model` は exact model ID、`get_session` は投稿の直前、`Agent` 行で確認できない誤りは人間に依頼、subagent は note を書かず報告を返す、編集の routing を `github-mcp-guidelines.md` の「操作別の第一選択」に追加、`cloud-session-guidelines.md` の参照先に「`Model` の確認手段」を追加。0024 も揃えた。

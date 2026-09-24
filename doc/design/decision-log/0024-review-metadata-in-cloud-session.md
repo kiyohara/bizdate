@@ -46,11 +46,11 @@ PR #67（Issue #64）の review cycle を cloud session で回したところ、
 
 ## 決定
 
-- 位置は B とする。投稿の末尾に置き、実行環境が footer を付ける（または付けるよう求める）場合はその直前に置き、間に空行を 1 行置く。parse は 5 つのキーがこの順で連続する 5 行で行う。1 投稿に 1 組とする。
-- `Model` の確認手段は D とする。cloud session の session 本体は `get_session`（`session_id` を省略）の `external_metadata.last_served_model` を書き、無い場合は `session_context.model` を書く。subagent は自身の system prompt が示す識別子を書く。それ以外の環境では、実行環境が示す識別子を書く。確認できない場合は `unknown` とする（0023）。
+- 位置は B とする。投稿の末尾に置き、実行環境が footer を付ける（または付けるよう求める）場合はその直前に置く。footer を自分で書く場合は間に空行を 1 行置く。footer を書くよう求められていない agent（cloud session の subagent など）は 5 行で投稿を終え、実行環境が付けた footer との間の空行を read-back で確かめる。parse は 5 つのキーがこの順で連続する 5 行で行う。1 投稿に 1 組とする。
+- `Model` の確認手段は D とする。cloud session の session 本体は `get_session`（`session_id` を省略）の `external_metadata.last_served_model` を書き、無い場合は `session_context.model` を書く。subagent は自身の system prompt が示す識別子を書く。それ以外の環境では、実行環境が示す識別子を書く。書くのは exact model ID（`get_session` の値と同じ形）とし、表示名は書かない。`get_session` は投稿の直前に呼ぶ。確認できない場合は `unknown` とする（0023）。
 - 委譲する側は `Model` の値と、skill と異なる書き方を指示しない（E を採らない）。`drive-issue-to-reviewed-pr` の委譲 brief にこれを明記する。
 - 投稿の前に、キーの並びと位置、`Agent` と `Model` の確認元、`Review cycle`、投稿直前に取り直した head SHA、`Mode` を確かめる。
-- 誤りの訂正は G とする。conversation comment は MCP の `update_issue_comment`（ローカルの `github-op-integrated` は allowlist に無いため `gh api`）、inline comment とその返信、提出済み review の本文は `gh api` で編集する。`gh` が使えない場合は、対象と正しい値を報告して人間に GitHub の UI での編集を依頼する。
+- 誤りの訂正は G とする。conversation comment は MCP の `update_issue_comment`（ローカルの `github-op-integrated` は allowlist に無いため `gh api`）、inline comment とその返信、提出済み review の本文は `gh api` で編集する。`gh` が使えない場合と、誤りが `Agent` 行にあるなどで同じ Agent 種別の投稿だと確認できない場合は、対象と正しい値を報告して人間に GitHub の UI での編集を依頼する。subagent は note を書かず、報告を orchestrator へ返す。
 - 正本は `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」とその下の 2 節とする。cloud session 固有の事情は `doc/guidelines/cloud-session-guidelines.md` の「なぜ専用の設定が要るか」に 1 行置き、skill を参照する。
 
 ## 理由
@@ -61,7 +61,7 @@ footer は repository のルールの外で付くため、規定の側を footer
 
 - `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」を改め、「`Model` の確認手段」と「投稿前の確認と誤りの訂正」を加えた。
 - `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md` の「subagent への委譲」に、metadata の値と書き方を brief で指示しないことを加え、brief の形に 1 行足した。
-- `doc/guidelines/cloud-session-guidelines.md` の「なぜ専用の設定が要るか」に 1 行、`doc/guidelines/github-mcp-guidelines.md` の「`gh` で補う範囲」の編集の行に、metadata の訂正に使う旨を加えた。
+- `doc/guidelines/cloud-session-guidelines.md` の「なぜ専用の設定が要るか」に 1 行加えた。`doc/guidelines/github-mcp-guidelines.md` は、tool routing の正本として「操作別の第一選択」に comment / review 本文の編集の行（環境ごとの手段と、編集してよい投稿の制約）を足し、「`gh` で補う範囲」の編集の行に metadata の訂正に使う旨を加えた。
 - 0023 は確認の手段を #69 に送っていたため、本ログを参照する追記を置いた。
 - `.github/copilot-instructions.md` と入口 shim は同期しない。どちらも review metadata の書き方を扱っていない。
 
