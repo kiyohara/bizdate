@@ -35,7 +35,9 @@ have=$(uname -sm)
 
 command -v brew > /dev/null 2>&1 || fail "brew is not on PATH"
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_INSTALL_CLEANUP=1
-brew --version | head -1
+# head で pipe を閉じると brew が write error を出すため、全行を読んでから 1 行目を取る。
+brew_version=$(brew --version 2>/dev/null | sed -n 1p)
+echo "$brew_version"
 
 archive=bizdate-$target.tar.gz
 [ -f "$dist_dir/$archive" ] || fail "$archive is not in $dist_dir"
@@ -99,7 +101,7 @@ record=$work/record.md
 {
     echo "### verify-homebrew-formula: $target"
     echo '```'
-    brew --version | head -1
+    echo "$brew_version"
     echo "formula: bizdate $version (local tap, url replaced with this run's archive)"
     echo "selected: $archive"
     echo "installed: $keg"
