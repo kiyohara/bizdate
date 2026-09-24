@@ -10,13 +10,13 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 
 ## 現在の状況
 
-- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めている。P2 の指摘 11 件に P4 で対応した。
+- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めている。P2 の指摘 11 件は P5 で resolve 可となり、P5 の完了要約の thread 外の 3 件に 2 周目の P4 で対応した。
 - 依存の #39（PR #79）と #80（PR #81）は merge 済み。レビュー待ちの自分の PR は無い。
 - 手順の正本 `doc/guidelines/release-guidelines.md`、skill `run-release`（雛形 `references/post-release-issue.md`）、Cursor と Claude Code の入口、decision log 0026 を置き、AGENTS.md、guideline の一覧、`development-loop.md`、`maintain-progress`、`run-issue-task`、README、`progress.md`、`distribution.md` の参照、Copilot 用の指示を揃えた。
 
 ## 決定事項
 
-- 公開は version ごとの公開後確認 Issue（title `v<version> の公開後確認`）で追う。状態は公開待ち、公開済み、確認済み、中止。確認済みになる前に close しない。公開後の PR（台帳の行、初回の README の切り替え）はその Issue を入力とする Issue 駆動タスクとし、merge で閉じる。
+- 公開は version ごとの公開後確認 Issue（title `v<version> の公開後確認`）で追う。状態は公開待ち、公開済み、確認済み、中止。確認済みになる前に close しない。公開後の PR（台帳の行、README の予定表記の切り替え）はその Issue を入力とする Issue 駆動タスクとし、merge で閉じる。
 - リリース準備 PR（`Cargo.toml` の version と `Cargo.lock` だけ）を、起点 Issue を持たない運用作業の例外にした。公開後確認 Issue を `Refs` で参照し、`Closes` を付けない。公開後確認 Issue から出すと 1 Issue = 1 PR が崩れるため。`development-loop.md` の恒常的な例外は 3 件になった。
 - tag の push は 0016 のとおりユーザーが行う。agent は公開対象と確認の結果を提示し、文言での承認を待つ。tag は `git tag -s`（署名付きの annotated tag）を既定にした。commit の署名の方針に揃えるため。
 - release notes は `CHANGELOG.md` を置かない方針（0016）のまま、要約の草稿を公開後確認 Issue に置き、承認の提示で示す。Release の編集は公開後に承認を得て行う。
@@ -75,3 +75,6 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 - 2026-09-24: #40 に着手した。依存の完了を確かめ、配布仕様、release workflow、既存の skill と guideline を読み、PR #81 の run と main の CI で生成物と job を照合した。guideline、skill、入口、README、`progress.md`、decision log 0026 を置き、上の検証と予行を行った。
 - 2026-09-24: PR #83 を draft で作成し、`number-working-branch-note` の手順で note を採番した（完了として書き換えたタスク行: note の「PR を作成し、note を採番する」の 1 行、PR description は 0 行。触らなかった stale 表現・タスク行: 0 件）。`progress.md` の DIST-05 の PR 列に #83 を記入した。reviewer の指定は、PR の作成者と同じ account のため GitHub が受け付けなかった（assignee は設定済み）。
 - 2026-09-24: P2。review cycle `claude-code-3576a17-20260924134440`（head `3576a17`）で指摘 11 件（must 1 / ask 2 / imo 7 / nits 1）。P3 で 11 件とも採用した。
+- 2026-09-24: P4（1 周目）。11 件とも採用し、`de0d0f3` で guideline、skill、雛形、Cursor の rule、0026 と index、Copilot 用の指示を直した。ask の 2 件には、README は公開後確認で確かめた経路の節だけを切り替える、tap の README は初回公開で Homebrew の install を確かめた後にユーザーが足す、と答えた。PR description を対応に合わせて更新し、11 thread へ処置を返信した。head `de0d0f3` の CI は skipped の想定分を除き全件 success。
+- 2026-09-24: P5（1 周目）。P2 と同じ subagent が head `de0d0f3` で verify-comments を行い、11 件とも resolve 可とした（未対応 0 件）。完了要約に thread 外の新たな指摘 3 件（nits 2 / fyi 1）があり、2 周目へ進んだ。
+- 2026-09-24: P4（2 周目）。thread 外の 3 件を採用し、0026 の決定の表現と、確かめた経路だけを切り替える理由（検討内容）、guideline の PR の run での job の表示名と、公開後の PR で文書を直すときは先に Issue に項目を足すこと、この note の決定事項の表現を直した。

@@ -291,6 +291,7 @@ brew test kiyohara/tap/bizdate
 - 公開後確認 Issue が確認済みになったら、その Issue を入力に `run-issue-task`（review まで回す場合は `drive-issue-to-reviewed-pr`）で PR を出す。description に `Closes #<公開後確認 Issue>` を含める。
 - PR の内容は、`progress.md` の「リリース履歴」への行の追加と、README に予定表記が残っていればその切り替えである。初回公開では `progress.md` の未公開の記述も直す（「初回公開（v0.1.0）」）。
 - README で有効な案内に切り替えるのは、公開後確認で確かめた経路（archive と Homebrew）の節だけとする。確かめられなかった経路の節は予定表記のまま残し、その経路を確かめた version の公開後の PR で切り替える。
+- 公開後確認で見つかった、この文書や README の記述の食い違い（job の表示名、対応環境の値など）を公開後の PR で直す場合は、先に公開後確認 Issue の「公開後の PR」に項目を足す。PR の範囲はその項目だけとする。
 - 公開の確認を終える前に、README の予定表記を外さない。手順を入れた PR や、リリース準備 PR の merge を、公開の確認の完了として扱わない。
 
 ## リリース台帳
@@ -303,7 +304,7 @@ brew test kiyohara/tap/bizdate
 初回に固有の扱い:
 
 - `Cargo.toml` の `version` は既に `0.1.0` であり、リリース準備 PR は要らない。候補 SHA は、公開前確認の時点の `main` の先頭とする。
-- README のインストール案内は公開予定の表記で置いてある。公開後の PR で、確かめた経路の予定表記を外し、有効な案内に切り替える（「公開後の PR」）。対応環境の値が tag の run の記録と異なれば、同じ PR で直す。
+- README のインストール案内は公開予定の表記で置いてある。公開後の PR で、確かめた経路の予定表記を外し、有効な案内に切り替える（「公開後の PR」）。対応環境の値が tag の run の記録と異なれば、「公開後の PR」に従って同じ PR で直す。
 - 公開後の PR では、`progress.md` の「リリース履歴」の前文（まだ公開した version は無い）と、「現況」と「次にやること」の初回公開が未実施という記述も直す。
 - tag の commit の README が archive に同梱されるため、`v0.1.0` の archive の README は予定表記のままである。予定表記は、公開後に読んでも誤りにならない文言にしてある。
 - 前の version が無いため、`brew upgrade` は確かめられない。追跡 Issue を起こし、次の version の公開後確認で確かめる。tap は単一の version しか持たず、次の version の公開の後は `v0.1.0` を入れ直せないため、Homebrew で入れた `v0.1.0` をその確認まで残しておく。追跡 Issue の再開条件にもそう書く。
@@ -322,7 +323,7 @@ brew test kiyohara/tap/bizdate
 - 公開 tap からの `brew install` と Formula の version
 - 既定 CSV の実際の取得（cloud session からは届かない）。`x86_64-unknown-linux-gnu` は、Apple Silicon の Mac の Docker では emulation になるため、native の x86_64 Linux が要る
 - 公開後確認で、Release の `dist-manifest.json` を `verify-release-archive.sh` の plan として使えること。PR の run では `dist plan` の出力でしか動かしていない。通らない場合は、tag の run の artifact `artifacts-plan-dist-manifest` の `plan-dist-manifest.json` を使う（cloud session からは artifact を取得できないため、ユーザーが run の画面から取得する）
-- 「監視」の job の表示名が、tag の run の表示と一致すること。PR の run では、`custom-ci / test / build` と `custom-publish-homebrew` は呼び出し側の名前のまま skipped になり、中の job の表示名は tag の run でしか見られない。異なれば、公開後の PR で「監視」と「公開前確認」の一覧を直す
+- 「監視」の job の表示名が、tag の run の表示と一致すること。PR の run では、`custom-ci / test / build` は matrix が展開されない名前（`custom-ci / test / build (${{ matrix.target }})`）で、`custom-publish-homebrew` は呼び出し側の job の名前で skipped になり、tag の run での表示名は見られない。異なれば、「公開後の PR」に従って「監視」と「公開前確認」の一覧を直す
 
 ユーザーが行う操作（順に）:
 
