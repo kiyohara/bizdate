@@ -4,7 +4,7 @@
 
 - 状態: decided
 - 作成日: 2026-09-23
-- 最終更新日: 2026-09-23
+- 最終更新日: 2026-09-24
 - 関連: `doc/guidelines/pull-request-guidelines.md`, `.agents/skills/review-pull-request/SKILL.md`, `doc/design/decision-log/0017-pr-tool-name-restriction.md`, `doc/design/decision-log/0019-issue-review-cycle-orchestration.md`
 
 ## 背景
@@ -32,6 +32,7 @@ review metadata の `Model`:
 
 - D: 実行環境で確認した識別子を書く。実行環境の既定の指示を理由に `unknown` にしない。
 - E: 実行環境の既定の指示が識別子を禁じる場合は `unknown` とする。
+- F: D を基本とし、実行環境の指示が PR と review のコメントへの記載まで禁じる場合（または対象外と確認できない場合）に限って `unknown` とし、その旨を投稿に残す。
 
 ## 検討内容
 
@@ -41,12 +42,17 @@ review metadata の `Model`:
 - A の範囲では、任意の記載を harness の指示に従って省くことは repository のルールと衝突しない。衝突が起き得るのは、記載を必須とする review metadata の `Model` だけである。
 - D: `Model` は review cycle を後から辿るための記録であり、同じ cycle の投稿で値が揃わないと記録として使えない。PR #67 の食い違いはこれに当たる。canonical metadata は PR と review のコメントに置かれ、repository に push される成果物ではない。
 - E: 同じ Agent 種別でも投稿者（orchestrator と subagent）の解釈で値が変わる。記録目的を満たさない。
+- D だけでは、実行環境の指示がコメントへの記載まで実際に禁じる場合も「書け」と読める。repository の guideline は agent の上位の system 指示を上書きできないため、その環境では agent が両方を守れない（PR #72 のクロスレビューの指摘）。#68 の事例で必要なのは、repository に push する成果物への禁止を PR コメントへ誤って広げないことであり、適用範囲で表せば足りる。
+- F: #68 の事例（指示の対象が repository に push する成果物で、コメントを含まない）は D と同じ結果になる。コメントまで禁じる指示がある環境では上位の指示に従い、`unknown` の理由を投稿に残すことで「確認できなかった」場合と区別できる。
 
 ## 決定
 
 - model の識別子の記載を禁止するのは **PR title** だけとする。tool 名、tool 由来の prefix と並べて `doc/guidelines/pull-request-guidelines.md` の「Tool 名と model の識別子の扱い」に置く。
 - PR description、PR と review のコメント、commit message（trailer を含む）、code と文書の本文では制限しない。書くかどうかは書き手の裁量とし、harness の既定の指示に従って省いてもよい。この範囲は tool 名にも同じく適用する。
-- review の canonical metadata の `Model` は必須のキーとし、実行環境で確認した識別子を書く。実行環境の既定の指示を理由に `unknown` にしない。`unknown` は識別子を確認できない場合に限る。
+- review の canonical metadata の `Model` は必須のキーとし、実行環境で確認した識別子を書く（候補 F）。
+  - 実行環境の指示が識別子の記載を禁じていても、PR と review のコメントがその対象外と確認できる場合は、それを理由に `unknown` にしない。
+  - 指示がコメントへの記載まで禁じている場合、または対象外と確認できない場合は、上位の指示を repository のルールで上書きせず `unknown` と書き、上位の指示で記載を控えた旨を同じ投稿の本文に 1 行残す。
+  - それ以外で `unknown` を使うのは、識別子を確認できない場合に限る。
 - 正本は、記載範囲を `doc/guidelines/pull-request-guidelines.md`、`Model` のキー定義を `.agents/skills/review-pull-request/SKILL.md` とし、後者から前者を参照する。
 - 確認の手段（cloud session での session 情報の取得など）は本ログで決めず、Issue #69 で扱う。
 
@@ -57,7 +63,7 @@ review metadata の `Model`:
 ## 影響
 
 - `doc/guidelines/pull-request-guidelines.md` の「基本方針」と「Tool 名の扱い」を改訂し、節名を「Tool 名と model の識別子の扱い」にした。
-- `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」の `Model` の項に、実行環境の既定の指示を理由に `unknown` にしないことを追記した。
+- `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」の `Model` の項に、コメントが実行環境の指示の対象外なら `unknown` にしないこと、対象なら `unknown` とし理由を残すことを追記した。
 - 入口 shim（`.claude/rules/pull-request-guidelines.md`、`.cursor/rules/pull-request-guidelines.mdc`）は title の禁止内容を要約しているため同期した。`AGENTS.md` と `CLAUDE.md` は正本への参照だけを持ち、変更しない。
 - `.github/copilot-instructions.md` は同期しない。Copilot code review は PR の diff を見るものであり、PR title と review metadata の書き方を扱わない。tool 名の扱いも元から載せていない。
 - commit message の扱いは `doc/guidelines/git-operation-guidelines.md` に書かない。制限しない以上、commit 時に読む必要がないためである。
@@ -66,4 +72,4 @@ review metadata の `Model`:
 ## 後から見直す条件
 
 - code や文書の本文に識別子が書かれ、陳腐化や混乱が実際に問題になったとき。
-- harness の既定の指示が PR と review のコメントにも及ぶよう変わり、review metadata の `Model` の規定と実際に衝突したとき。
+- harness の指示が PR と review のコメントにも及ぶよう変わり、理由付きの `unknown` が増えて `Model` が記録として使えなくなったとき。

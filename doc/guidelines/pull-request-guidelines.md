@@ -16,7 +16,7 @@
 
 - PR title には `claude`、`codex`、`cursor` などの tool 名、`[codex]` のような tool 由来の prefix、処理に使った model の識別子を含めない。title はレビュアーが変更内容を把握するためのものである。
 - PR title 以外（PR description、PR と review のコメント、commit message、code と文書の本文）では制限しない。`Co-Authored-By` や `🤖 Generated with ...` のような trailer も記載してよい。書くかどうかは書き手の裁量とする。
-- 例外として、review の canonical metadata の `Model` は必須のキーであり、実行環境で確認した model の識別子を書く。agent の実行環境の既定の指示（harness の system prompt など）が識別子を書かないよう求めていても、それを理由に `unknown` にしない。`unknown` は識別子を確認できない場合に限る。キーの定義は `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」に従う。
+- 例外として、review の canonical metadata の `Model` は必須のキーであり、実行環境で確認した model の識別子を書く。agent の実行環境の指示（harness の system prompt など）が識別子の記載を禁じていても、PR と review のコメントがその禁止の対象外と確認できる場合（repository に push する成果物だけを対象とする指示など）は、それを理由に `unknown` にしない。指示がコメントへの記載まで禁じている場合、または対象外と確認できない場合は、repository のルールで上位の指示を上書きせず、`unknown` と書き、上位の指示で記載を控えた旨を同じ投稿の本文に 1 行残す。それ以外で `unknown` を使うのは、識別子を確認できない場合に限る。キーの定義は `.agents/skills/review-pull-request/SKILL.md` の「可視 metadata の canonical フォーマット」に従う。
 
 ## 推奨構成
 
