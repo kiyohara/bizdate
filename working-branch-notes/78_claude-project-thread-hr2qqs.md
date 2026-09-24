@@ -25,6 +25,7 @@
 
 - skill、guideline、decision log の改訂。（完了）
 - 検証、PR 作成、review cycle（本 PR 自身の cycle で新規定の読み戻しを確かめる）。
+- merge 後、ユーザーが inline thread を resolve する。
 
 ## 検証
 
@@ -34,7 +35,7 @@
 - skill、guideline、decision log の整合: `Model` の記載範囲（0023、`pull-request-guidelines.md`）と確認手段（0024、skill）が食い違わないこと、`gh api` での編集の範囲が `github-mcp-guidelines.md` の「`gh` で補う範囲」と一致することを読み合わせた。
 - `git diff --check`: 問題なし。note の情報統制: 禁則の値なし（session ID などは書いていない）。
 - cargo の検証: 文書と skill だけの変更のため実施しない。
-- 新規定の実地確認（Issue の検証 1）: 本 PR の review cycle で行う（未実施）。
+- 新規定の実地確認（Issue の検証 1）: 本 PR の review cycle で確認した。review body（subagent、footer は server が付与）、address-comments の返信 7 件（session 本体、footer は自分で記載）、verify-comments の完了要約（subagent）のいずれも、5 行が末尾（footer の直前、空行 1 行を挟む）にあり、`Model` に確認した識別子 `claude-opus-5-5` が入ることを read-back で確かめた。
 
 ## リスク・ブロッカー
 
@@ -49,3 +50,6 @@
 - 2026-09-24T04:17Z P2 を subagent に委譲。review cycle `claude-code-061bf5d-20260924041749`、指摘 7 件（imo 5 / nits 2）。04:21Z に完了。
 - P2 の metadata の read-back（subagent の報告）: 5 行は review body の最後に連続し、subagent は footer を書かず、server が空行 1 行を挟んで footer を付けた。`Model` は subagent の system prompt の exact model ID（`claude-opus-5-5`）。新規定を満たした。
 - P3: 7 件すべて採用。footer を書かない agent の書き方と確かめ方、`Model` は exact model ID、`get_session` は投稿の直前、`Agent` 行で確認できない誤りは人間に依頼、subagent は note を書かず報告を返す、編集の routing を `github-mcp-guidelines.md` の「操作別の第一選択」に追加、`cloud-session-guidelines.md` の参照先に「`Model` の確認手段」を追加。0024 も揃えた。
+- 2026-09-24T04:22Z P4: 修正を push（head `da30cce`）し、7 thread へ処置を返信（MCP）。返信の metadata は session 本体として投稿直前の `get_session` の `last_served_model` を使い、footer は自分で書いた（空行 1 行を挟む）。read-back で 5 行と footer の関係を確かめた。
+- 2026-09-24T04:25Z P5 を同じ subagent に委譲。7 thread すべて resolve 可。返信 7 件と完了要約の metadata が新規定を満たすことを read-back で確認（Issue の検証 1 を満たした）。追加は [nits] 1 件（「`gh` が使えない場合は編集しない」が、`gh` なしで編集できる cloud session の conversation comment と食い違う）と [fyi] 1 件（PR description が da30cce を反映していない）。
+- P6: 2 件とも採用。nits は対象を `gh` を使う編集に絞って直し、PR description の「主な変更」を更新した。2 周目の P4 → P5 で確認する。

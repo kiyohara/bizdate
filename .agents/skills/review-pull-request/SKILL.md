@@ -124,7 +124,7 @@ metadata を含む投稿の前に、次を確かめる。
 
 - `gh` の実行形式は `doc/guidelines/github-cli-guidelines.md`、cloud session で `gh` で補う範囲は `doc/guidelines/github-mcp-guidelines.md` の「cloud session」に従う。
 - 次の場合は編集せず、削除と再投稿もしない。対象の URL、誤っている箇所、正しい値をユーザーへ報告し、GitHub の UI での編集を依頼する。
-  - `gh` が使えない（cloud session で導入されていない、など）。agent は `gh` の導入を試みない。
+  - 上の表で `gh` を使う編集（inline comment とその返信、提出済み review の本文、ローカルの conversation comment）で、`gh` が使えない（cloud session で導入されていない、など）。agent は `gh` の導入を試みない。cloud session の conversation comment は `gh` が無くても `update_issue_comment` で編集できる。
   - 誤りが `Agent` 行そのものにある、または 5 行が崩れていて、同じ Agent 種別の投稿だと `Agent` 行で確認できない。
 - 報告は working branch note にも残す。note を書くのは PR branch に push できる Agent（`drive-issue-to-reviewed-pr` では orchestrator）である。subagent は note を書かず push もせず、報告を `未収束事項` として返す。
 
