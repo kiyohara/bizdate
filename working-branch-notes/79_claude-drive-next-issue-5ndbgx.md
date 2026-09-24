@@ -68,3 +68,4 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 - 2026-09-24: P5。同じ review cycle で head `c8fd2c5` を再確認し、3 thread とも resolve 可と判定された。新規指摘は完了要約内の nits 1 件（`release-verify.yml` の古いコメント「publish-homebrew も同じ script を通す」）。P6 で採用し、コメントだけを直した（`0754a93`）。当初は 1 周で収束と記したが、修正が要る時点で P4 に戻るべきだったため、2 周目として扱い直した。
 - 2026-09-24: 2 周目。新規 nits への対応返信を PR に記録し、同じ review cycle で head `0754a93` を再確認した。新規 nits の対応は確認済み、既存 3 thread は resolve 可のまま。新規指摘は完了要約内の nits 1 件（この note と PR description の「1 周で収束」の表記）で、`86bd8e8` で直した。反復は上限の 2 周に達した。
 - 2026-09-24: 3 周目（特例）。軽微な修正が見込まれるため、ユーザーが上限を超える 3 周目を承認した。2 周目の nits（周回数の表記）への対応（`86bd8e8` と、この commit での 3 周目の反映）を PR に返信し、同じ review cycle で再確認を依頼した。
+- 2026-09-24: 3 周目の再確認（head `6f318e9`）で、2 周目の nits への対応は確認済み。3 thread はユーザーが resolve 済み。新規指摘は PR description の nits 1 件（「PR CI」節の最終 head の記述と、補足の resolve の記述が古い）で、description を直した。最後の周回のため再確認はしない。残るのは merge の判断。
