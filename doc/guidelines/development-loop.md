@@ -6,7 +6,7 @@
 
 ## 基本方針
 
-- 人間・AI agent が開始する作業は必ず GitHub Issue から始める。**恒常的な**例外は `progress.md` を保守する運用作業そのもの、すなわち索引登録（`register-progress-issue`）と進捗整理（`maintain-progress`）の 2 件で、これらには起点 Issue を作らない。「Issue を索引に登録するための Issue」「進捗整理を行うための Issue」は指示書として意味を持たないためである。恒常的な例外はこの 2 件に限り、通常の作業へ広げない。リリース手順を担う skill を追加する場合も、同種の運用作業として同じ扱いへ揃える。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
+- 人間・AI agent が開始する作業は必ず GitHub Issue から始める。**恒常的な**例外は運用作業そのものの 3 件で、これらには起点 Issue を作らない。`progress.md` を保守する索引登録（`register-progress-issue`）と進捗整理（`maintain-progress`）、および公開する version にするリリース準備 PR（`run-release`）である。「Issue を索引に登録するための Issue」「進捗整理を行うための Issue」「version を上げるための Issue」は指示書として意味を持たないためである。リリース準備 PR に入れるのは `Cargo.toml` の version と `Cargo.lock` の更新だけで、その version の公開後確認 Issue を参照し、`Closes` を付けない。公開後確認 Issue を入力とする PR（リリース台帳の行の追加、README の切り替え）は通常の Issue 駆動タスクである。詳細は `doc/guidelines/release-guidelines.md` を正本とする。恒常的な例外はこの 3 件に限り、通常の作業へ広げない。なお、開発ループの整備そのものを Issue 無しで進めたのは、ループが存在しない状態から始めた経緯による一度きりの扱いであり、`doc/design/decision-log/0012-development-loop.md` に記録がある。
 - 複数 Issue をまとめて 1 ブランチで進めない。実行時は `doc/guidelines/issue-driven-task-execution.md` に従い、1 Issue = 1 ブランチ = 1 PR とする。
 - タスクは直列に消化する。複数 Issue の並行作業はしない。
 - 横断的に見渡したい Issue 群は `progress.md` の進行中タスク索引に登録する。
@@ -59,7 +59,7 @@ flowchart TD
 |---|---|
 | GitHub Issue | 作業の入力。背景、依存、作業内容、スコープ外、検証を置く。 |
 | `progress.md` | リリース台帳と進行中タスクの索引。詳細経緯やブランチ作業ログは置かない。 |
-| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。索引登録と進捗整理は起点 Issue を持たない独立 PR となるため、`Closes` を付けない。代わりに、索引登録では登録した Issue の一覧と順序・依存の根拠を、進捗整理では圧縮した完了フェーズと要約に残した参照を description に書く。 |
+| Pull Request | 1 Issue に対する変更単位。description には変更意図、検証、未検証事項、`Closes #<Issue>` を書く。索引登録、進捗整理、リリース準備は起点 Issue を持たない独立 PR となるため、`Closes` を付けない。代わりに、索引登録では登録した Issue の一覧と順序・依存の根拠を、進捗整理では圧縮した完了フェーズと要約に残した参照を、リリース準備では公開後確認 Issue への参照を description に書く。 |
 | `working-branch-notes/` | ブランチ単位の作業目的、状況、判断、引き継ぎメモ。PR に含めるが最終仕様書ではない。 |
 | decision log | 後から辿る必要がある設計判断や方針変更の記録。進捗管理や作業ログは置かない。 |
 | guideline | 人間と AI agent が共通で従う恒久的な作業ルール。 |
@@ -75,10 +75,11 @@ flowchart TD
 | PR 採番直後 | `number-working-branch-note` | `draft_<branch>.md` を `<PR番号>_<branch>.md` へ rename し、note 本文と PR description の参照を揃える。 |
 | PR をレビューする / review comment へ対応するとき | `review-pull-request` | `review` / `address-comments` / `verify-comments` の 3 モード。MCP-first で投稿し、resolve は人間が行う。 |
 | Issue 群を消化し終えた区切り | `maintain-progress` | `progress.md` を薄く保ち、完了済みタスクを要約し、進行中タスク索引を最新化する。 |
+| version を公開するとき | `run-release` | `doc/guidelines/release-guidelines.md` に沿って、公開後確認 Issue の起票・再利用、公開前確認、承認の提示、公開の監視、公開後確認と記録を進める。tag の push と PR の merge はユーザーが行う。 |
 
 `drive-issue-to-reviewed-pr` は既存 skill を呼び出す orchestrator であり、被委譲 skill の責務を変えない。個別 skill を単独で使う従来の流れも続ける。
 
-skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills/` の symlink 経由で見える（`doc/guidelines/agent-configuration-management.md`）。リリース手順を担う skill は、CI とリリース体制を導入するときに追加する。
+skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills/` の symlink 経由で見える（`doc/guidelines/agent-configuration-management.md`）。`run-release` の手順の正本は `doc/guidelines/release-guidelines.md` である。
 
 ## 参照順
 
@@ -89,6 +90,7 @@ skill は `.agents/skills/` を正本とし、Claude Code には `.claude/skills
 5. 実装中に方針決定が必要になった場合は `doc/guidelines/decision-log-guidelines.md` に従う。
 6. PR 作成時は `doc/guidelines/pull-request-guidelines.md` に従う。
 7. 区切りで `maintain-progress` skill を使い、`progress.md` を整理する。進捗整理も索引登録と同じく、起点 Issue を作らず独立 PR として出す。
+8. version を公開するときは `doc/guidelines/release-guidelines.md` に従い、`run-release` skill で進める。
 
 ## 重複させない情報
 

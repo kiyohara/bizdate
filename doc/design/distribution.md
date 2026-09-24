@@ -4,7 +4,7 @@
 
 想定読者は、配布を実装・運用する開発者と AI agent である。
 
-公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/` のリリース guideline とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md)、release workflow の構成は [`decision-log/0022-release-workflow.md`](decision-log/0022-release-workflow.md)、Homebrew Formula の生成と tap への書き込みは [`decision-log/0025-homebrew-formula-publishing.md`](decision-log/0025-homebrew-formula-publishing.md) を参照する。
+公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/release-guidelines.md` とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md)、release workflow の構成は [`decision-log/0022-release-workflow.md`](decision-log/0022-release-workflow.md)、Homebrew Formula の生成と tap への書き込みは [`decision-log/0025-homebrew-formula-publishing.md`](decision-log/0025-homebrew-formula-publishing.md) を参照する。
 
 ## 配布手段
 
@@ -234,7 +234,7 @@ tap への書き込みは、`host`（GitHub Release の公開）の後に走る 
   1. GitHub の Settings → Developer settings → Personal access tokens → Fine-grained tokens で、Resource owner を `kiyohara`、Repository access を `kiyohara/homebrew-tap` だけ、Repository permissions の Contents を read and write にして token を発行する。
   2. `kiyohara/bizdate` の Settings → Secrets and variables → Actions で、Repository secret `HOMEBREW_TAP_GITHUB_TOKEN` に登録する。
   3. token の有効期限が切れる前に作り直し、同じ名前で登録し直す。
-- 公開の作業手順の中での位置づけ（いつ設定と確認をするか）は、リリース guideline（#40）で扱う。
+- 公開の作業手順の中での位置づけ（いつ設定と確認をするか）は、`doc/guidelines/release-guidelines.md` で扱う。
 
 ## 対象外
 

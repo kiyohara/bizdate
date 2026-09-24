@@ -17,6 +17,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - GitHub CLI 実行ルール（`gh` の実行範囲 / 承認が必要な操作 / write 失敗時の扱い）: `doc/guidelines/github-cli-guidelines.md`
 - 1Password 連携ルール（前段ゲートを置かない / 承認待ち失敗時の中断と選択肢 / やらないこと）: `doc/guidelines/one-password-integration-guidelines.md`
 - Pull Request 作成ガイドライン: `doc/guidelines/pull-request-guidelines.md`
+- リリース手順ルール（公開後確認 Issue / リリース準備 PR / 公開前確認 / 承認と tag の push / 復旧 / 公開後確認 / リリース台帳）: `doc/guidelines/release-guidelines.md`
 - Working branch notes 取り扱いルール（性質・整合性スコープ・ライフサイクル・ファイル名規約）: `doc/guidelines/working-branch-notes-handling.md`
 - Working branch notes 情報統制ルール（`working-branch-notes/**/*.md` のセキュリティ禁則）: `doc/guidelines/working-branch-notes-security.md`
 - Decision log 記録ルール（方針決定ログの作成・更新・index 管理）: `doc/guidelines/decision-log-guidelines.md`
@@ -63,6 +64,7 @@ index として利用し、これ自体を唯一の正本として扱わない�
 - `gh` コマンドで GitHub を操作するときは `doc/guidelines/github-cli-guidelines.md` に従う。
 - `git` / `gh` / `op` の実行や MCP server の起動が失敗し、出力に 1Password や承認に関する文言がある、または原因を判断できないときは、1Password の承認ダイアログへの応答が間に合わなかった可能性を疑い、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。1Password 連携の有無で手順を分けず、前段にゲートや preflight を置かない。
 - PR を作成または更新するときは `doc/guidelines/pull-request-guidelines.md` に従う。PR の merge は agent が行わない。
+- version を公開する作業（リリース準備 PR、公開前確認、承認の提示、公開の監視と復旧、公開後確認、リリース台帳の更新）は `doc/guidelines/release-guidelines.md` に従う。agent は tag を push せず、公開の承認はユーザーの文言で受ける。
 - `working-branch-notes/**/*.md` を作成・編集・レビューするときは `doc/guidelines/working-branch-notes-handling.md` と `doc/guidelines/working-branch-notes-security.md` の両方に従う。
 - ドキュメントを作成・移動・分類変更するときは、まず `doc/README.md` と該当ディレクトリの `README.md` を確認する。
 - 日本語ドキュメントを作成・編集するときは `doc/guidelines/document-style-guidelines.md` に従い、読者層別の文末（利用者向けはですます調、開発者向けは常体）とトーンを守る。

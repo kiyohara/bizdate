@@ -9,7 +9,7 @@ I want to review in Japanese.
 - CI（GitHub Actions）が PR ごとに、`cargo fmt --check` / `clippy`（warning を error 扱い）/ 第三者 action の SHA 固定を Linux で、`test`（unit / CLI E2E）/ release `build` / release バイナリの起動確認を配布対象 3 target（macOS arm64、Linux arm64 / x86_64）の native runner で検査する。フォーマット違反、clippy の lint、ビルドエラー、対象 OS でのテスト失敗は CI が検出するため指摘しない。
 - Release workflow（`.github/workflows/release.yml`）も PR ごとに走り、3 target の配布 archive を作って、checksum、archive の構成、third-party 表記と依存の対応、展開した binary の起動を検証する。公開（GitHub Release の作成）は `v<version>` tag の push でだけ行う。
 - Release workflow は `custom-ci` として `ci.yml` を呼ぶ。PR の run では直接の CI と重複する `platform` を省いて `lint` だけを回し、tag push では全 job を回す。build job の cargo-about は、upstream の prebuilt を `.github/scripts/install-cargo-about.sh` に固定した sha256 と照合して入れる。どちらも decision log 0022 で決定済みであり、PR で `custom-ci` の `platform` が skipped になることと、cargo-about をソースからビルドしないことは指摘しない。`ci.yml` の `platform` の条件が、省く場合（PR の run で release workflow から呼ばれたとき）だけを列挙する形から外れ、tag push で省かれうる変更は指摘する。
-- 配布仕様は `doc/design/distribution.md` で決定済みで、配布対象 3 target の CI と release workflow、Homebrew Formula の生成・検証と tap への更新 job は導入済みである。インストール手順（README の案内）が無いことは指摘しない。
+- 配布仕様は `doc/design/distribution.md` で決定済みで、配布対象 3 target の CI と release workflow、Homebrew Formula の生成・検証と tap への更新 job は導入済みである。README のインストール案内は、初回公開を確認するまで「公開予定」と明示した表記とし、公開後確認 Issue を入力とする PR で有効な案内へ切り替える（`doc/guidelines/release-guidelines.md`）。予定表記であることは指摘しない。公開の確認より前に予定表記を外す変更、公開後確認で確かめていない経路（archive、Homebrew）の予定表記を外す変更、公開済みと読める記述を足す変更は指摘する。
 - tap への書き込みは dist の builtin の publish job ではなく custom の `.github/workflows/publish-homebrew.yml` で行い、dist が「Homebrew publish job が無効」と WARN を出すのは想定どおりである（decision log 0025）。`publish-homebrew-formula.sh` の書かない条件（prerelease、巻き戻し、同じ version の内容違い、`Formula/bizdate.rb` 以外の変更）を緩める変更は指摘する。
 - macOS は Apple Silicon だけを配布対象とする。Intel Mac（`x86_64-apple-darwin`）は `doc/design/distribution.md` の「対象外」で決定済み（経緯は decision log 0016）であり、その CI、archive、手動ビルドの手順が無いことは指摘しない。
 
@@ -49,10 +49,10 @@ I want to review in Japanese.
 - 存在しないファイルへの参照とリンク切れは指摘する。
 - `.claude/settings.json` は SessionStart hook の登録だけを持つ。処理本体や恒久ルールが書かれていたら指摘する。処理本体は `.agents/scripts/` に置く（`doc/guidelines/cloud-session-guidelines.md`）。
 - `doc/design/` 直下の spec（`concept.md` / `business-day.md` / `cli-interface.md` / `distribution.md`）が仕様の正本である。spec 間の矛盾や decision log の決定との食い違いを指摘する。decision log を仕様の正本として扱う記述も指摘する。
-- `distribution.md` は配布物の仕様だけを扱う。公開の作業手順（誰がいつ何を実行するか）が spec 側に混ざっていたら指摘する。手順の正本は `doc/guidelines/` のリリース guideline である。
+- `distribution.md` は配布物の仕様だけを扱う。公開の作業手順（誰がいつ何を実行するか）が spec 側に混ざっていたら指摘する。手順の正本は `doc/guidelines/release-guidelines.md` であり、`run-release` skill、spec、decision log に手順を複製していたら指摘する。
 - `.github/workflows/release.yml` は `dist` が `dist-workspace.toml` と `.github/build-setup.yml` から生成する。`release.yml` だけを手で直した変更は指摘し、設定を直して `dist generate` で作り直すよう求める。生成物の `THIRD-PARTY-LICENSES.md` は commit しない。
 - `doc/design/decision-log/*.md` は 1 テーマ 1 ファイル。背景・候補・検討内容・決定・理由・影響・見直し条件のうち判断に必要なものが欠けていれば指摘する。`index.md` は入口であり、詳細議論の詰め込み、参照漏れ、有効な方針と未決事項の混同を指摘する。
-- `progress.md` は横断的な作業状況の一覧である。Issue 本文や skill 手順の複製、内容が混ざって読めなくなる変更を指摘する。
+- `progress.md` は横断的な作業状況の一覧である。Issue 本文や skill 手順の複製、内容が混ざって読めなくなる変更を指摘する。「リリース履歴」には公開後確認を終えた version の行だけを置く。公開していない version の行や架空の行を足す変更は指摘する。
 - 文末は読者層で分かれる。利用者向け（repo root `README.md`）はですます調、開発者向け（`doc/` 配下、`AGENTS.md`、`progress.md`、`working-branch-notes/`、各ディレクトリの `README.md`）は常体。混在は `[nits]` で指摘する。
 
 ## Working Branch Notes のレビュー観点
