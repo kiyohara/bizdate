@@ -50,7 +50,7 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
 | OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | todo | なし | model の識別子を記載してよい範囲と、review metadata の `Model` の扱いを明文化する | - |
-| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | todo | なし | cloud session で `gh` を使えるようにする。network の許可リストへの host の追加も判断する | - |
+| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | done | なし | 完了。`--provision` が `gh` を入れ、MCP tool に無い操作だけ `gh api` で補う線引きを規約と 0018 に置いた。許可リストへの host 追加は見送り | [#74](https://github.com/kiyohara/bizdate/pull/74) |
 | OPS-03 | [#69](https://github.com/kiyohara/bizdate/issues/69) | todo | #68 | cloud session で review の canonical metadata を規定どおりに書けるようにする。#70 の後なら `gh` の利用を前提に書ける | - |
 
 ## 次にやること

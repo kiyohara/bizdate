@@ -13,7 +13,7 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 | 開発コマンドは Compose 経由（`doc/guidelines/development-command-guidelines.md`） | docker CLI / daemon / compose は入っているが daemon は起動していない | SessionStart hook が daemon を起動し、開発用 image を用意する |
 | toolchain は MSRV に揃える | sandbox の rustup toolchain は MSRV より古く、crate を build できない | sandbox の `cargo` は使わない。Compose 経由を維持する |
 | 外向き通信 | 許可リスト方式で、直接接続は gateway が TLS を再終端する。container 内の CA では検証できない。Docker Hub の blob 配信元は許可されていない | container は sandbox の agent proxy を経由させ、base image は許可リスト内の mirror から取る（`compose.cloud.yaml`） |
-| GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` と `gh` が無く、MCP server は起動できない | 組み込みの GitHub tool を第一選択にする（同 guideline の「cloud session」） |
+| GitHub 操作は `github-op-integrated` MCP を第一選択（`doc/guidelines/github-mcp-guidelines.md`） | `op` が無く、MCP server は起動できない。`gh` は image に無い（setup script が入れる）。組み込みの GitHub MCP tool は用意された操作しかできない | 組み込みの GitHub tool を第一選択にする。`gh` は setup script が入れ、MCP tool に無い操作だけ `gh api`（REST）で補う（同 guideline の「cloud session」） |
 | Issue 記載のブランチ名で作業する（`doc/guidelines/issue-driven-task-execution.md`） | 作業ブランチは session 作成時に platform が決め、push はそのブランチにだけ許可される | session のブランチをそのまま使う（同 guideline と `doc/guidelines/git-operation-guidelines.md` の「cloud session」） |
 | commit 署名は 1Password（`doc/guidelines/git-operation-guidelines.md`） | 署名と author は platform 側で行われる | 署名の切り分け手順は適用しない（同 guideline の「cloud session」） |
 
@@ -31,8 +31,8 @@ cloud session の sandbox では、このリポジトリの前提が次のよう
 ## 実行順序
 
 1. platform がリポジトリを clone する。
-2. environment cache が無ければ setup script（stub → `--provision`）が実行され、完了後に filesystem が snapshot される。cache があればこの手順は飛ぶ。setup script は agent proxy が立つ前に走り、container の中から外へは出られない。そのため `--provision` は daemon の起動、base image の pull、state file の記録だけを行い、薄い最終層の build は hook に任せる。
-3. Claude Code が起動し、SessionStart hook が script を hook mode で実行する。`COMPOSE_FILE` を session に設定し、daemon を起動し、image が無ければ build し（base image が snapshot にあれば数秒）、cache の drift を確認する。hook の stdout は agent の context に入る。
+2. environment cache が無ければ setup script（stub → `--provision`）が実行され、完了後に filesystem が snapshot される。cache があればこの手順は飛ぶ。setup script は agent proxy が立つ前に走り、container の中から外へは出られない。そのため `--provision` は `gh` の導入（Ubuntu archive）、daemon の起動、base image の pull、state file の記録だけを行い、薄い最終層の build は hook に任せる。`gh` の導入に失敗しても exit 0 で続ける。
+3. Claude Code が起動し、SessionStart hook が script を hook mode で実行する。`COMPOSE_FILE` を session に設定し、daemon を起動し、image が無ければ build し（base image が snapshot にあれば数秒）、`gh` の有無を表示し、cache の drift を確認する。hook は `gh` を導入しない。hook の stdout は agent の context に入る。
 4. 以後の作業は通常どおり。
 
 hook は `resume` でも実行される。VM が作り直された後の再開でも daemon が起動する。
@@ -88,8 +88,11 @@ environment の Network access は既定の Trusted のままでよい。使う 
 | base image の取得（mirror） | `mirror.gcr.io`（`*.gcr.io`）とその配信元（`*.googleapis.com`） |
 | `rustup component add`（image の build 時） | `static.rust-lang.org` |
 | crate の取得 | `index.crates.io`、`static.crates.io` |
+| `gh` の導入（`--provision`） | `archive.ubuntu.com`（Ubuntu archive。`gh` 2.45.0） |
 
 Docker Hub 本体（`registry-1.docker.io`）には到達できるが、blob の配信元は許可されていないため pull は失敗する。`compose.cloud.yaml` はこのために base image を gcr.io の Docker Hub mirror から取る。mirror は公式 image を同じ digest で配信する。ECR Public も候補だったが、blob の配信元が直接接続の許可リストに無く、agent proxy の無い setup script の文脈では pull できない。
+
+GitHub Actions の job log と artifact の配信元（`results-receiver.actions.githubusercontent.com`、`productionresultssa*.blob.core.windows.net`）は許可リストに無く、`gh run view --log` と artifact の取得は通らない。job log は組み込み tool の `get_job_logs` で取る。artifact は session では扱わず、中身の確認は CI（`verify-release-archive.sh`）に任せる。host を足す判断の経緯は `doc/design/decision-log/0018-cloud-session-environment.md` の追記を参照する。
 
 許可されていない host への接続は、直接接続なら `403`、proxy 経由なら接続失敗として現れる。`curl -sS "$HTTPS_PROXY/__agentproxy/status"` で proxy 側の拒否理由を確認できる。拒否された host へ迂回しない。必要なら環境設定の変更としてユーザーに報告する。
 
@@ -107,14 +110,15 @@ sandbox での実測（2026-09-12、4 vCPU）。
 | hook（base image が snapshot にあり、image 無し） | 3〜6 秒（実環境で約 3 秒） |
 | hook（image あり） | 1 秒未満 |
 | 初回の `cargo test --locked`（named volume の作成と全 crate の build を含む） | 約 15 秒 |
+| `gh` の導入（`apt-get install`、package list あり。2026-09-23 に session 内で実測） | 約 3 秒（`apt-get` の 3 段を各 45 秒で打ち切り、最悪 135 秒） |
 
-setup script は 5 分以内に終わる必要がある。`--provision` は 1 分以内に収まる。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
+setup script は 5 分以内に終わる必要がある。`--provision` は通常 1 分以内に収まる。`gh` の導入が応答せず打ち切りまで待った場合でも、最悪 135 秒に base image の pull を足して 3 分程度である。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
 
 ## 利用開始手順
 
 1. environment は既定の設定（Trusted）で使える。setup script を登録しなくても hook が初回に image を build する。
 2. session 開始を速くするには、cloud session の中で `bash .agents/scripts/cloud-session-setup.sh --print-stub` を実行し、出力を environment の setup script に貼る。次の新しい session から base image が snapshot に入り、hook は薄い最終層の build だけになる。
-3. 新しい session を開き、冒頭に hook の出力（daemon、image、`COMPOSE_FILE`）が入ることと、`docker compose run --rm dev cargo fmt --check` が通ることを確認する。
+3. 新しい session を開き、冒頭に hook の出力（daemon、image、`gh`、`COMPOSE_FILE`）が入ることと、`docker compose run --rm dev cargo fmt --check` と `gh --version` が通ることを確認する。
 
 ## 変更するとき
 
@@ -130,6 +134,9 @@ setup script は 5 分以内に終わる必要がある。`--provision` は 1 �
 - container に `NO_PROXY` を渡さない。渡すと `index.crates.io` への接続が直接接続になり、container 内の CA で検証できず失敗する。
 - hook は local の Claude Code でも起動する。`CLAUDE_CODE_REMOTE` が `true` でなければ無出力で終わるため、local の開発には影響しない。
 - `.mcp.json` の `github-op-integrated` は cloud session で常に起動に失敗する。想定どおりであり、対処しない。
+- `gh auth status` は内部の GraphQL が proxy に拒否され、「token が無効」と誤表示する。認証の問題ではない。`gh` の使い方は `doc/guidelines/github-mcp-guidelines.md` の「cloud session」に従う。
+- `GH_TOKEN` / `GITHUB_TOKEN` の placeholder を実際の token や PAT で上書きしない（environment の環境変数にも置かない）。credential は proxy が差し替える。
+- 公式ドキュメントは `gh` を preinstall としているが、この environment の image には無かった（2026-09-23）。platform の変更で挙動が変わり得るため、`gh` の導入経路や proxy の規則に関わる変更をするときは実測し直す。
 - hook は同期実行である。image が無い session では build が終わるまで session の開始が遅れる（base image が snapshot に無ければ 1 分程度）。
 - environment の setup script は agent proxy が立つ前に走る。container の中から外へ出る処理（image の build、`cargo fetch`）は setup script では通らないため、`--provision` に足さない。
 - environment の setup script は repository と branch をまたいで共有される。stub は script が無ければ skip して exit 0 するため、他の repository や script を含まない branch で session を開いても起動を妨げない。stub を `exec` だけの形に書き換えない。
