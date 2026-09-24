@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/project-thread-hr2qqs`
-- PR: 未作成
+- PR: #78
 - 最終更新: 2026-09-24
 
 ## 目的
@@ -23,7 +23,7 @@
 
 ## 次にやること
 
-- skill、guideline、decision log の改訂。
+- skill、guideline、decision log の改訂。（完了）
 - 検証、PR 作成、review cycle（本 PR 自身の cycle で新規定の読み戻しを確かめる）。
 
 ## 検証
@@ -42,3 +42,6 @@
 
 - 2026-09-24T04:10Z 着手（`drive-issue-to-reviewed-pr` #69）。前の session（同じ Issue で起動）は着手前に中断されており、引き継ぐブランチや PR は無かった。
 - subagent から見える model の情報を確認した。subagent の system prompt に exact model ID の行があり、`get_session` も呼べた（どちらも本 session の model と同じ値）。
+- 2026-09-24T04:40Z PR #78 を draft で作成（head `9391c2f`）。レビュアーの指定は、PR の作成者と同じ account のため GitHub に拒否された（assignee は設定済み）。
+- `number-working-branch-note` の手順で note を採番した（`draft_` → `78_`）。完了として書き換えたタスク行: 「次にやること」の「skill、guideline、decision log の改訂。」の 1 件（note 本文）。PR description は 0 件。触らなかった行: 「次にやること」の「検証、PR 作成、review cycle（…）」（完了要素と未完の review cycle が混在する複合行）。停止は無い。
+- `progress.md` の OPS-03 を done にし、PR 欄を #78 に更新した（別 commit）。
