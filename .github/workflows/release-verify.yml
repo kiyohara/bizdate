@@ -78,7 +78,8 @@ jobs:
             .github/scripts/verify-release-archive.sh "$target" "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
           done
 
-  # Homebrew Formula を生成して検査し、起動テストを足す (tag push で tap へ書くものと同じ script)。
+  # Homebrew Formula を生成して検査し、起動テストを足して brew style の自動修正をかける
+  # (tag push で tap へ書くものと同じ script)。
   # この workflow は build-global-artifacts (Formula を作る job) と並行して走り、その artifact を待てないため、
   # plan job が保存した同じ dist で、同じ入力 (全 target の archive と checksum) から Formula を作り直す。
   # 名前を artifacts-* にしない。host は artifacts-* を Release へ添付するため。
@@ -116,6 +117,10 @@ jobs:
           mkdir "$RUNNER_TEMP/formula"
           .github/scripts/prepare-homebrew-formula.sh target/distrib/bizdate.rb target/distrib \
             "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/formula/bizdate.rb"
+
+      # dist の template が含む、brew style の自動修正できる違反を直す (publish-homebrew も同じ script を通す)。
+      - name: Fix the Formula style
+        run: .github/scripts/fix-homebrew-formula-style.sh "$RUNNER_TEMP/formula/bizdate.rb"
 
       - name: Upload the Formula
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

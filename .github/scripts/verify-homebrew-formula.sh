@@ -7,7 +7,7 @@
 #
 # 確認すること (失敗したら exit 1):
 #   - runner の OS / architecture が target と一致する
-#   - brew style を通る (dist の builtin publish job と同じく、利用者が書く desc と homepage の cop は除く)
+#   - brew style を通る (fix-homebrew-formula-style.sh を通した後の Formula であること。除く cop も同じ)
 #   - 一時的な local tap から install でき、Formula が選んだ archive が target のものである
 #   - brew test が通る
 #   - bizdate が bin に、README.md と LICENSE が doc に、THIRD-PARTY-LICENSES.md が pkgshare に入り、

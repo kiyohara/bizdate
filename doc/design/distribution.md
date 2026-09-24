@@ -193,14 +193,14 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 | 依存 | 無い |
 | test | `bizdate --version` が `bizdate <version>` を出すこと、`pkgshare` に `THIRD-PARTY-LICENSES.md` があること |
 
-- Formula は dist の Homebrew installer が生成し、`.github/scripts/prepare-homebrew-formula.sh` が上の値を検査してから `test do` を足す。dist の template は test を持たないためである。PR の release workflow と、tap へ書く publish job は同じ script を通す。
+- Formula は dist の Homebrew installer が生成し、`.github/scripts/prepare-homebrew-formula.sh` が上の値を検査してから `test do` を足す。dist の template は test を持たないためである。続けて `.github/scripts/fix-homebrew-formula-style.sh` が `brew style --fix` をかけ、違反が残らないことを確かめる（desc と homepage の cop だけ除く）。PR の release workflow と、tap へ書く publish job は同じ 2 つの script を通す。
 - 祝日データは install 時に取得しない。`first` / `last` の前に利用者が `bizdate fetch-holidays` で用意する既存仕様（[`business-day.md`](business-day.md)）を変えない。Formula の test も祝日データを要しない。
 
 ### 公開前の検証
 
 release workflow の `release-verify` は、PR でも dist で Formula を生成して上の script で検査し、build と同じ native runner で次を確かめる。
 
-- `brew style` を通る（dist の builtin の publish job と同じく、desc と homepage の cop は除く）。
+- 自動修正後の Formula が `brew style` を通る。
 - 一時的な local tap に置き、`url` をその run の archive（`file://`）へ差し替えて install できる。`sha256` は差し替えない。
 - `brew test` が通る。
 - `bizdate` が `bin`、`README.md` と `LICENSE` が doc、`THIRD-PARTY-LICENSES.md` が `pkgshare` に入り、archive の file と同一である。
