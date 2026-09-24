@@ -49,8 +49,8 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 | ID | Issue | 状態 | 依存 | 次にやること | PR |
 |---|---|---|---|---|---|
-| OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | done | なし | 完了。model の識別子の禁止を PR title に限り、review metadata の `Model` は実行環境の既定の指示を理由に `unknown` にしないと定めた（0023） | [#72](https://github.com/kiyohara/bizdate/pull/72) |
-| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | todo | なし | cloud session で `gh` を使えるようにする。network の許可リストへの host の追加も判断する | - |
+| OPS-01 | [#68](https://github.com/kiyohara/bizdate/issues/68) | done | なし | 完了。model の識別子の禁止を PR title に限り、review metadata の `Model` は PR / review のコメントが実行環境の指示の対象外なら `unknown` にしないと定めた（0023） | [#72](https://github.com/kiyohara/bizdate/pull/72) |
+| OPS-02 | [#70](https://github.com/kiyohara/bizdate/issues/70) | done | なし | 完了。`--provision` が `gh` を入れ、MCP tool に無い操作だけ `gh api` で補う線引きを規約と 0018 に置いた。許可リストへの host 追加は見送り | [#74](https://github.com/kiyohara/bizdate/pull/74) |
 | OPS-03 | [#69](https://github.com/kiyohara/bizdate/issues/69) | todo | #68 | cloud session で review の canonical metadata を規定どおりに書けるようにする。#70 の後なら `gh` の利用を前提に書ける | - |
 
 ## 次にやること

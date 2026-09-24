@@ -53,3 +53,4 @@
 - P6: 追加対応は不要と判断し、review cycle を完了した（着手から約 22 分）。ユーザー確認で止まった箇所は無い。
 - 評価実験の所見: 投稿の末尾に environment が attribution footer を自動で付けることがあり、canonical metadata が末尾にならない投稿や、`---` が二重になる投稿が出た（#69 のスコープ）。`github-op-integrated` MCP は接続できず、組み込みの GitHub tool で代替した。
 - 2026-09-24T00:30Z: ユーザーの依頼で別 Agent（Codex）がクロスレビューした（review cycle `codex-fcf618d-20260924002407`、`[must]` 1 件）。指摘: `Model` の規則が、上位の指示がコメントへの記載まで実際に禁じる場合も上書きするように読める。採用し、guideline、skill、0023、index の行を「コメントが指示の対象外と確認できる場合は `unknown` にしない。コメントまで禁じる、または確認できない場合は従って `unknown` とし理由を残す」に揃えた。resume 時の SessionStart hook で Docker daemon が起動しなかったが、文書だけの変更で cargo の検証は元から対象外のため影響は無い。
+- 2026-09-24: PR #74（#70）の merge で `progress.md` が衝突した。main を merge して解消した（OPS-01 は本 PR の内容に 0023 の最新の決定を反映、OPS-02 は main の内容を採用）。rebase と force push はしていない。

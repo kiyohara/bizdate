@@ -27,7 +27,7 @@
 
 1. MCP server が設定済みで、操作対象が allowlist 内の MCP tool で完結する場合は MCP を使う。
 2. 操作が allowlist に無い、MCP が未設定、または起動済みの MCP が応答失敗する場合は、`doc/guidelines/github-cli-guidelines.md` に従って `gh` に fallback する。
-3. MCP server が起動しない場合（接続待ちが終わっても tool が見えない、接続 timeout、`Connection closed` など）は、原因を切り分けず `gh` へも進まず、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。wrapper の `op run` が承認を待って失敗した可能性があり、agent からは他の原因と区別できない。cloud session は組み込み tool を使うため該当しない（後述）。
+3. MCP server が起動しない場合（接続待ちが終わっても tool が見えない、接続 timeout、`Connection closed` など）は、原因を切り分けず `gh` へも進まず、`doc/guidelines/one-password-integration-guidelines.md` に従って中断する。wrapper の `op run` が承認を待って失敗した可能性があり、agent からは他の原因と区別できない。cloud session は組み込み tool を使うため該当しない（後述の「cloud session」。`gh` の扱いも同節に従う）。
 4. local git / commit signing を伴う操作は MCP に寄せず、`doc/guidelines/git-operation-guidelines.md` に従う。
 
 ### 汎用 skill / plugin と競合する場合
@@ -38,11 +38,36 @@
 
 ### cloud session（Claude Code on the web）
 
-cloud session の sandbox には `op` と `gh` が無く、Docker daemon 前提の `github-op-integrated` は起動できない（MCP host に出る起動失敗の表示は想定どおりで、対処しない）。代わりに session が組み込みの GitHub MCP tool を提供する。
+cloud session の sandbox には `op` が無く、Docker daemon 前提の `github-op-integrated` は起動できない（MCP host に出る起動失敗の表示は想定どおりで、対処しない）。代わりに session が組み込みの GitHub MCP tool を提供する。`gh` は environment の setup script（`.agents/scripts/cloud-session-setup.sh --provision`）が入れる（`doc/guidelines/cloud-session-guidelines.md`）。
 
 - 組み込み GitHub tool を第一選択とする。「操作別の第一選択」の tool 名はそのまま読み替え、skill 内の `github-op-integrated` の記載も組み込み tool に読み替える。
-- `gh` fallback は無い。write が失敗したら read 系 tool で反映を確認し、未反映なら同じ tool で再試行するか、ユーザーに報告する。
+- `gh` は、組み込み tool に無い操作を補うためだけに使う。MCP tool で足りる操作を `gh` に置き換えない。
+- write が失敗したら read 系 tool で反映を確認し、未反映なら同じ tool で再試行するか、ユーザーに報告する。同じ write を `gh` で再実行しない。
 - 組み込み tool には allowlist 外の write（merge、review thread の resolve、workflow の実行・再実行・cancel、API 経由の file push、auto-merge の変更など）も見える。見えていても実行しない。「CI 操作の境界」と「Review event と resolve の制約」はそのまま適用する。
+
+#### `gh` で補う範囲
+
+GitHub 宛ての request は platform の GitHub proxy が実際の credential に差し替える。`GH_TOKEN` / `GITHUB_TOKEN` には placeholder が入っており、token は VM に入らない。`gh auth login` はしない。`GH_TOKEN` / `GITHUB_TOKEN` や PAT を environment の環境変数に設定しない（environment の利用者から読めるうえ、placeholder の経路を上書きしてしまう）。
+
+proxy は REST だけを通し、GraphQL、検索 API、session に接続していない repository と repository の外の path、Actions の一部の path を拒否する。このため `gh` は `gh api`（REST）を基本とし、次を守る。
+
+- GraphQL を使う subcommand（`gh pr view` / `list` / `checks` / `create`、`gh issue view`、`gh release list` など）と `gh api graphql` を使わない。403 になる。
+- `gh auth status` を使わない。内部の GraphQL が 403 になり、「token が無効」と誤表示する。認証の状態は `gh api user` など REST の read で確かめる。
+- 動作を確かめた subcommand は `gh api`、`gh run list` / `view`、`gh workflow list`、`gh pr diff` である。repository は git remote から判定されるため `-R` は要らない。
+- 検索、CI の job log は組み込み tool で行う（`gh` からは届かない）。
+
+`gh` で補う操作の例（2026-09-23 の実測。詳細は `doc/design/decision-log/0018-cloud-session-environment.md` の追記）:
+
+| 区分 | 操作 | 扱い |
+| --- | --- | --- |
+| read | main など任意の commit の check run、issue の timeline、commit の比較（compare）、label・milestone の一覧、ruleset | agent が実行してよい |
+| write | inline review comment の編集、提出済み review の本文の編集、reaction | agent が実行してよい。編集は、同じ Agent 種別が投稿したと canonical metadata の `Agent` 行（`.agents/skills/review-pull-request/SKILL.md`）で確認できる comment / review に限る。人間や他の Agent 種別の投稿、metadata の無い投稿は編集しない |
+| write | label・milestone の作成と編集 | 一括変更はユーザーの承認を得る（`doc/guidelines/github-cli-guidelines.md`） |
+| write | comment の削除、release の作成と編集、commit status の作成 | ユーザーの承認を得る（同上）。commit status は CI の結果と見分けにくく、merge 判断を誤らせ得る |
+
+禁止と要承認の操作は `gh` の経路でも同じである。merge、`APPROVE` / `REQUEST_CHANGES`、review thread の resolve、auto-merge の変更、API 経由の file push は `gh`（`gh api` と proxy の専用 route を含む）でも実行しない。workflow の実行・再実行・cancel・log 削除、release、削除系、repository 設定の変更は、`doc/guidelines/github-cli-guidelines.md` のとおりユーザーの承認を得てから実行する。
+
+`gh` が入っていない session（setup script の stub が未登録、または導入に失敗した）では、`gh` の導入を agent が試みず、組み込み tool だけで進める。組み込み tool に無い操作が必要になったら、ユーザーに報告する。
 
 ## 操作別の第一選択
 
