@@ -57,6 +57,6 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 - 2026-09-24T00:02Z P2 完了。review cycle `claude-code-4a85093-20260923235905`、head `4a85093`、指摘 4 件（must 1 / imo 2 / nits 1）。
 - P3: 4 件とも採用。must は dependabot-core の source（`VersionResolver` / `LockfileUpdater`）と cargo 1.98 での実験で裏を取った。imo の rebase の契機と `ignore` の security updates への効きは options reference の source で確かめた。
 - 2026-09-24T00:04Z P4 完了。`278831d` を push し、4 thread に返信した。#73 に MSRV の解決の確認項目を足し、PR description を更新した。
-- 2026-09-24T00:1xZ P5 完了。4 件とも resolve 可、未対応 0 件。review cycle 完了（1 周で収束）。
+- 2026-09-24T00:13Z P5 完了。4 件とも resolve 可、未対応 0 件。review cycle 完了（1 周で収束）。
 - ユーザー確認で止まった箇所: 無し。
 - PR CI の所要時間: 初回 head `4a85093` で CI 約 4.6 分、Release workflow 約 6.6 分（macOS runner の queued を含む）。review 対応後の head `278831d` で CI 約 1 分、Release workflow 約 4.5 分。
