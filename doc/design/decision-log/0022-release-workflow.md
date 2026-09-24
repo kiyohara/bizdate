@@ -175,7 +175,7 @@ PR の run では、直接の CI と Release workflow の `custom-ci` が、同�
 - PR の run では、`custom-ci` の `platform`（macOS 1 本を含む 3 job）が skipped になる。push 1 回あたりの macOS job は 3 本（CI 1 本、Release workflow 2 本）になる。
 - PR #76 の初回 push（head `dbcf7b9`、[run 35936143855](https://github.com/kiyohara/bizdate/actions/runs/35936143855)）で、Release workflow は 1 分 44 秒になった（上の #67 の 3 分 37 秒から）。3 つの build job は 48〜58 秒で、cargo-about の step は 1 秒以下だった。
 - `doc/design/distribution.md`、`doc/guidelines/development-command-guidelines.md`、`.github/build-setup.yml` と `.github/workflows/ci.yml` のコメント、`.github/copilot-instructions.md` を改めた。
-- tag push の経路は PR では走らない。tag push で `platform` が回ることは条件式の review で確かめた。実動は初回の公開で確かめる。
+- tag push の経路は PR では走らない。tag push で `platform` が回ることは条件式の review で確かめた。`platform` が省かれても `custom-ci` は `lint` だけで success になり、`host` は公開へ進むため、失敗として表に出ない。実動は、初回公開の tag push の run で `custom-ci / test / build (<target>)` の 3 job が skipped でなく success で走ったことで確かめる。この確認は #40 の公開後チェックへ引き継いだ。
 - 上の「後から見直す条件」のうち、「cargo-about が `x86_64-apple-darwin` の prebuilt を出した場合」は、#64 で対象から外したため適用しない。「PR ごとの CI 時間やレビュー待ちが問題になった場合」は、CI の二重実行をこの追記で見直した。`pr-run-mode` は維持した。
 
 ### 後から見直す条件

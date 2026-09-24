@@ -28,6 +28,7 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - `ci.yml` の `platform` に `if: ${{ !(github.event_name == 'pull_request' && inputs.plan) }}` を置く。省く場合（呼び出し側の event が `pull_request` で、dist から `plan` が渡された run）だけを列挙する。`lint` は条件を付けず、`custom-ci` を success で終わらせる。
 - `.github/build-setup.yml` はコメントだけを変え、step の名前と中身は変えない。YAML のコメントは `release.yml` へ出ないため、`release.yml` の作り直しは要らない（`dist generate --check` で確かめた）。
 - decision log は 0022 への追記とする（ユーザーの補足と Issue のとおり）。0022 の主題（release workflow の構成）のうち、cargo-about の導入方法と PR での CI の二重実行だけを変える更新であり、他の決定は有効なままである。
+- review 対応で決めたこと: tag push での `platform` の実動確認を、初回公開の手順と確認項目を定める #40 の公開後チェックへ引き継ぐ（review cycle `claude-code-77382cf-20260924000454` の `[imo]` を採用）。`platform` が省かれても `custom-ci` は `lint` だけで success になり、`host` は公開へ進むため、確認しないと失敗として表に出ない。0022 の追記の「影響」に確認の方法と引き継ぎ先を書き、#40 の本文に 1 項目を足す。#65 のスコープ外の「リリース手順（#40）」には当たらないと判断した。手順そのものは書かず、#67 が #40 の本文を同期したのと同じく、前提の変化を引き継ぐだけであるため。
 
 ## 次にやること
 
@@ -39,6 +40,13 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - [x] `progress.md` の DIST-03b の行を更新する（採番後に PR 欄へ #76 を反映した）
 - [x] PR を作成し、note を採番する
 - [x] PR CI の結果と所要時間を記録し、PR #67 の実測と比べる
+
+## 後続 Issue の同期
+
+Issue 本文を MCP で更新し、公開 API で読み戻して、意図した本文と byte 単位で一致することを確かめた。PR の差分には含まれない。
+
+- #40: 「#36 の決定（同期）」の公開後チェックに、tag push の Release workflow で `custom-ci / test / build (<target>)` の 3 job が skipped でなく success で走ったことを足した。#65 で加えた項目であることと、確かめる理由（PR の run では省くため tag push でだけ確かめられ、省かれても `custom-ci` は success になって公開を止めない）も書いた。review 対応（P4）で行った。
+- MCP の読み取り結果は `<...>` を除くなど本文を整形して返すため、更新前の本文は公開 API から取得した原文を使った（#40 の原文は `v<version>` を 2 箇所含む）。
 
 ## 検証
 
@@ -107,7 +115,7 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 
 ## リスク・ブロッカー
 
-- tag push で `custom-ci` の `platform` が回ることは、条件式の review だけで確かめている。実動は未検証。
+- tag push で `custom-ci` の `platform` が回ることは、条件式の review だけで確かめている。実動は未検証で、初回公開の公開後チェックとして #40 へ引き継ぐ。
 - prebuilt とソースビルドの出力の byte 比較は Linux aarch64（`aarch64-unknown-linux-musl`）でだけ行った。`x86_64-unknown-linux-musl` と `aarch64-apple-darwin` の prebuilt の出力は、PR CI の各 build job で `check-third-party-licenses.sh` を通すことで確かめる（byte 比較ではない）。
 
 ## セッションログ
@@ -116,3 +124,5 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - 2026-09-24: `install-cargo-about.sh`、Dockerfile、`ci.yml`、`build-setup.yml` のコメント、`distribution.md`、development-command guideline、Copilot 指示、decision log（0022 追記と index）、`progress.md` の DIST-03b を改めた。Compose で `release-tools` を作り直し、`dist generate --check` / `dist plan`、表記の生成と照合、ソースビルドとの byte 比較、stub での失敗経路を確かめた。
 - 2026-09-24: PR #76 を作成した（head `dbcf7b9`）。`number-working-branch-note` で note を PR #76 で採番した（`192844f`）。PR description の note 参照を 1 箇所置換し、公開 API の読み戻しで意図した本文と byte 単位で一致することを確かめた。P1 の引き上げ項目: 完了として書き換えたタスク行は note の 1 件（「PR を作成し、note を採番する」）で、PR description には該当なし。触らなかった行は note の 1 件（「`progress.md` の DIST-03b の行を更新する（PR 欄は採番後）」。完了要素と未完要素（PR 欄の反映）が混在する行で、採番 skill は `progress.md` を更新しない）で、この後の P1 で PR 欄を反映し括弧書きを改めた。PR description の「PR CI の結果と所要時間は、完了後にこの節へ追記する」は定型外で採番 skill は触らず、P1 で CI の結果に置き換えた。採番 skill は停止せず完走した。
 - 2026-09-24: PR CI（head `dbcf7b9` と `192844f`）の結果と所要時間を記録し、PR #67 の初回 push と比べた。0022 の追記の「影響」に実測を足した。`progress.md` の DIST-03b の PR 欄に #76 を反映した。
+- 2026-09-24: P2 の review（cycle `claude-code-77382cf-20260924000454`、head `77382cf`）を subagent に委譲した。review 1 本と inline 1 件が投稿され、読み戻しで確かめた。指摘は imo 1。must / ask / nits / fyi は 0。install script、`platform` の条件、0022 の追記、文書の整合、Issue #65 の完了条件はいずれも妥当と判定された。review の `Model` は `claude-opus-5-5`（subagent の system prompt で確認）。
+- 2026-09-24: P3 で指摘を確かめた。#40 の本文の公開前チェック・公開後チェックに、tag push の run で `custom-ci` の `platform` が回ったことを見る項目は無かった。`platform` が省かれても `custom-ci` は success になり、`host` の条件を満たすことも確かめた。採用と判断した。P4 で 0022 の追記の「影響」に確認の方法と引き継ぎ先を書き、#40 の本文の公開後チェックに 1 項目を足した（「後続 Issue の同期」）。文書だけの変更のため、Rust と Compose の検証は再実行していない。
