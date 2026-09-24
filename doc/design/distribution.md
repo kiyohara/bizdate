@@ -4,7 +4,7 @@
 
 想定読者は、配布を実装・運用する開発者と AI agent である。
 
-公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/` のリリース guideline とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md)、release workflow の構成は [`decision-log/0022-release-workflow.md`](decision-log/0022-release-workflow.md) を参照する。
+公開の作業手順（誰がいつ何を実行するか、公開前後に何を確認するか）はこの文書では扱わない。手順の正本は `doc/guidelines/` のリリース guideline とする。決定経緯は [`decision-log/0016-distribution-contract.md`](decision-log/0016-distribution-contract.md)、release workflow の構成は [`decision-log/0022-release-workflow.md`](decision-log/0022-release-workflow.md)、Homebrew Formula の生成と tap への書き込みは [`decision-log/0025-homebrew-formula-publishing.md`](decision-log/0025-homebrew-formula-publishing.md) を参照する。
 
 ## 配布手段
 
@@ -156,7 +156,7 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 
 - 初回配布は stable とする。
 - prerelease が必要になった場合は `v<version>-<prerelease>` 形式とする（例: `v0.2.0-rc.1`）。
-- Homebrew Formula は単一 version しか保持しない。prerelease で stable の Formula を上書きしない設定を維持する。
+- Homebrew Formula は単一 version しか保持しない。prerelease で stable の Formula を上書きしない設定を維持する（「Homebrew」の「tap の更新」）。
 
 ### リリースノート
 
@@ -179,6 +179,62 @@ Homebrew Formula 経由で install した場合の配置は次のとおりで、
 - `dist` は Formula を tap の `Formula/` 配下へ書く。既存の `Casks/slapex.rb` とはディレクトリが分かれるため共存できる。Cask を Formula へ移す作業は行わない。
 - `dist` は Cask を生成しない。`bizdate` は CLI であり Formula が適切である。
 - Formula は 3 対象すべてを 1 ファイルで扱い、`OS` と `Hardware::CPU` で分岐して該当 archive を取得する。macOS 向けの archive は Apple Silicon の 1 つだけで、Intel Mac 向けの archive は持たない。
+- 設定は `dist-workspace.toml` の `installers = ["homebrew"]` と `tap = "kiyohara/homebrew-tap"` に置く。決定経緯は [`decision-log/0025-homebrew-formula-publishing.md`](decision-log/0025-homebrew-formula-publishing.md) を参照する。
+
+### Formula
+
+| 項目 | 値 |
+|---|---|
+| 名前と配置 | `bizdate`。tap の `Formula/bizdate.rb` |
+| 利用者の install | `brew install kiyohara/tap/bizdate` |
+| version | `Cargo.toml` の `version`（tag の `v` を除いた部分） |
+| asset | 各分岐の `url` が `https://github.com/kiyohara/bizdate/releases/download/v<version>/bizdate-<target triple>.tar.gz` を指し、`sha256` は Release に添付する `.sha256` と同じ値 |
+| desc / homepage / license | `Cargo.toml` の `description` / `homepage` / `license` |
+| 依存 | 無い |
+| test | `bizdate --version` が `bizdate <version>` を出すこと、`pkgshare` に `THIRD-PARTY-LICENSES.md` があること |
+
+- Formula は dist の Homebrew installer が生成し、`.github/scripts/prepare-homebrew-formula.sh` が上の値を検査してから `test do` を足す。dist の template は test を持たないためである。続けて `.github/scripts/fix-homebrew-formula-style.sh` が `brew style --fix` をかけ、違反が残らないことを確かめる（desc と homepage の cop だけ除く）。この 2 つは release workflow の `release-verify` が PR でも tag push でも実行し、tap へ書く publish job は `release-verify` が次の検証まで通した Formula をそのまま使う（作り直さない）。
+- 祝日データは install 時に取得しない。`first` / `last` の前に利用者が `bizdate fetch-holidays` で用意する既存仕様（[`business-day.md`](business-day.md)）を変えない。Formula の test も祝日データを要しない。
+
+### 公開前の検証
+
+release workflow の `release-verify` は、PR でも dist で Formula を生成して上の script で検査し、build と同じ native runner で次を確かめる。
+
+- 自動修正後の Formula が `brew style` を通る。
+- 一時的な local tap に置き、`url` をその run の archive（`file://`）へ差し替えて install できる。`sha256` は差し替えない。
+- `brew test` が通る。
+- `bizdate` が `bin`、`README.md` と `LICENSE` が doc、`THIRD-PARTY-LICENSES.md` が `pkgshare` に入り、archive の file と同一である。
+
+これは公開前成果物での確認であり、公開 tap からの `brew install` / `upgrade` の確認ではない。
+
+prerelease の tag では、Formula の生成と検証を job ごと skipped にする。Formula は prerelease を扱わず tap も更新しないためで、GitHub Release の公開は止めない。
+
+### tap の更新
+
+tap への書き込みは、`host`（GitHub Release の公開）の後に走る custom の publish job（`.github/workflows/publish-homebrew.yml`）が行う。dist の builtin の publish job は使わない。
+
+- tag push でだけ走る。PR では `host` が走らないため呼ばれない。
+- 書くのは、同じ run の `release-verify` が install と `brew test` を通した Formula である。version が plan と一致しなければ書かずに失敗する。job を再実行しても書く内容は変わらない。
+- prerelease の tag では job ごと skipped になる。`dist-workspace.toml` の `publish-prereleases` は既定（false）のままとする。
+- 次の場合は tap を変えずに失敗する。
+  - Formula の version が prerelease である。
+  - tap の Formula の version のほうが新しい（patch release などで巻き戻さない）。
+  - tap に同じ version があり、内容が異なる（同じ version を作り直さない）。
+  - `Formula/bizdate.rb` 以外の file に変更が出る（`Casks/slapex.rb` などを変えない）。
+- tap に同じ version が同じ内容で既にある場合は、何もせず成功する。
+- 失敗しても GitHub Release は公開済みである。原因を直してから publish job を再実行する。巻き戻しや同じ version の作り直しで止まった場合は、version を上げて出し直す。
+- commit の author は `github-actions[bot]`、message は `bizdate <version>` とする。
+
+### tap への書き込みの認証
+
+- 認証には、このリポジトリの Actions secret `HOMEBREW_TAP_TOKEN` を使う。job の `GITHUB_TOKEN` は `contents: read` に絞り、tap への書き込みには使わない。
+- token は `kiyohara/homebrew-tap` だけを対象にした fine-grained personal access token（Repository permissions の Contents を read and write）を推奨する。classic token の `repo` scope でも動くが、持ち主が書ける全リポジトリに書ける。
+- token の発行と secret の登録はユーザーが行う。AI agent は secrets を操作しない。secret が無い場合、publish job は token を使う前に失敗し、未設定であることを示す。
+- 手順は次のとおりとする。
+  1. GitHub の Settings → Developer settings → Personal access tokens → Fine-grained tokens で、Resource owner を `kiyohara`、Repository access を `kiyohara/homebrew-tap` だけ、Repository permissions の Contents を read and write にして token を発行する。
+  2. `kiyohara/bizdate` の Settings → Secrets and variables → Actions で、Repository secret `HOMEBREW_TAP_TOKEN` に登録する。
+  3. token の有効期限が切れる前に作り直し、同じ名前で登録し直す。
+- 公開の作業手順の中での位置づけ（いつ設定と確認をするか）は、リリース guideline（#40）で扱う。
 
 ## 対象外
 

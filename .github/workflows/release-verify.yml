@@ -77,3 +77,100 @@ jobs:
           for target in $TARGETS; do
             .github/scripts/verify-release-archive.sh "$target" "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
           done
+
+  # Homebrew Formula を生成して検査し、起動テストを足して brew style の自動修正をかける。
+  # ここで作って homebrew job が install と brew test を通した Formula を、tag push の publish-homebrew が
+  # そのまま tap へ書く。
+  # この workflow は build-global-artifacts (Formula を作る job) と並行して走り、その artifact を待てないため、
+  # plan job が保存した同じ dist で、同じ入力 (全 target の archive と checksum) から Formula を作り直す。
+  # 名前を artifacts-* にしない。host は artifacts-* を Release へ添付するため。
+  # prerelease では job ごと skipped にする (homebrew も needs で skipped)。Formula は prerelease を扱わず
+  # tap も更新しないが、GitHub Release の公開 (host) は止めない。reusable workflow 内の skipped は host の
+  # 条件で成功扱いになる。
+  homebrew-formula:
+    name: homebrew formula
+    if: ${{ !fromJson(inputs.plan).announcement_is_prerelease }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cargo-dist-cache
+          path: ${{ runner.temp }}/dist-bin
+
+      - name: Fetch the archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: artifacts-build-local-*
+          path: target/distrib/
+          merge-multiple: true
+
+      - name: Generate and prepare the Formula
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          chmod +x "$RUNNER_TEMP/dist-bin/dist"
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          tag=$(jq --raw-output .announcement_tag "$RUNNER_TEMP/plan.json")
+          "$RUNNER_TEMP/dist-bin/dist" build --tag="$tag" --artifacts=global --output-format=json > "$RUNNER_TEMP/global.json"
+          mkdir "$RUNNER_TEMP/formula"
+          .github/scripts/prepare-homebrew-formula.sh target/distrib/bizdate.rb target/distrib \
+            "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/formula/bizdate.rb"
+
+      # dist の template が含む、brew style の自動修正できる違反を直す (publish-homebrew はこの結果をそのまま書く)。
+      - name: Fix the Formula style
+        run: .github/scripts/fix-homebrew-formula-style.sh "$RUNNER_TEMP/formula/bizdate.rb"
+
+      - name: Upload the Formula
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-verify-homebrew-formula
+          path: ${{ runner.temp }}/formula/bizdate.rb
+          if-no-files-found: error
+
+  # 検査した Formula の url をこの run の archive へ差し替えて、build と同じ native runner で install と
+  # brew test を行う。公開 tap からの brew install / upgrade の確認ではない。
+  homebrew:
+    name: homebrew (${{ join(matrix.targets, ', ') }})
+    needs: homebrew-formula
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(inputs.plan).ci.github.artifacts_matrix }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the Formula
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-verify-homebrew-formula
+          path: ${{ runner.temp }}/formula
+
+      - name: Fetch the archive built on this runner
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: artifacts-build-local-${{ join(matrix.targets, '_') }}
+          path: ${{ runner.temp }}/distrib
+
+      # macOS の runner は brew が PATH にある。Ubuntu の runner (x86_64 / arm64) は /home/linuxbrew に
+      # 入っているが PATH に無い。brew が見つからなければ verify-homebrew-formula.sh が失敗する。
+      - name: Install and test the Formula
+        env:
+          TARGETS: ${{ join(matrix.targets, ' ') }}
+        run: |
+          if ! command -v brew > /dev/null 2>&1 && [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          for target in $TARGETS; do
+            .github/scripts/verify-homebrew-formula.sh "$target" "$RUNNER_TEMP/formula/bizdate.rb" "$RUNNER_TEMP/distrib"
+          done

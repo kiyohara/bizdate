@@ -40,7 +40,7 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 | DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | done | #37 | 完了。`dist` の設定と release workflow を置いた。初回公開は未実施 | [#62](https://github.com/kiyohara/bizdate/pull/62) |
 | DIST-03a | [#64](https://github.com/kiyohara/bizdate/issues/64) | done | #38 | 完了。配布対象を 3 target にし、Intel Mac（`x86_64-apple-darwin`）を外した | [#67](https://github.com/kiyohara/bizdate/pull/67) |
 | DIST-03b | [#65](https://github.com/kiyohara/bizdate/issues/65) | done | #64 | 完了。cargo-about を upstream の prebuilt（固定した sha256 と照合）で入れ、PR の run では `custom-ci` から `platform` を省いた | [#76](https://github.com/kiyohara/bizdate/pull/76) |
-| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | todo | #65 | Homebrew Formula 生成と更新連携を整備する | - |
+| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | done | #65 | 完了。Formula を dist で生成して検査・test 追加し、PR で公開前の archive から install を確かめ、tag push で custom の publish job が tap へ書く構成を置いた（0025）。tap への実公開は未実施 | [#79](https://github.com/kiyohara/bizdate/pull/79) |
 | DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | todo | #39 | リリース手順・skill・インストール案内を整備する | - |
 
 ### cloud session での agent 運用
