@@ -1,0 +1,74 @@
+# Release workflow (.github/workflows/release.yml。dist が生成する) が、host (GitHub Release の公開) の後に
+# 呼ぶ reusable workflow。dist-workspace.toml の publish-jobs から参照する。tag push でだけ走り、PR では
+# host が走らないため呼ばれない。prerelease では、dist が生成する呼び出し側の条件で skipped になる。
+# dist の builtin の Homebrew publish job を使わない理由は doc/design/decision-log/0025-homebrew-formula-publishing.md。
+#
+# tap (kiyohara/homebrew-tap) への push には、このリポジトリの secret HOMEBREW_TAP_TOKEN を使う。
+# 設定はユーザーが行う (doc/design/distribution.md の「Homebrew」)。
+name: Publish Homebrew formula
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        description: dist の plan (dist-manifest.json)。Formula の version を照合する
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  formula:
+    name: formula
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # release-verify の homebrew job と同じ artifact から、同じ script で Formula を作る。
+      - name: Fetch the Formula and the archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: artifacts-build-*
+          path: ${{ runner.temp }}/distrib
+          merge-multiple: true
+
+      - name: Prepare the Formula
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          .github/scripts/prepare-homebrew-formula.sh "$RUNNER_TEMP/distrib/bizdate.rb" "$RUNNER_TEMP/distrib" \
+            "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/bizdate.rb"
+
+      - name: Check that the tap token is set
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::error::the secret HOMEBREW_TAP_TOKEN is not set; set it and re-run this job (the GitHub Release is already published)"
+            exit 1
+          fi
+
+      # push するため、この checkout だけ credential を残す。
+      - name: Checkout the tap
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: kiyohara/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+          persist-credentials: true
+
+      # 巻き戻し、同じ version の作り直し、Formula/bizdate.rb 以外の変更では止まる。同じ内容が既にあれば
+      # 何もしない (push 済みの後にこの job を再実行した場合)。
+      - name: Publish the Formula
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: .github/scripts/publish-homebrew-formula.sh "$RUNNER_TEMP/bizdate.rb" homebrew-tap

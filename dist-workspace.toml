@@ -14,8 +14,14 @@ members = ["cargo:."]
 cargo-dist-version = "0.32.0"
 ci = "github"
 hosting = "github"
-# installer は作らない。Homebrew は後続 (Issue #39) で足す。shell installer は提供しない。
-installers = []
+# installer は Homebrew の Formula だけを作る。shell installer は提供しない。
+installers = ["homebrew"]
+# Formula の置き先。slapex の Cask と共用する (doc/design/distribution.md の「Homebrew」)。
+tap = "kiyohara/homebrew-tap"
+# tap への書き込みは dist の builtin の job ("homebrew") ではなく、custom の publish job で行う。起動テストを
+# 足し、巻き戻しを止めるため (doc/design/decision-log/0025-homebrew-formula-publishing.md)。この構成では
+# dist が「tap があるのに Homebrew publish job が無効」と WARN を出すが、想定どおりである。
+publish-jobs = ["./publish-homebrew"]
 # 配布対象は doc/design/distribution.md の 3 target。macOS は Apple Silicon だけで、Intel Mac
 # (x86_64-apple-darwin) には配らない。1 行の配列で書く (check-third-party-licenses.sh がこの形で読む)。
 targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu"]
@@ -45,6 +51,8 @@ global-artifacts-jobs = ["./release-verify"]
 [dist.github-custom-job-permissions]
 ci = { contents = "read" }
 release-verify = { contents = "read" }
+# tap へは HOMEBREW_TAP_TOKEN で push する。GITHUB_TOKEN の書き込み権限は要らない。
+publish-homebrew = { contents = "read" }
 
 # 配布仕様のビルド runner。すべて対象 architecture 上の native ビルドにする。
 [dist.github-custom-runners]

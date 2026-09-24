@@ -6,6 +6,7 @@ rust-version = "1.98"
 description = "その日が月の最初 / 最後の業務日かどうかを判定する CLI"
 license = "MIT"
 repository = "https://github.com/kiyohara/bizdate"
+homepage = "https://github.com/kiyohara/bizdate"
 # 公開ライブラリクレートとしては提供しない (doc/design/decision-log/0008-language-and-distribution.md)。
 publish = false
 

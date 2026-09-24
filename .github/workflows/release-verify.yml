@@ -77,3 +77,56 @@ jobs:
           for target in $TARGETS; do
             .github/scripts/verify-release-archive.sh "$target" "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
           done
+
+  # dist が生成した Homebrew Formula を検査して起動テストを足し (tag push で tap へ書くものと同じ手順)、
+  # この run の archive を指すよう url を差し替えて、build と同じ native runner で install と brew test を行う。
+  # 公開 tap からの brew install / upgrade の確認ではない。
+  homebrew:
+    name: homebrew (${{ join(matrix.targets, ', ') }})
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(inputs.plan).ci.github.artifacts_matrix }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Formula (build-global-artifacts) と、全 target の archive と checksum (build-local-artifacts) を取る。
+      # Formula の sha256 を全 target の checksum と照合するため、この runner の分だけでなくすべて取る。
+      - name: Fetch the Formula and the archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: artifacts-build-*
+          path: ${{ runner.temp }}/distrib
+          merge-multiple: true
+
+      - name: Prepare the Formula
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          .github/scripts/prepare-homebrew-formula.sh "$RUNNER_TEMP/distrib/bizdate.rb" "$RUNNER_TEMP/distrib" \
+            "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/bizdate.rb"
+
+      # macOS の runner は brew が PATH にある。Ubuntu の x86_64 runner は /home/linuxbrew に入っているが
+      # PATH に無い。Homebrew の無い runner (Ubuntu の arm64 runner) では install を確かめられないため、
+      # その target に限って step summary に記録して終える。それ以外の runner で brew が無ければ失敗させる。
+      - name: Install and test the Formula
+        env:
+          TARGETS: ${{ join(matrix.targets, ' ') }}
+        run: |
+          if ! command -v brew > /dev/null 2>&1 && [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          for target in $TARGETS; do
+            if ! command -v brew > /dev/null 2>&1 && [ "$target" = aarch64-unknown-linux-gnu ]; then
+              echo "### verify-homebrew-formula: $target" >> "$GITHUB_STEP_SUMMARY"
+              echo "not verified: this runner has no Homebrew (the Formula was checked by prepare-homebrew-formula.sh)" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            .github/scripts/verify-homebrew-formula.sh "$target" "$RUNNER_TEMP/bizdate.rb" "$RUNNER_TEMP/distrib"
+          done
