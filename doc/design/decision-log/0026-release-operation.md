@@ -42,6 +42,7 @@ README のインストール案内:
 - E の「version を上げるための Issue」は、索引登録や進捗整理のための Issue と同じく、指示書として意味を持たない。公開後確認 Issue を起点にすると、公開後の PR と合わせて 1 Issue に 2 PR となり、1 Issue = 1 PR を崩す。D は公開後確認 Issue を参照で辿れ、1 Issue = 1 PR を保てる。
 - G は、cloud session では push できるのが作業ブランチだけであり、実行できない。承認した人と実行する人を分けないと、提示と異なる commit に tag を打つ誤りを止める人がいない。F は 0016 と一致する。
 - I は、#40 を終えても README に案内が無く、公開の直後に案内の PR を急ぐことになる。H は予定と明示すれば事実と食い違わず、公開の後は予定表記を外す差分だけを review すればよい。ただし tag の commit の README が archive に同梱されるため、初回（`v0.1.0`）の archive には予定表記の README が入る。予定表記は、公開後に読んでも誤りにならない文言にする。0016 の「実際に Release を公開してから切り替える」は、有効な案内への切り替えを公開の後に行う点で維持される。
+- tap の README は slapex の Cask だけを説明しており、[0025](0025-homebrew-formula-publishing.md) は bizdate の Formula の案内を足すかを #40 に委ねた。そのままでは、tap を見た人が bizdate の Formula を知る手段が無い。tap の変更はこの repository の PR では行えず、tap への書き込みに当たる。公開の前に足すと、まだ入れられない Formula を案内することになる。
 - release notes は、`CHANGELOG.md` を導入しない（0016）ため repository の file ではない。Release 本文は `host` の段階で dist の生成物として作られ、要約は公開の後にしか加えられない。そこで、要約の草稿を公開前に公開後確認 Issue に置き、承認の提示で示す。
 
 ## 決定
@@ -49,7 +50,8 @@ README のインストール案内:
 - 公開は、version ごとの公開後確認 Issue で追う（A）。公開担当者が公開の前に起票し、既にあれば再利用する。状態は公開待ち、公開済み、確認済み、中止とし、公開の操作と Issue の完了を分ける。全項目の結果を記録し、残る項目を追跡 Issue へ引き継ぐまで close しない。予行のためには起票しない。
 - リリース準備 PR（`Cargo.toml` の version と `Cargo.lock` の更新だけ）は、起点 Issue を作らない運用作業の例外とする（D）。公開後確認 Issue を参照し、`Closes` を付けない。公開後確認 Issue を入力とする PR（リリース台帳の行、初回の README の切り替え）は通常の Issue 駆動タスクとする。恒常的な例外は、索引登録、進捗整理と合わせて 3 件になる。
 - tag の push はユーザーが行う（F）。公開担当者は公開対象と公開前確認の結果を提示し、ユーザーの文言での承認を受ける。既存の tag を付け替えず、失敗した job を確認なしに再実行しない。
-- README のインストール案内は公開予定の手順として置き、公開の確認後に有効な案内へ切り替える（H）。
+- README のインストール案内は公開予定の手順として置き、公開の確認後に有効な案内へ切り替える（H）。切り替えるのは、公開後確認で確かめた経路（archive、Homebrew）の節だけとし、確かめられなかった経路の節は予定表記のまま残す。
+- tap の README への bizdate の Formula の案内は、初回公開で Homebrew の install を確かめた後に、ユーザーが tap 側で足す。この repository の PR では行わない。
 - Release 本文の要約は、草稿を公開後確認 Issue に置いて承認の提示で示し、公開の後に承認を得て加える。
 - リリース台帳は `progress.md` の「リリース履歴」とし、列は version、公開日、Release、検証、未確認とする。行は公開後確認を終えた version についてだけ、公開後確認 Issue を入力とする PR で足す。
 - 確かめられない項目（初回公開での `brew upgrade` など）は、項目ごとに追跡 Issue を起こし、次の version の公開後確認で確かめる。
@@ -67,6 +69,7 @@ README のインストール案内:
 - `doc/guidelines/release-guidelines.md` を追加し、`AGENTS.md`、guideline の一覧、Cursor と Claude Code の入口、`run-release` skill と公開後確認 Issue の雛形を置いた。
 - `development-loop.md` の恒常的な例外を 3 件にし、リリース準備 PR の範囲を書いた。`maintain-progress` の観点 5 を台帳の定義へ揃えた。
 - README に、公開予定のインストール案内を置いた。`v0.1.0` の archive には予定表記の README が入る。
+- 初回公開のユーザーの操作に、tap の README への案内の追加を入れた。
 - `progress.md` に「リリース履歴」の節を置いた。行はまだ無い。
 - `.github/copilot-instructions.md` の README と手順の正本の記述を揃えた。
 

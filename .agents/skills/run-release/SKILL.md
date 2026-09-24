@@ -14,7 +14,7 @@ bizdate の version を公開するための実行 skill。
 - 公開する version（例: `0.1.0`）。version はユーザーが決める。指定が無ければ、`Cargo.toml` の `version` と前回の公開からの変更を示して確認する。
 - 公開後確認 Issue の番号（任意）。
 - 複数の version を同時に扱わない。
-- 途中から再開する場合（tag の push の後、公開後確認の途中など）は、公開後確認 Issue の「状態」節の状態と再開条件から、再開する手順を決める。
+- 途中から再開する場合（tag の push の後、公開後確認の途中など）は、「再開」に従う。
 
 ## 参照する正本
 
@@ -25,21 +25,35 @@ bizdate の version を公開するための実行 skill。
 - `doc/guidelines/cloud-session-guidelines.md` — cloud session での制約。
 - `doc/guidelines/issue-driven-task-execution.md`、`doc/guidelines/working-branch-notes-handling.md`、`doc/guidelines/working-branch-notes-security.md`、`doc/guidelines/pull-request-guidelines.md` — リリース準備 PR を出す場合。
 
+## 再開
+
+公開後確認 Issue の「状態」節の状態と再開条件から、再開する手順を決める。
+
+| 状態 | 再開条件 | 再開する手順 |
+| --- | --- | --- |
+| 公開待ち | リリース準備 PR の merge | merge を確かめて 4 |
+| 公開待ち | 公開前確認の続き | 4 |
+| 公開待ち | ユーザーの承認と tag の push | tag の run があれば 6。無ければ、候補 SHA と公開の内容が提示から変わっていないことを確かめて 5 で待つ。変わっていれば 4 |
+| 公開済み | 失敗した job の扱い（secret を直した後の再実行など） | 6 |
+| 公開済み | 公開後確認の残り | 7 |
+| 確認済み | 公開後の PR | 8（引き継ぎの報告だけ） |
+| 中止 | なし | 再開しない。やり直す version で 1 から始める |
+
 ## 手順
 
 ### 1. 前提の確認
 
 - guideline の「役割と権限」で、agent が行わない操作を確かめる。
 - レビュー待ちの自分の PR が他に無いことを確かめる。あればユーザーに確認する。
-- 新しく始める場合（公開後確認 Issue がまだ無い場合）は、`v<version>` の tag と Release が無いことを確かめる。有れば止めて報告する。途中から再開する場合は「入力」に従い、再開する手順から行う。
 
 ### 2. 公開後確認 Issue の起票・再利用
 
 1. title が `v<version> の公開後確認` の Issue を、open と closed の両方から探す。
-2. open の Issue があれば再利用する。本文の「状態」節を読み、再開する手順を決める。
+2. open の Issue があれば再利用する。本文の「状態」節を読み、「再開」に従って再開する手順を決める。
 3. closed の Issue があれば止め、ユーザーに確認する。その version は公開済みか中止である。
-4. 無ければ `references/post-release-issue.md` の雛形で起票する。状態は公開待ちとし、担当と再開条件を書く。
-5. 本文を read-back で確かめる。
+4. 無ければ、`v<version>` の tag と Release が無いことを確かめる。有れば止めて報告する。
+5. `references/post-release-issue.md` の雛形で起票する。状態は公開待ちとし、担当と再開条件を書く。
+6. 本文を read-back で確かめる。
 
 ### 3. リリース準備 PR
 
@@ -66,12 +80,12 @@ version が `Cargo.toml` の `version` と異なる場合だけ行う。同じ�
 
 - tag の run を見つけ、guideline の「監視」の job を確かめ、終わったら結果を示す。
 - Release が作られたら、公開後確認 Issue の状態を公開済みにし、確定 SHA、Release と run の URL を書く。
-- 失敗したら guideline の「復旧」に従う。再実行と Release の編集は、対象と理由を示して承認を得てから行う。version を上げる場合は、Issue を中止にして新しい version で 1 からやり直す。
+- 失敗したら guideline の「復旧」に従う。再実行と Release の編集は、対象、理由、実行するコマンド（guideline の「承認を得て行う操作」）を示して承認を得てから行う。version を上げる場合の公開後確認 Issue の扱いは、guideline の「復旧」に従う。新しい version は 1 からやり直す。
 
 ### 7. 公開後確認
 
 - guideline の「公開後確認」の各項目を、行える環境で行う。行えない項目（macOS、Linux arm64、cloud session から届かない既定 CSV の取得など）は、手順と記録先を示してユーザーに依頼する。
-- 証拠は guideline の「証拠の残し方」に従い、公開後確認 Issue にコメントで残す。結果が出た項目は本文の checklist に反映する。
+- 証拠は guideline の「証拠の残し方」に従い、公開後確認 Issue にコメントで残す。本文の checklist は guideline の「記録するもの」に従って check する。
 - 承認を得ていれば、Release 本文に要約を加える。
 - 前の version の未確認項目の追跡 Issue が open なら、その項目も確かめる。
 - 確かめられない項目は、guideline の「未確認項目の追跡」に従って追跡 Issue を起こす。
@@ -86,7 +100,7 @@ version が `Cargo.toml` の `version` と異なる場合だけ行う。同じ�
 | 状況 | 扱い |
 | --- | --- |
 | version が決まっていない | 候補を示してユーザーに確認する |
-| 公開後確認 Issue がまだ無いのに、同じ version の tag か Release がある。または同じ version の closed の公開後確認 Issue がある | 止めて報告する |
+| 同じ version の closed の公開後確認 Issue がある。または公開後確認 Issue が無いのに、同じ version の tag か Release がある | 止めて報告する |
 | 公開前確認の項目を満たさない | 止めて、内容と推奨する対処を報告する |
 | 承認を待つ | 止まる。文言での承認と tag の push の知らせを待つ |
 | workflow が失敗した | guideline の「復旧」に従う。承認の無い再実行をしない |

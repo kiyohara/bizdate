@@ -6,6 +6,7 @@
 - release workflow の job の構成は `doc/guidelines/development-command-guidelines.md` の「release workflow」にある。
 - 決定の経緯は decision log 0016（公開の運用条件）、0022（release workflow）、0025（Homebrew）、0026（この手順）にある。
 - agent は `run-release` skill（`.agents/skills/run-release/SKILL.md`）でこの手順を実行する。skill はこの文書を参照し、手順を複製しない。
+- release workflow（`.github/workflows/release.yml` と、それが呼ぶ `ci.yml`、`release-verify.yml`、`publish-homebrew.yml`）の job、`dist-workspace.toml` の成果物、手順から呼ぶ `.github/scripts/` の script の引数を変えたら、この文書の job の一覧（「公開前確認」と「監視」）、asset の数、コマンドを同じ変更で揃える。
 
 ## 用語
 
@@ -44,7 +45,7 @@
 6. release workflow を見守り、結果を提示する。Release が作られたら状態を公開済みにする。失敗したら「復旧」に従う。
 7. 公開後確認を行い、証拠を公開後確認 Issue に残す。承認を得て Release 本文に要約を加える。
 8. 全項目の結果を記録し、残る項目を追跡 Issue へ引き継いだら、状態を確認済みにする。
-9. 公開後確認 Issue を入力に `run-issue-task` で PR を出す（リリース台帳の行、初回は README の切り替え）。merge で Issue が閉じる。
+9. 公開後確認 Issue を入力に `run-issue-task` で PR を出す（リリース台帳の行、README の予定表記の切り替え）。merge で Issue が閉じる。
 
 ## 公開後確認 Issue
 
@@ -72,6 +73,8 @@
 | 未確認の追跡先 | 確認済みにする時点 |
 
 確認の証拠はコメントで残す。書き方は「公開後確認」の「証拠の残し方」に従う。
+
+本文の公開後確認の checklist は、結果を記録した項目を check する。失敗した項目と、追跡 Issue へ回した項目も、行末に結果と追跡先を書いて check する。公開後確認の項目がすべて check されていることを、確認済みにする条件とする（公開後の PR の項目は含めない）。
 
 ### 状態
 
@@ -160,7 +163,7 @@ git push origin v<version>
 - `custom-release-verify / release tag`、`custom-release-verify / archive (<target>)` の 3 job、`custom-release-verify / homebrew formula`、`custom-release-verify / homebrew (<target>)` の 3 job
 - `host`、`custom-publish-homebrew / formula`、`announce`
 
-job の名前は release workflow（`.github/workflows/release.yml` と、それが呼ぶ `ci.yml`、`release-verify.yml`、`publish-homebrew.yml`）に従う。job を変えたら、この一覧と「公開前確認」の一覧を同じ変更で揃える。
+job の名前は release workflow に従う。workflow を変えたときに揃える範囲は、冒頭のとおりである。
 
 ### 復旧
 
@@ -175,6 +178,14 @@ job の名前は release workflow（`.github/workflows/release.yml` と、それ
 
 - 再実行は、失敗の内容、再実行する job、期待する結果を示し、承認を得てから行う。同じ失敗が繰り返したら再実行を重ねず、原因を調べる。
 - tag を付け替えない。version を上げてやり直す場合、Release が作られていなければ公開後確認 Issue を中止として閉じる。作られていれば公開済みのまま公開後確認を行い、結果を記録する。新しい version は「流れ」の 1 からやり直す。
+
+### 承認を得て行う操作
+
+承認の提示では、実行するコマンドも示す。`gh` の実行形式は `doc/guidelines/github-cli-guidelines.md` に従う。
+
+- job の再実行: `gh run rerun --job <job-id>`。`<job-id>` は job の数値 ID で、`gh run view <run-id> --json jobs --jq '.jobs[] | {name, databaseId}'` の `databaseId` である。失敗した job をまとめて再実行する場合は `gh run rerun <run-id> --failed`。組み込みの GitHub tool の `actions_run_trigger` は、見えていても使わない（`doc/guidelines/github-mcp-guidelines.md` の「CI 操作の境界」）。
+- Release 本文の編集: 本文は全体が置き換わる。今の本文と Release の `id` を読み（組み込みの GitHub tool の `get_release_by_tag`、または `gh api repos/kiyohara/bizdate/releases/tags/v<version>`）、要約を前に加えた全文を file に書いて、`gh api -X PATCH repos/kiyohara/bizdate/releases/<release-id> -F body=@<file>` で更新する。更新の後に読み戻して確かめる。
+- cloud session の proxy がこれらを拒否した場合は、経路を変えて再試行せず、ユーザーに GitHub の UI での操作（run の画面の再実行、Release の編集）を依頼する。
 
 ## 公開後確認
 
@@ -248,12 +259,13 @@ Homebrew（macOS）:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/kiyohara/homebrew-tap/HEAD/Formula/bizdate.rb | grep -E '^  version |sha256 '
+brew update
 brew install kiyohara/tap/bizdate
 bizdate --version
 brew test kiyohara/tap/bizdate
 ```
 
-前の version を入れた環境では、`brew install` の代わりに `brew upgrade kiyohara/tap/bizdate` を実行する。Release に添付される `bizdate.rb` は dist が生成したままの Formula であり、tap の Formula（検査して `test do` を足したもの）と内容は一致しない。一致を求めるのは `version` と `sha256` である。
+`brew update` を先に実行するのは、手元の tap の clone を最新にするためである。tap は slapex と共用で、既に tap してある Mac では、自動更新（既定で 24 時間に 1 回）を待つ間、古い clone が使われ得る。そのままでは install の失敗や upgrade の空振りが、tap への書き込みの失敗と見分けにくい。前の version を入れた環境では、`brew update` の後に、`brew install` の代わりに `brew upgrade kiyohara/tap/bizdate` を実行する。Release に添付される `bizdate.rb` は dist が生成したままの Formula であり、tap の Formula（検査して `test do` を足したもの）と内容は一致しない。一致を求めるのは `version` と `sha256` である。
 
 ### 証拠の残し方
 
@@ -277,7 +289,8 @@ brew test kiyohara/tap/bizdate
 ## 公開後の PR
 
 - 公開後確認 Issue が確認済みになったら、その Issue を入力に `run-issue-task`（review まで回す場合は `drive-issue-to-reviewed-pr`）で PR を出す。description に `Closes #<公開後確認 Issue>` を含める。
-- PR の内容は、`progress.md` の「リリース履歴」への行の追加と、初回公開では README のインストール案内の切り替え（「初回公開（v0.1.0）」）である。
+- PR の内容は、`progress.md` の「リリース履歴」への行の追加と、README に予定表記が残っていればその切り替えである。初回公開では `progress.md` の未公開の記述も直す（「初回公開（v0.1.0）」）。
+- README で有効な案内に切り替えるのは、公開後確認で確かめた経路（archive と Homebrew）の節だけとする。確かめられなかった経路の節は予定表記のまま残し、その経路を確かめた version の公開後の PR で切り替える。
 - 公開の確認を終える前に、README の予定表記を外さない。手順を入れた PR や、リリース準備 PR の merge を、公開の確認の完了として扱わない。
 
 ## リリース台帳
@@ -290,9 +303,11 @@ brew test kiyohara/tap/bizdate
 初回に固有の扱い:
 
 - `Cargo.toml` の `version` は既に `0.1.0` であり、リリース準備 PR は要らない。候補 SHA は、公開前確認の時点の `main` の先頭とする。
-- README のインストール案内は公開予定の表記で置いてある。公開後の PR で予定表記を外し、有効な案内に切り替える。対応環境の値が tag の run の記録と異なれば、同じ PR で直す。
+- README のインストール案内は公開予定の表記で置いてある。公開後の PR で、確かめた経路の予定表記を外し、有効な案内に切り替える（「公開後の PR」）。対応環境の値が tag の run の記録と異なれば、同じ PR で直す。
+- 公開後の PR では、`progress.md` の「リリース履歴」の前文（まだ公開した version は無い）と、「現況」と「次にやること」の初回公開が未実施という記述も直す。
 - tag の commit の README が archive に同梱されるため、`v0.1.0` の archive の README は予定表記のままである。予定表記は、公開後に読んでも誤りにならない文言にしてある。
-- 前の version が無いため、`brew upgrade` は確かめられない。追跡 Issue を起こし、次の version の公開後確認で確かめる。
+- 前の version が無いため、`brew upgrade` は確かめられない。追跡 Issue を起こし、次の version の公開後確認で確かめる。tap は単一の version しか持たず、次の version の公開の後は `v0.1.0` を入れ直せないため、Homebrew で入れた `v0.1.0` をその確認まで残しておく。追跡 Issue の再開条件にもそう書く。
+- tap の README は slapex の Cask だけを説明している（decision log 0025）。Homebrew の install を確かめた後に、ユーザーが tap の README に bizdate の Formula の案内を足す。tap 側の変更であり、この repository の PR では行わない。
 - 「リリース履歴」の最初の行は、公開後の PR で足す。
 
 初回公開の前にそろえるもの:
@@ -305,7 +320,9 @@ brew test kiyohara/tap/bizdate
 - tap への実際の書き込み（secret の名前と権限を含む）
 - 公開 asset の取得、checksum、展開、各 target での起動
 - 公開 tap からの `brew install` と Formula の version
-- 既定 CSV の実際の取得（cloud session からは届かない）
+- 既定 CSV の実際の取得（cloud session からは届かない）。`x86_64-unknown-linux-gnu` は、Apple Silicon の Mac の Docker では emulation になるため、native の x86_64 Linux が要る
+- 公開後確認で、Release の `dist-manifest.json` を `verify-release-archive.sh` の plan として使えること。PR の run では `dist plan` の出力でしか動かしていない。通らない場合は、tag の run の artifact `artifacts-plan-dist-manifest` の `plan-dist-manifest.json` を使う（cloud session からは artifact を取得できないため、ユーザーが run の画面から取得する）
+- 「監視」の job の表示名が、tag の run の表示と一致すること。PR の run では、`custom-ci / test / build` と `custom-publish-homebrew` は呼び出し側の名前のまま skipped になり、中の job の表示名は tag の run でしか見られない。異なれば、公開後の PR で「監視」と「公開前確認」の一覧を直す
 
 ユーザーが行う操作（順に）:
 
@@ -313,5 +330,7 @@ brew test kiyohara/tap/bizdate
 2. 公開担当者に v0.1.0 の公開の準備を指示する。公開担当者は公開後確認 Issue を起票し、公開前確認を行い、承認を求める。
 3. 提示を確かめ、文言で承認する。
 4. 「tag の push」のコマンドで `v0.1.0` を push する。
-5. 公開後確認のうち、macOS と Linux arm64、既定 CSV の取得、Homebrew を、Mac で行う（公開担当者が agent なら、手順と結果の記録先を示す）。
-6. 公開後確認 Issue を入力とする PR（台帳の行と README の切り替え）を review し、merge する。
+5. 公開後確認のうち、macOS と Linux arm64 の確認（既定 CSV の取得を含む）と Homebrew を、Mac で行う（公開担当者が agent なら、手順と結果の記録先を示す）。Homebrew で入れた `v0.1.0` は、次の version の公開後確認まで残しておく。
+6. `x86_64-unknown-linux-gnu` の既定 CSV の取得を、native の x86_64 Linux で行う。用意できなければ追跡 Issue に残る。
+7. Homebrew の install を確かめたら、tap の README に bizdate の Formula の案内を足す。
+8. 公開後確認 Issue を入力とする PR（台帳の行、README の切り替え、`progress.md` の未公開の記述）を review し、merge する。

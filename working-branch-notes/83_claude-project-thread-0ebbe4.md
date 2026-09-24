@@ -10,7 +10,7 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 
 ## 現在の状況
 
-- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めている。P1（実装と PR 作成）を終えた。
+- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めている。P2 の指摘 11 件に P4 で対応した。
 - 依存の #39（PR #79）と #80（PR #81）は merge 済み。レビュー待ちの自分の PR は無い。
 - 手順の正本 `doc/guidelines/release-guidelines.md`、skill `run-release`（雛形 `references/post-release-issue.md`）、Cursor と Claude Code の入口、decision log 0026 を置き、AGENTS.md、guideline の一覧、`development-loop.md`、`maintain-progress`、`run-issue-task`、README、`progress.md`、`distribution.md` の参照、Copilot 用の指示を揃えた。
 
@@ -25,6 +25,10 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 - 公開後確認は tag の commit を checkout して行う。script、`Cargo.lock`、比べる `README.md` と `LICENSE` を tag の時点に揃えるため。Linux は Compose の dev service で `verify-release-archive.sh` を、macOS は host で `platform-check.sh` を使い、third-party 表記は Compose で確かめる（`check-third-party-licenses.sh` が cargo を要するため）。
 - 方針は decision log 0026 を新規に作って記録した。0016 の運用判断の具体化と、0012 の例外の拡張にまたがるため、既存ログへの追記にしなかった。
 - 初回公開の未設定・未検証の項目とユーザーの操作の順は、guideline の「初回公開（v0.1.0）」に置き、`progress.md` の「次にやること」から参照した。
+- （P4）README で有効な案内に切り替えるのは、公開後確認で確かめた経路（archive、Homebrew）の節だけとした。Homebrew だけが失敗した version で、使えない案内が有効になるのを避けるため。
+- （P4）tap の README への bizdate の案内は、初回公開で Homebrew の install を確かめた後にユーザーが tap 側で足すとした（0025 が #40 に委ねた扱い）。この repository の PR では行えず、tap への書き込みに当たるため。
+- （P4）公開後確認 Issue の checklist は、失敗や追跡 Issue へ回した項目も結果と追跡先を書いて check し、公開後確認の項目がすべて check されていることを確認済みの条件とした。雛形の依存は「なし」とし、確認済みを公開後の PR の開始条件として「実行」に書いた。`run-issue-task` の依存確認で止まらないようにするため。
+- （P4）再実行のコマンドは `gh run rerun --job <job-id>` とした。gh 2.45.0 の help で、`--job` は job の数値 ID（`gh run view --json jobs` の `databaseId`）を取ることを確かめた。
 
 ## 次にやること
 
@@ -54,6 +58,8 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 | skill の検出 | `run-release` は追加の直後に cloud session の skill 一覧に載った。description での発火は未検証（新しい session で確かめられる） |
 | Rust の検証（`cargo fmt` / `clippy` / `test`） | 省略。Rust のコードと Cargo の設定を変えていないため。PR CI では回る |
 | 初回公開、tap の更新、実際の install | 未実施（スコープ外）。公開 asset の取得、公開 tap からの install と upgrade、既定 CSV の取得は未検証 |
+| PR の CI（head `3576a17`） | CI（run 36006552956）と Release workflow（run 36006553630）は success 18 件。`host`、`custom-publish-homebrew`、`announce`、`custom-ci / test / build` の skipped 4 件は PR の run の想定どおり。`custom-release-verify / release tag` は PR の run でも success になる（tag の検査の step だけが skipped）ことを確かめ、初回公開の一覧を直した |
+| P4 の修正 | `git diff --check` OK。guideline の shell の code block 6 件を `sh -n` で確かめた。開発者向け文書の追加行に「です・ます」の文末は無い。新しい参照先（`dist-workspace.toml`、`.github/scripts/` の 4 script、`ci.yml`）の存在を確かめた。tag の run の plan の artifact 名 `artifacts-plan-dist-manifest` は `release.yml` で確かめた |
 | note の情報統制 | 確認済み。秘密情報、個人情報、ローカルの絶対 path、署名付き URL を書いていない |
 
 ## リスク・ブロッカー
@@ -62,8 +68,10 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 - `verify-release-archive.sh` に Release の `dist-manifest.json` を渡す使い方は、公開前には確かめられない（plan の manifest と同じ形式である前提）。初回公開で確かめる。
 - `x86_64-unknown-linux-gnu` の既定 CSV の取得には native の環境が要る。cloud session からは届かず、Apple Silicon の Mac の Docker では emulation になる。用意できなければ追跡 Issue に残る。
 - `v0.1.0` の archive の README は予定表記のままになる。
+- 承認を得て行う `gh run rerun` と Release の編集（`gh api -X PATCH`）が cloud session の proxy を通るかは未検証である。承認が要る write のため試していない。拒否されたらユーザーが GitHub の UI で行う。
 
 ## セッションログ
 
 - 2026-09-24: #40 に着手した。依存の完了を確かめ、配布仕様、release workflow、既存の skill と guideline を読み、PR #81 の run と main の CI で生成物と job を照合した。guideline、skill、入口、README、`progress.md`、decision log 0026 を置き、上の検証と予行を行った。
 - 2026-09-24: PR #83 を draft で作成し、`number-working-branch-note` の手順で note を採番した（完了として書き換えたタスク行: note の「PR を作成し、note を採番する」の 1 行、PR description は 0 行。触らなかった stale 表現・タスク行: 0 件）。`progress.md` の DIST-05 の PR 列に #83 を記入した。reviewer の指定は、PR の作成者と同じ account のため GitHub が受け付けなかった（assignee は設定済み）。
+- 2026-09-24: P2。review cycle `claude-code-3576a17-20260924134440`（head `3576a17`）で指摘 11 件（must 1 / ask 2 / imo 7 / nits 1）。P3 で 11 件とも採用した。
