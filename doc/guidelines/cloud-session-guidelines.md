@@ -112,7 +112,7 @@ sandbox での実測（2026-09-12、4 vCPU）。
 | 初回の `cargo test --locked`（named volume の作成と全 crate の build を含む） | 約 15 秒 |
 | `gh` の導入（`apt-get install`、package list あり。2026-09-23 に session 内で実測） | 約 3 秒（`apt-get` の 3 段を各 45 秒で打ち切り、最悪 135 秒） |
 
-setup script は 5 分以内に終わる必要がある。`--provision` は 1 分以内に収まる。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
+setup script は 5 分以内に終わる必要がある。`--provision` は通常 1 分以内に収まる。`gh` の導入が応答せず打ち切りまで待った場合でも、最悪 135 秒に base image の pull を足して 3 分程度である。setup script では container の network が通らないため、`cargo build` や `cargo fetch` の事前実行は含めない。
 
 ## 利用開始手順
 

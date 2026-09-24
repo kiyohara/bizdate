@@ -22,6 +22,7 @@
 ## 次にやること
 
 - script と文書の変更、検証、PR 作成、review cycle。
+- merge 後、ユーザーが stub を貼り直し、新しい session で `gh --version` を確認する（PR の「merge 後にユーザーが行う操作」）。
 
 ## 検証
 
@@ -53,3 +54,7 @@
 - P3: 7 件すべて採用。progress.md の行のセル崩れ（must）、`apt-get` の timeout 合計が setup script の 5 分上限に抵触し得る点（must、各 45 秒・最悪 135 秒に短縮）、host 追加の結論の記録（ask、「merge をもって採用」と明記）、github-cli の禁止操作の補足、cloud-session の表の残存表現、編集対象の判定基準、hook の `gh` 表示位置。
 - 未収束（ユーザーへ報告）: 投稿の末尾に tool が footer を自動で付け、canonical metadata の 5 行が末尾にならない。本 PR では扱わず、#69 の判断事項として報告する。
 - 2026-09-24T00:00Z P4: 修正を push（head `4ec1ce3`）し、7 thread へ処置を返信（MCP）。返信 1 件を `gh api` で編集し、書き込みの検証とした。
+- 2026-09-24T00:05Z P4 後の CI（head `9011fbc`）が全件 success / skipped。最初の job の開始から最後の job の完了まで約 4 分。
+- 2026-09-24T00:05Z P5 を同じ subagent に委譲。7 thread すべて resolve 可、追加は [fyi] 1 件（cloud-session-guidelines の「`--provision` は 1 分以内」が最悪値と食い違う）。00:06Z に review cycle 完了（1 周で収束）。
+- P6: [fyi] は正しいため最終の note 更新と同じ commit で直した。未収束は footer と canonical metadata の位置（#69 の判断事項）と、host 追加の結論のユーザー判断（merge 前）。
+- 評価実験のまとめ: ユーザー確認で止まった箇所は無い。権限判定や proxy で拒否された操作は無い（session 内の `apt-get install` も通った）。
