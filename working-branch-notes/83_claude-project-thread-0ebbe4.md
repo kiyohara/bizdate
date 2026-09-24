@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/project-thread-0ebbe4`
-- PR: 未採番
+- PR: #83
 - 最終更新: 2026-09-24
 
 ## 目的
@@ -30,7 +30,7 @@ Issue #40。version を公開する作業手順（公開後確認 Issue、リリ
 
 - [x] guideline、skill、入口、README、`progress.md`、decision log を書く
 - [x] 検証と予行を行い、結果を記録する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] review cycle を回す
 
 ## 検証
