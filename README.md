@@ -52,7 +52,7 @@ curl -fsSLO "https://github.com/kiyohara/bizdate/releases/latest/download/bizdat
 sha256sum -c "bizdate-${target}.tar.gz.sha256"
 ```
 
-macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使います。`OK` と表示されれば、checksum が一致しています。環境によっては `WARNING: 1 line is improperly formatted` も表示されますが、`OK` が表示されていれば問題ありません。`--strict` を付けると失敗するため、付けないでください。
+macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使います。`OK` と表示されれば、checksum が一致しています。環境によっては `WARNING: 1 line is improperly formatted` も表示されますが、`OK` が表示されていれば問題ありません。この警告が出る環境では `--strict` を付けると失敗するため、付けないでください。
 
 展開して、PATH の通ったディレクトリに置きます。次の例では `~/.local/bin` に置きます。
 

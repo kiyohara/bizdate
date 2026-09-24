@@ -31,7 +31,7 @@ bizdate の version を公開するための実行 skill。
 
 - guideline の「役割と権限」で、agent が行わない操作を確かめる。
 - レビュー待ちの自分の PR が他に無いことを確かめる。あればユーザーに確認する。
-- `v<version>` の tag と Release が無いことを確かめる。有れば止めて報告する。
+- 新しく始める場合（公開後確認 Issue がまだ無い場合）は、`v<version>` の tag と Release が無いことを確かめる。有れば止めて報告する。途中から再開する場合は「入力」に従い、再開する手順から行う。
 
 ### 2. 公開後確認 Issue の起票・再利用
 
@@ -86,7 +86,7 @@ version が `Cargo.toml` の `version` と異なる場合だけ行う。同じ�
 | 状況 | 扱い |
 | --- | --- |
 | version が決まっていない | 候補を示してユーザーに確認する |
-| 同じ version の closed の公開後確認 Issue、tag、Release のいずれかがある | 止めて報告する |
+| 公開後確認 Issue がまだ無いのに、同じ version の tag か Release がある。または同じ version の closed の公開後確認 Issue がある | 止めて報告する |
 | 公開前確認の項目を満たさない | 止めて、内容と推奨する対処を報告する |
 | 承認を待つ | 止まる。文言での承認と tag の push の知らせを待つ |
 | workflow が失敗した | guideline の「復旧」に従う。承認の無い再実行をしない |
