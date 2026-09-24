@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/project-thread-0js1d6`
-- PR: 未作成
+- PR: #81
 - 最終更新: 2026-09-24
 
 ## 目的
@@ -26,7 +26,7 @@ Issue #80。tap（`kiyohara/homebrew-tap`）への書き込みに使う Actions 
 
 - [x] publish job、`dist-workspace.toml` のコメント、`distribution.md` を新しい名前に揃える
 - [x] 0025 に追記し、index を揃える
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] #40 の本文の secret の記述を同期する
 - [ ] review cycle を回す
 
