@@ -13,6 +13,7 @@ Issue #65。Release workflow の build job で cargo-about 0.9.2 をソースか
 - 依存の #64（PR #67）は merge 済み。着手時点で open PR は無い。
 - ローカル（macOS host の Docker Desktop）で作業している。`drive-issue-to-reviewed-pr` の P1 として進めている。
 - PR #76 を作成し、note を採番した。PR CI（head `dbcf7b9` と `192844f`）で CI と Release workflow はすべて success となり、`custom-ci` の `platform` は skipped になった。所要時間を PR #67 の初回 push と比べた（「検証」の「PR CI」）。
+- review cycle `claude-code-77382cf-20260924000454`（head `77382cf`）で指摘 1 件（imo 1）を受け、採用して対応した（P4、`214120e`）。再確認（P5、head `214120e`）で thread は resolve 可と判定され、1 周で収束した。残るのは人間による thread の resolve と merge の判断である。
 - ユーザーの補足（2026-09-24）: 並列実行の試行中で、#68 / #70 / #63 を cloud session が同時に進めている。直列の確認は今回に限り例外として承認済みで、他の session のブランチと PR には触れない。`progress.md` は DIST-03b の行だけを更新する。decision log は 0022 への追記を優先し、新しいログが要る場合は 0026 を使う。review metadata の `Model` には実行環境で確認した識別子を書く。
 
 ## 調査結果
@@ -117,6 +118,7 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 
 - tag push で `custom-ci` の `platform` が回ることは、条件式の review だけで確かめている。実動は未検証で、初回公開の公開後チェックとして #40 へ引き継ぐ。
 - prebuilt とソースビルドの出力の byte 比較は Linux aarch64（`aarch64-unknown-linux-musl`）でだけ行った。`x86_64-unknown-linux-musl` と `aarch64-apple-darwin` の prebuilt の出力は、PR CI の各 build job で `check-third-party-licenses.sh` を通すことで確かめる（byte 比較ではない）。
+- `progress.md` の「次にやること」に「`run-issue-task` で #65 へ進む」の行が残る。ユーザーの指示（DIST-03b の行だけを更新する）に従って据え置いた。merge 後の整理（`maintain-progress` など）に残す。
 
 ## セッションログ
 
@@ -126,3 +128,5 @@ Issue 本文を MCP で更新し、公開 API で読み戻して、意図した�
 - 2026-09-24: PR CI（head `dbcf7b9` と `192844f`）の結果と所要時間を記録し、PR #67 の初回 push と比べた。0022 の追記の「影響」に実測を足した。`progress.md` の DIST-03b の PR 欄に #76 を反映した。
 - 2026-09-24: P2 の review（cycle `claude-code-77382cf-20260924000454`、head `77382cf`）を subagent に委譲した。review 1 本と inline 1 件が投稿され、読み戻しで確かめた。指摘は imo 1。must / ask / nits / fyi は 0。install script、`platform` の条件、0022 の追記、文書の整合、Issue #65 の完了条件はいずれも妥当と判定された。review の `Model` は `claude-opus-5-5`（subagent の system prompt で確認）。
 - 2026-09-24: P3 で指摘を確かめた。#40 の本文の公開前チェック・公開後チェックに、tag push の run で `custom-ci` の `platform` が回ったことを見る項目は無かった。`platform` が省かれても `custom-ci` は success になり、`host` の条件を満たすことも確かめた。採用と判断した。P4 で 0022 の追記の「影響」に確認の方法と引き継ぎ先を書き、#40 の本文の公開後チェックに 1 項目を足した（「後続 Issue の同期」）。文書だけの変更のため、Rust と Compose の検証は再実行していない。
+- 2026-09-24: P4 で thread に処置を返信した（採用し修正した。`Model` は `claude-opus-5-5`。session の metadata と system prompt で確認）。読み戻しで返信が 1 件だけであることを確かめた。`214120e` の check runs 17 件はすべて完了し、期待どおりだった。
+- 2026-09-24: P5 の再確認（P2 と同じ subagent、head `214120e`）で、thread は resolve 可と判定された（resolve 可マーカー付きの返信 1 件と完了要約 1 本を読み戻しで確かめた）。未対応 0、新規指摘 0。#40 の本文も公開 API の原文で確かめられた。P6 で追加対応は不要と判断した。
