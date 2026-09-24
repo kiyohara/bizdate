@@ -1,11 +1,11 @@
 <!-- 記入前に doc/guidelines/decision-log-guidelines.md の「正本と参照の関係」を確認する。関連は decision log → spec の向きで書く。本ログは仕様の正本ではない。状態は proposed / decided / superseded / rejected のいずれか。index 未決表の open は使わない。 -->
 
-# Dependabot による GitHub Actions の更新
+# Dependabot による GitHub Actions と Cargo の更新
 
 - 状態: decided
 - 作成日: 2026-09-09
 - 最終更新日: 2026-09-23
-- 関連: `.github/dependabot.yml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `dist-workspace.toml`, `doc/guidelines/development-loop.md`, [Issue #21](https://github.com/kiyohara/bizdate/issues/21), [Issue #38](https://github.com/kiyohara/bizdate/issues/38)
+- 関連: `.github/dependabot.yml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `dist-workspace.toml`, `doc/guidelines/development-loop.md`, [Issue #21](https://github.com/kiyohara/bizdate/issues/21), [Issue #38](https://github.com/kiyohara/bizdate/issues/38), [Issue #63](https://github.com/kiyohara/bizdate/issues/63), [Issue #73](https://github.com/kiyohara/bizdate/issues/73)
 
 ## 背景
 
@@ -104,3 +104,54 @@ Cargo の version updates の実装 Issue（#63）は、配布準備（#36〜#40
 - Cargo の更新 PR のレビュー負荷や、MSRV 起因の失敗が大きい場合。grouping、頻度、major 更新の扱いを見直す。
 - dist が、生成する workflow の action を他の workflow と揃えて更新する仕組みを持った場合。`release.yml` の扱いを見直す。
 - security updates の PR が version updates の PR と衝突し、レビューの手戻りが目立つ場合。
+
+## 2026-09-23 追記: Cargo の version updates の設定（#63）
+
+上の再判断で採用した Cargo の version updates を、[Issue #63](https://github.com/kiyohara/bizdate/issues/63) で `.github/dependabot.yml` に入れる。更新頻度、grouping、open PR 上限、major 更新、MSRV を超える更新、security updates の grouping、実動確認の追跡先を決める。
+
+### 一次資料で確かめたこと
+
+- options（`allow`、`groups` の `update-types` / `applies-to`、`open-pull-requests-limit`、既定 cooldown）は [Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference) の source（[github/docs](https://github.com/github/docs) の `content/code-security/reference/supply-chain-security/dependabot-options-reference.md`、commit `7922319`、2026-09-23）で確かめた。
+  - version updates は既定で manifest に明示した依存だけを対象にする。`allow` の `dependency-type: all` は、`cargo` では直接の依存の依存（間接の依存）も含める。
+  - `groups` は既定で version updates に効く（`applies-to` 未指定時は `version-updates`）。`update-types` は `minor` / `patch` / `major` で group を絞る。group に入らない更新は依存ごとの PR になる。
+  - `open-pull-requests-limit` は version updates にだけ効き、security updates の PR は数えない。既定は 5。
+  - 既定の cooldown（3 日）は version updates に効き、security updates には効かない（上の 2026-09-09 追記と同じ）。
+- Dependabot の Cargo の挙動は [dependabot-core](https://github.com/dependabot/dependabot-core) の source（commit `f8de02f`、2026-09-23）で確かめた。本リポジトリの bot PR で確かめた結果ではない。
+  - 更新の分類: `Cargo::Version.update_type` は、1.0 未満では Cargo の SemVer 規則に従い、`0.y` の `y` の変化（`0.0.z` では `z` の変化）を `major` と数える（`cargo/lib/dependabot/cargo/version.rb`）。`jiff` 0.2 → 0.3 や `encoding_rs` 0.8 → 0.9 は major として扱われる。
+  - MSRV: 最新 version の探索は `rust-version` で絞らない。`UpdateChecker` は `LatestVersionFinder#latest_version` を `language_version` 無しで呼び、crates.io の release が持つ `rust` の値は使われない（`cargo/lib/dependabot/cargo/update_checker.rb`、`update_checker/latest_version_finder.rb`）。ただし `Cargo.lock` がある場合、更新先はこの最新 version ではなく、`VersionResolver` が決める解決可能な version である。`FilePreparer` が要求を `>= <現行>, <= <最新>` に置き換えた manifest を作り、Dependabot の image の cargo で `cargo update -p <spec>` を実行して、結果の `Cargo.lock` から version を読む（`update_checker/version_resolver.rb`、`update_checker/file_preparer.rb`。調査時点の image は `rust:1.98.0`）。manifest の `edition` と `rust-version` はそのまま渡る。
+  - `Cargo.lock` の書き換え: `LockfileUpdater` は manifest の要求を `=<version>` に固定し、`cargo update -p <name>:<previous_version>` を実行する。line が動かなかった場合にだけ `--precise` で再試行する（`file_updater/lockfile_updater.rb`）。
+  - manifest の要求は、新しい version を既存の要求が許さない場合にだけ上げる（`RequirementsUpdateStrategy::BumpVersionsIfNecessary`）。互換のある更新は `Cargo.lock` だけの差分になる。
+
+### 判断
+
+| 項目 | 採否 | 理由 |
+|---|---|---|
+| ecosystem と頻度 | `cargo`、`directory: "/"`、weekly | `github-actions` と揃える。依存は直接 5 crate、`Cargo.lock` 全体でも数十 crate であり、週次でも grouping で本数を抑えられる。修正の利用者への到達は再リリースが律速であり、日次にする利益が小さい |
+| 対象 | 間接の依存も含める（`allow: dependency-type: all`） | TLS を担う `rustls` / `ring`、root store の `webpki-roots` は `ureq` 経由の間接の依存である。既定の直接の依存だけでは、`ureq` の更新が出るまで `Cargo.lock` の中で古いまま残る |
+| grouping | minor / patch を group `cargo` の 1 本にまとめる。major はまとめない | 互換のある更新は `Cargo.lock` だけの差分が大半で、まとめてもレビューの負担が小さい。major（上記のとおり `0.y` の変化を含む）はコード修正が要ることがあり、まとめると 1 つの失敗で他の更新も止まる。依存ごとの PR に分けて切り分けやすくする |
+| major 更新 | 対象に含める（`ignore` しない） | `github-actions` と同じ。除外すると、互換の無い更新に気付く経路が無くなる |
+| open PR 上限 | 2 本 | `github-actions` と同じ 1 本では、修正待ちの major の PR が 1 本残るだけで group の PR も出なくなる。group 1 本と major 1 本を並べられる数にする。レビューは直列のまま行う |
+| cooldown | 既定（3 日）のまま | `github-actions` と揃える。security updates には効かないため、脆弱性の修正は待たない |
+| security updates の grouping | まとめない（`applies-to: security-updates` の group を置かない） | security updates は open PR 上限を受けず、依存ごとに出る。依存が少なく同時に出ることは稀で、1 件ずつなら失敗の切り分けと revert が容易である。まとめると、修正版の 1 つが MSRV などで落ちたときに他の修正まで止まる |
+
+### MSRV を超える更新
+
+更新先は、Dependabot の image の cargo が `rust-version` 付きの manifest を解決した結果で決まる（上記）。edition 2024 の resolver（v3）は `rust-version` を考慮した解決（`incompatible-rust-versions = "fallback"`）を既定にしている。
+
+- 確かめたこと: Compose の cargo 1.98 で、`rust-version = "1.64"`、`resolver = "3"`、要求 `clap = ">= 4.0.0, <= 4.6.0"` の crate を解決すると、`clap` は MSRV に合う 4.3.24 になった。cargo は `Adding clap v4.3.24 (available: v4.6.7, requires Rust 1.85)` と出力した。`resolver = "2"` では 4.6.0 になった。範囲内に MSRV に合う version があれば、直接の依存でもそれが選ばれる。
+- 見込み（未確認）: Dependabot でも同じ解決になるなら、MSRV を超える更新は CI の失敗ではなく、「MSRV に合う version までの更新 PR が出る」または「更新 PR が出ない」形で現れる。範囲内に MSRV に合う version が無い場合（`fallback` は合う version が無ければ合わない version を選ぶ）や、security updates で修正版が MSRV を超える場合は、MSRV を超える crate が入った更新 PR が作られ得る。本リポジトリの bot PR では確かめていない（[#73](https://github.com/kiyohara/bizdate/issues/73) で確かめる）。
+- 検出: CI は MSRV と同じ toolchain（`ci.yml` の `RUST_TOOLCHAIN`）で `--locked` の clippy / test / build を回す。Release workflow の build も同じ toolchain を使う（`.github/build-setup.yml`）。MSRV を超える crate が `Cargo.lock` に入ると cargo が `rust-version` の不足で失敗する。更新 PR の CI 成功を merge の条件にすることで、MSRV を超える更新は main に入らない。
+- 据え置きへの気付き: 更新 PR が出ないまま MSRV のために古い version に留まる場合は、PR からは気付けない。MSRV は最新 stable に揃える方針（[0014](0014-dependency-crates-and-toolchain.md)）であり、Rust の新しい stable が出た時点で MSRV を上げれば据え置きは解ける。据え置きの有無は、Compose で `cargo update --dry-run` を実行したときの `requires Rust` の表示で確かめられる。
+- 処置: CI が MSRV の不足で落ちた更新 PR は merge しない。MSRV を上げる Issue を起こし、`doc/guidelines/development-command-guidelines.md` の「MSRV を上げるとき」に従って別 PR で上げる。更新 PR に MSRV の変更を足さない。MSRV の変更は開発 image と cloud session の environment cache にも及び、bot の更新と分けてレビューするためである。MSRV を上げても、Dependabot が更新 PR を rebase するのは次の schedule の実行時か、target branch への push で PR が conflict したときである（options reference の `rebase-strategy`）。急ぐ場合は更新 PR に `@dependabot rebase` をコメントして rebase させ、CI を回し直す。
+- 上限を塞ぐ場合: MSRV を上げるまでの間に更新 PR が open PR 上限を塞ぐ場合、または group の PR に MSRV を超える更新が混ざって互換のある他の更新まで止まる場合は、該当の依存を `ignore` へ理由のコメント付きで足す PR を出し、MSRV を上げたら速やかに外す。`ignore` は security updates にも効くため、`versions` で該当 version の範囲に絞り、`update-types` での除外にしない。`@dependabot ignore` のコメントは設定がリポジトリに残らないため使わない（`@dependabot rebase` は設定を残さない一度きりの操作なので使ってよい）。
+- 手順は `doc/guidelines/development-loop.md` の「Dependabot が作成する更新 PR」に置く。
+
+### 実動確認の追跡
+
+設定が既定ブランチへ入った後の確認（設定の受理、更新チェックの実行、間接の依存が対象に入ること、最初の Cargo 更新 PR の分かれ方と差分、その PR での CI と Release workflow の結果）は [Issue #73](https://github.com/kiyohara/bizdate/issues/73) で追う。#63 は PR の merge で close されるため、#21 と #30 の分け方に揃える。設定追加 PR の CI 成功だけでは実動確認済みとしない。Dependabot alerts と security updates の有効化の確認も #73 に含める。
+
+### 影響
+
+- `.github/dependabot.yml` に `cargo` の設定を足す。`github-actions` の設定は変えない。
+- `doc/guidelines/development-loop.md` の「Dependabot が作成する更新 PR」を、Cargo の更新 PR にも当てはめ、レビュー観点と MSRV を超える更新の処置を足す。
+- Dependabot alerts と Dependabot security updates の有効化は、ユーザーが repository settings で行う。agent は settings を変えない。

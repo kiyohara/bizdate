@@ -14,3 +14,25 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 1
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # 直接の依存に加え、Cargo.lock にだけ現れる間接の依存（rustls / ring / webpki-roots など）も
+    # version update の対象にする。
+    allow:
+      - dependency-type: "all"
+    # 互換のある更新（minor / patch）を 1 本にまとめる。互換の無い更新（Cargo の規則では 0.y の
+    # y の変化も含む）は依存ごとの PR に分け、コードの修正が要る更新がまとめた PR を止めないようにする。
+    # security update はまとめない。cooldown は github-actions と同じく既定のままとする。
+    # 方針と MSRV を超える更新の扱いは doc/design/decision-log/0015-dependabot-updates.md を参照。
+    groups:
+      cargo:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # まとめた PR 1 本と、互換の無い更新の PR 1 本を同時に開ける上限。
+    open-pull-requests-limit: 2
