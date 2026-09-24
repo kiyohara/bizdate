@@ -21,7 +21,7 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 - minor / patch を group `cargo` の 1 本にまとめる。major（Cargo の規則で `0.y` の変化を含む）は依存ごとの PR にする。major は ignore しない。
 - open PR 上限は 2 本（group 1 本 + major 1 本）。`github-actions` の 1 本とは揃えない。
 - cooldown は既定のまま。security updates は group にしない。
-- MSRV: Dependabot は更新先を選ぶときに `rust-version` を考慮しない（dependabot-core の source で確認）。MSRV の toolchain で回る CI が止める。落ちた更新 PR は merge せず、MSRV を別 PR で上げる。上限を塞ぐ間は `ignore` を PR で足す。
+- MSRV: 最新 version の探索は `rust-version` で絞らないが、実際の更新先は `rust-version` 付きの manifest を cargo が解決した結果で決まり、MSRV に合う version に留まる場合がある（dependabot-core の source と cargo 1.98 の実験。Dependabot での挙動は #73 で確かめる）。MSRV を超える crate が入った更新 PR は MSRV の toolchain で回る CI が止める。落ちた更新 PR は merge せず、MSRV を別 PR で上げる。更新が止まる間は `versions` に絞った `ignore` を PR で足す。
 - 実動確認は追跡用 Issue #73 を起こして追う（#21 / #30 と同じ分け方）。
 
 ## 次にやること
@@ -60,3 +60,4 @@ Issue #63 の対応。`.github/dependabot.yml` に `cargo` ecosystem を追加�
 - 2026-09-24T00:13Z P5 完了。4 件とも resolve 可、未対応 0 件。review cycle 完了（1 周で収束）。
 - ユーザー確認で止まった箇所: 無し。
 - PR CI の所要時間: 初回 head `4a85093` で CI 約 4.6 分、Release workflow 約 6.6 分（macOS runner の queued を含む）。review 対応後の head `278831d` で CI 約 1 分、Release workflow 約 4.5 分。
+- 2026-09-24T00:24Z Codex のクロスレビュー（cycle `codex-fc86ddd-20260924002331`、head `fc86ddd`）。指摘 1 件（fyi）: note の決定事項の MSRV の行が修正前の判断のまま。採用し、現在の判断に合わせた。
