@@ -10,7 +10,7 @@
 
 ## 現在の状況
 
-- 正本、skill、入口 shim、decision log 0023、index、`progress.md`（OPS-01 の行だけ）を更新した。PR 作成前。
+- PR #72 を作成し、review cycle `claude-code-594a957-20260923235616` を完了した（指摘 1 件、採用、resolve 可マーカー付き）。thread の resolve と merge はユーザーが行う。
 
 ## 決定事項
 
@@ -25,7 +25,8 @@
 ## 次にやること
 
 - PR を作成し、note を採番する。（完了）
-- `drive-issue-to-reviewed-pr` の P2 以降（review を subagent へ委譲）。
+- `drive-issue-to-reviewed-pr` の P2 以降（review を subagent へ委譲）。（完了）
+- ユーザーが inline thread を resolve し、PR を merge する。
 
 ## 検証
 
@@ -47,3 +48,7 @@
 - 2026-09-23T23:56Z〜23:58Z: P2。subagent が review cycle `claude-code-594a957-20260923235616` を作り、head `594a957` を review した。指摘 1 件（`[imo]` 1）。拒否された操作は無い。inline comment に environment が footer を二重に付けた（#69 のスコープ）。
 - P3: `[imo]` 1 件を採用した。guideline の「PR title 以外では制限しない」は tool 名にも掛かり、0017（commit message は無規定、code / 文書は言及なし）からの明文化を 0023 が記録していなかった。0023 の「決定」と「影響」、index の行を直した。
 - 2026-09-23T23:58Z: P4。修正を 60a7b46 で push し、inline thread に処置（採用し修正した）を返信した。read-back で返信 1 件のみを確認した。
+- 2026-09-24T00:03Z: 修正後の head `0701b70` の CI が green（23:58:57Z から 00:02:40Z まで約 4 分）。
+- 2026-09-24T00:04Z: P5。P2 と同じ subagent が head `0701b70` を再確認し、thread に resolve 可マーカー付きで返信し、完了要約を投稿した。追加の指摘は 0 件。拒否された操作は無い。
+- P6: 追加対応は不要と判断し、review cycle を完了した（着手から約 22 分）。ユーザー確認で止まった箇所は無い。
+- 評価実験の所見: 投稿の末尾に environment が attribution footer を自動で付けることがあり、canonical metadata が末尾にならない投稿や、`---` が二重になる投稿が出た（#69 のスコープ）。`github-op-integrated` MCP は接続できず、組み込みの GitHub tool で代替した。
