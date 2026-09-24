@@ -123,7 +123,7 @@ jobs:
           .github/scripts/prepare-homebrew-formula.sh target/distrib/bizdate.rb target/distrib \
             "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/formula/bizdate.rb"
 
-      # dist の template が含む、brew style の自動修正できる違反を直す (publish-homebrew も同じ script を通す)。
+      # dist の template が含む、brew style の自動修正できる違反を直す (publish-homebrew はこの結果をそのまま書く)。
       - name: Fix the Formula style
         run: .github/scripts/fix-homebrew-formula-style.sh "$RUNNER_TEMP/formula/bizdate.rb"
 

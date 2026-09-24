@@ -31,7 +31,7 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 - [x] PR CI で、3 target の Formula の検査と install / `brew test` / 配置を確かめる
 - [x] `distribution.md`、decision log 0025 と index、`development-command-guidelines.md`、Copilot 指示を更新する
 - [x] `progress.md` の DIST-04 を更新する（PR 欄に #79）
-- [ ] review cycle を回す（`drive-issue-to-reviewed-pr` の P2 以降。P2 と P4 は済み、P5 の再確認が残る）
+- [x] review cycle を回す（1 周で収束）
 - [x] PR を作成し、note を採番する
 
 ## 検証
@@ -65,3 +65,4 @@ Issue #39。dist の Homebrew installer を有効にし、既存 tap `kiyohara/h
 - 2026-09-24: #39 に着手。dist の Homebrew 設定と custom publish job、Formula の検査・test 追加・install 検証・publish の script を追加した。
 - 2026-09-24: PR #79 を draft で作成し、`number-working-branch-note` の手順で note を採番した（完了として書き換えたタスク行: 「PR を作成し、note を採番する」の 1 行。触らなかった stale 表現・タスク行: 0 件。PR description に旧 note 名の参照は無かった）。PR CI の失敗 3 回を直し、head `7e90272` で全 job が green になった。
 - 2026-09-24: P2。review cycle `claude-code-69f95c0-20260924050758`（head `69f95c0`）で指摘 3 件（must 1 / imo 1 / nits 1）。P3 で 3 件とも採用。P4 で対応した: prerelease の tag で `homebrew-formula` を skipped にする（must）、publish job は検証済みの artifact をそのまま書き、version を plan と照合する（imo）、`fix-homebrew-formula-style.sh` の冒頭コメントを直す（nits）。あわせて `distribution.md`、0025、index を揃えた。
+- 2026-09-24: P5。同じ review cycle で head `c8fd2c5` を再確認し、3 thread とも resolve 可と判定された。新規指摘は完了要約内の nits 1 件（`release-verify.yml` の古いコメント「publish-homebrew も同じ script を通す」）。P6 で採用し、コメントだけを直した。反復は 1 周で収束。残るのは人間による 3 thread の resolve と merge の判断。
