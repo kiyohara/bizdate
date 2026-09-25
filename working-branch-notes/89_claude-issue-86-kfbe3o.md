@@ -12,7 +12,7 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
 
 - cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` の P1 として進めている。#82 と並行して進める（ユーザーが一度限りの試行として承認。直列の確認は今回に限り外す。#82 のブランチと PR には触れない。decision log を新規に作る場合は 0027 を使う）。
 - 依存: #84 は PR #87 の merge（2026-09-25）で閉じている。
-- 実装と手元の検証を終えた。方法の選択はユーザーの回答待ちで、推奨の「公開前に整える」で進めている。
+- 実装と手元の検証を終えた。方法はユーザーが「公開前に整える」に決めた（2026-09-25）。
 - review cycle `claude-code-763668e-20260925053303` の指摘に対応している（P4）。
 
 ## 決定事項
@@ -24,7 +24,7 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
   - `github-release = "announce"` は Release の作成を publish job の後へ移し、tap の Formula が Release より先に書かれる。
   - `extra-artifacts` の build は `sha256.sum` の生成より前に走る。
   - 残る方法は、`custom-release-verify` の中で `build-global-artifacts` の artifact を待ち、末尾の空行を取り除いた checksum file で workflow artifact を置き換えてから `host` へ渡す形である。PR の run（`pr-run-mode = "upload"`）で毎回通る。待つために run の artifact の一覧を読む `actions: read` が要る。
-- 方法の選択をユーザーに示した（推奨は上の「公開前に整える」。回答待ちの間は推奨で進める）。
+- 方法の選択をユーザーに示し、ユーザーが推奨の「公開前に整える」を選んだ（2026-09-25）。
 - 推奨の方法で実装した。`release-verify` に 3 job（`wait for build artifacts`、`normalize checksums (<artifact>)`、`checksum files`）と 3 script（`wait-for-build-artifacts.sh`、`normalize-checksum-files.sh`、`check-checksum-files.sh`）を足し、`release-verify` の権限に `actions: read` を足した。置き換えは、build の artifact を取得する `archive`、`homebrew-formula`、`homebrew` の後に置く。
 - re-run で前の attempt の `artifacts-build-global` を拾わないよう、最新の `artifacts-plan-dist-manifest` より後に作られたものを待つ。同じ名前の artifact が複数あると、取得と置き換えは ID が最大のものを選び、ID は作成順とは限らない。待ち合わせの後は `host` の取得まで `artifacts-*` を上げる job が無く、`checksum files` が `host` と同じ集合を検査するため、置き換えが別の attempt の artifact を選んで整え損ねても `host` の前で止まる。例外として、`build-global-artifacts` が artifact を上げた後に失敗した run は再実行せず、version を上げる（release-guidelines の「復旧」）。
 - prerelease では `homebrew-formula` と `homebrew` が skipped になり、`if` の無い後の job も skipped になる。追加した 3 job のすべてに状態関数を含む条件を置き、prerelease でも走らせる。
@@ -68,7 +68,6 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 
 ## リスク・ブロッカー
 
-- ユーザーが「上流を待つ」を選んだ場合は、実装を外して方針を変える。
 - 別の job が上げた artifact の `overwrite` での置き換えと、`actions: read` での artifact の一覧の取得は、PR の run（head `fa31805`）で動くことを確かめた。置き換えた artifact を `host` が Release に上げる経路は、次の version の公開で初めて通る。
 - `build-global-artifacts` が失敗した場合、`wait for build artifacts` は上限（900 秒）まで待ってから失敗する。`host` はどちらでも走らない。
 - `build-global-artifacts` が artifact を上げた後に失敗した run で、失敗した job だけを再実行すると、上げ直した `sha256.sum` が置き換えと検査を通らずに `host` に渡りうる。workflow では防げないため、release-guidelines の「復旧」で、その run では再実行せず version を上げるとした。
@@ -82,3 +81,4 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 - 2026-09-25（P2）: review cycle `claude-code-763668e-20260925053303`（head `763668e`）で指摘 2 件（must 1、ask 1）。must は prerelease で置き換えと検査が skipped になる件、ask は re-run で前の attempt の artifact を選びうる件。
 - 2026-09-25（P3/P4）: 2 件とも採用した。must は `homebrew-formula` の条件を一時的に反転した commit（`b113fc4`）で再現し、後の 2 job に状態関数を含む条件を置いた。ask は、取得と置き換えが選ぶ artifact の前提を改め、防げない場合の扱いを release-guidelines の「復旧」に置いた。
 - 2026-09-25（P4）: 修正後の run（head `19f1482`）で、prerelease 相当でも 3 job が走って通ることを確かめ、条件の反転を戻した。
+- 2026-09-25: ユーザーが方法の選択で「公開前に整える」を選んだ。
