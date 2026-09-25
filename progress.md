@@ -72,7 +72,7 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 | version | 公開日 | Release | 検証 | 未確認 |
 |---|---|---|---|---|
-| `0.1.0` | 2026-09-25 | [v0.1.0](https://github.com/kiyohara/bizdate/releases/tag/v0.1.0) | [#84](https://github.com/kiyohara/bizdate/issues/84)。3 target の archive、third-party 表記、Homebrew の install と `brew test`、対応環境の値は ok。既定 CSV の取得は arm64 の 2 target で ok（`x86_64-unknown-linux-gnu` はユーザーの判断で確かめない） | [#85](https://github.com/kiyohara/bizdate/issues/85)（前の version からの `brew upgrade`） |
+| `0.1.0` | 2026-09-25 | [v0.1.0](https://github.com/kiyohara/bizdate/releases/tag/v0.1.0) | [#84](https://github.com/kiyohara/bizdate/issues/84)。3 target の archive、third-party 表記、macOS での Homebrew の install と `brew test`、対応環境の値は ok。既定 CSV の取得は arm64 の 2 target で ok（`x86_64-unknown-linux-gnu` はユーザーの判断で確かめない） | [#85](https://github.com/kiyohara/bizdate/issues/85)（前の version からの `brew upgrade`） |
 
 ## 完了
 

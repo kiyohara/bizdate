@@ -51,3 +51,5 @@ cloud session で実行した。
 
 - 2026-09-25: #84 が確認済みになった後に着手した。#84 の「公開後の PR」に項目を 2 つ足し（「配布準備」の表の注記、Copilot 用の指示）、README、`progress.md`、`.github/copilot-instructions.md` を直した。
 - 2026-09-25（P1）: PR #87 を draft で作成し、`number-working-branch-note` で note を採番した。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。
+- 2026-09-25（P2）: head `95cb0f7` の CI と Release workflow の success を確かめてから、subagent に review を委譲した。review cycle `claude-code-95cb0f7-20260925032438`、指摘 1 件（nits 1）。merge を妨げる問題は無し。
+- 2026-09-25（P3 / P4）: nits（台帳の行の検証の要約に、公開 tap で Homebrew を確かめた環境が無い）を採用した。guideline の「公開後確認」の表で Homebrew の環境は「macOS。Linux の Homebrew があれば Linux も」であり、#84 の Mac のコメントのとおり公開 tap からの install と `brew test` は macOS だけで行ったことを確かめた。suggestion のとおり「macOS での」を足した（行は suggestion と一致、5 列のまま）。README の案内は、tag の run の `custom-release-verify / homebrew` が Linux の 2 target でも install と `brew test` を通しているため変えない。
