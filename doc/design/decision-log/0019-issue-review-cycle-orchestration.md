@@ -89,13 +89,13 @@ prompt を毎回書き起こす運用では、次が毎回曖昧になってい�
 
 ## 2026-09-25 追記: `--from-pr` で P2 から始める前に P1 の完了条件を確かめる
 
-Issue #82。`--from-pr` の入口は、PR の state と head SHA、既存の review cycle の有無を確かめて P2（未収束の review cycle があれば P4）から始め、P1 の完了条件は確かめていなかった。P1 の途中（PR の作成後、採番の前など）で session が途切れ、`--from-pr` で再開すると、次のことが起こり得た。P2 以降のフェーズは採番をせず、P2 / P5 の委譲中は push もしないため、review の途中でも補えない。
+Issue #82。`--from-pr` の入口は、PR の state と head SHA、既存の review cycle の有無を確かめて P2（未収束の review cycle があれば P4）から始め、P1 の完了条件は確かめていなかった。P1 の途中（PR の作成後、採番の前など）で session が途切れ、`--from-pr` で再開すると、次のことが起こり得た。
 
 - note の採番が飛ばされる。
 - 索引にある Issue で、`progress.md` の更新が漏れる。
 - `run-issue-task` の報告から引き上げた項目が note に残らず、終了時の報告から落ちる。
 
-slapex の同じ skill でも同じ隙間が見つかり、kiyohara/slapex#234 で扱う。
+P2 以降のフェーズはこれらを行わず、P2 / P5 の委譲中は push もしないため、review の途中でも補えない。slapex の同じ skill でも同じ隙間が見つかり、kiyohara/slapex#234 で扱う。
 
 ### 候補
 
