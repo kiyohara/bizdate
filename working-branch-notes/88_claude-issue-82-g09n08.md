@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/issue-82-g09n08`
-- PR:
+- PR: #88
 - 最終更新: 2026-09-25
 
 ## 目的
@@ -31,7 +31,7 @@ Issue #82。`drive-issue-to-reviewed-pr` を `--from-pr` で P2 から始める�
 - [x] SKILL.md の「入力と入口」に確認の規定を足す
 - [x] 0019 に追記し、index の要約を揃える
 - [x] Issue の「検証」を行い、結果を残す
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] review cycle を回す
 
 ## 検証
