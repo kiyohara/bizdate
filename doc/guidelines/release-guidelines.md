@@ -119,6 +119,7 @@
 - `build-local-artifacts (<target>)` の 3 job と `build-global-artifacts`: 3 target の archive と `.sha256`、`sha256.sum`、`bizdate.rb` の 8 件を作っている。Release には `host` が `dist-manifest.json` を加え、9 件になる。
 - `custom-release-verify / archive (<target>)` の 3 job: checksum、archive の構成、third-party 表記、起動の確認が通っている。記録した最低 glibc（Linux の 2 target）と最低 macOS が、README の対応環境と一致する。上がっていれば、README を直す Issue を先に済ませ、release notes にも書く。
 - `custom-release-verify / homebrew formula` と `custom-release-verify / homebrew (<target>)` の 3 job: Formula の生成、install、`brew test` が通っている。
+- `custom-release-verify / wait for build artifacts`、`custom-release-verify / normalize checksums (<artifact>)` の 4 job、`custom-release-verify / checksum files`: build の artifact の checksum file から末尾の空行を取り除いて置き換え、`host` と同じ形で取得した checksum file の検査が通っている。
 - `custom-ci / fmt / clippy`: success。PR の run では `custom-ci / test / build (<target>)` が skipped になるのは想定どおりである。
 
 その run の後に `main` へ別の PR が入っていた場合、run が確かめた内容は候補 SHA と一致しない。その旨を承認の提示に書く。tag push の run は `host` の前に同じ検証を通すため、失敗しても公開はされないが、その version は使えなくなる。
@@ -160,7 +161,7 @@ git push origin v<version>
 
 - `plan`、`build-local-artifacts (<target>)` の 3 job、`build-global-artifacts`
 - `custom-ci / fmt / clippy` と `custom-ci / test / build (<target>)` の 3 job。後者が skipped でなく success であること（PR の run では確かめられない）
-- `custom-release-verify / release tag`、`custom-release-verify / archive (<target>)` の 3 job、`custom-release-verify / homebrew formula`、`custom-release-verify / homebrew (<target>)` の 3 job
+- `custom-release-verify / release tag`、`custom-release-verify / archive (<target>)` の 3 job、`custom-release-verify / homebrew formula`、`custom-release-verify / homebrew (<target>)` の 3 job、`custom-release-verify / wait for build artifacts`、`custom-release-verify / normalize checksums (<artifact>)` の 4 job、`custom-release-verify / checksum files`
 - `host`、`custom-publish-homebrew / formula`、`announce`
 
 job の名前は release workflow に従う。workflow を変えたときに揃える範囲は、冒頭のとおりである。
@@ -196,7 +197,7 @@ job の名前は release workflow に従う。workflow を変えたときに揃�
 | Release | draft でも prerelease でもなく、asset が 9 件そろう | どこでもよい |
 | tag の run | 「監視」の job がすべて success | どこでもよい |
 | 確定 SHA | tag が指す commit が候補 SHA と一致する | どこでもよい |
-| 取得と checksum | 9 件を取得でき、各 `.sha256` と `sha256.sum` に一致する | どこでもよい |
+| 取得と checksum | 9 件を取得でき、各 `.sha256` と `sha256.sum` に一致する。checksum file が `check-checksum-files.sh` を通る（空行が無く、`--strict` の照合が警告なしで通る） | 取得はどこでもよい。`check-checksum-files.sh` は Compose の dev service |
 | 展開、同梱物、起動、隔離データでの判定 | `verify-release-archive.sh`（macOS は下の手順）が通る | 各 target の native 環境 |
 | third-party 表記 | 各 archive の `THIRD-PARTY-LICENSES.md` が `check-third-party-licenses.sh` を通る | Compose の dev service |
 | 既定 CSV の取得 | `--source` を付けない `fetch-holidays` が成功し、取得したデータで判定できる | 各 target の native 環境のうち、取得先に届くもの |
@@ -232,6 +233,12 @@ dir=$(mktemp -d ./release-check.XXXXXX)
 ```
 
 取得できない asset が 1 件でもあれば、その時点で非 0 で終わる。`sha256.sum` に 3 つの archive の行があることと、各 archive の `.sha256` が記す file 名がその archive だけであること（`verify-release-archive.sh` と同じ読み方）も確かめるため、asset が欠けていたり、`.sha256` が別の archive を指していたりすれば通らない。最後に `ok:` の行が出れば、9 件の取得と checksum の確認が済んでいる。macOS では `sha256sum -c` の代わりに `shasum -a 256 -c` を使う。
+
+続けて、公開した checksum file に空行が無く、`sha256sum` と `shasum` の `-c --strict` が警告なしで通ることを確かめる（release workflow の `checksum files` の job と同じ検査）。
+
+```sh
+docker compose run --rm dev .github/scripts/check-checksum-files.sh "$dir" "$dir/dist-manifest.json"
+```
 
 Linux（container の architecture の target。cloud session では x86_64、Apple Silicon の Mac では arm64）:
 
@@ -297,10 +304,11 @@ brew test kiyohara/tap/bizdate
 ## 公開後の PR
 
 - 公開後確認 Issue が確認済みになったら、その Issue を入力に `run-issue-task`（review まで回す場合は `drive-issue-to-reviewed-pr`）で PR を出す。description に `Closes #<公開後確認 Issue>` を含める。
-- PR の内容は、`progress.md` の「リリース履歴」への行の追加と、README に予定表記が残っていればその切り替えである。初回公開では `progress.md` の未公開の記述も直す（「初回公開（v0.1.0）」）。
+- PR の内容は、`progress.md` の「リリース履歴」への行の追加と、README に予定表記が残っていればその切り替えである。README に `shasum` の警告の注記が残っていれば、下の条件で外す。初回公開では `progress.md` の未公開の記述も直す（「初回公開（v0.1.0）」）。
 - README で有効な案内に切り替えるのは、公開後確認で確かめた経路（archive と Homebrew）の節だけとする。確かめられなかった経路の節は予定表記のまま残し、その経路を確かめた version の公開後の PR で切り替える。
 - 公開後確認で見つかった、この文書や README の記述の食い違い（job の表示名、対応環境の値など）を公開後の PR で直す場合は、先に公開後確認 Issue の「公開後の PR」に項目を足す。PR の範囲はその項目だけとする。
 - 公開の確認を終える前に、README の予定表記を外さない。手順を入れた PR や、リリース準備 PR の merge を、公開の確認の完了として扱わない。
+- README の「GitHub Releases の archive からインストールする」にある `shasum` の警告の注記（`WARNING: 1 line is improperly formatted` と `--strict`）は、空行の無い checksum file を初めて公開した version の公開後の PR で外す。その version の公開後確認で、checksum file が `check-checksum-files.sh` を通ったことを確かめてから外す。それより前の version の checksum file は空行を含む（decision log 0022 の 2026-09-25 追記）。
 
 ## リリース台帳
 

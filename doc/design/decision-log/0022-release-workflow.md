@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-23
-- 最終更新日: 2026-09-24
-- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `dist-workspace.toml`, `.github/workflows/release.yml`, `.github/workflows/ci.yml`, `.github/scripts/install-cargo-about.sh`, [Issue #38](https://github.com/kiyohara/bizdate/issues/38), [Issue #65](https://github.com/kiyohara/bizdate/issues/65)
+- 最終更新日: 2026-09-25
+- 関連: `doc/design/distribution.md`, `doc/guidelines/development-command-guidelines.md`, `doc/guidelines/release-guidelines.md`, `dist-workspace.toml`, `.github/workflows/release.yml`, `.github/workflows/ci.yml`, `.github/workflows/release-verify.yml`, `.github/scripts/install-cargo-about.sh`, [Issue #38](https://github.com/kiyohara/bizdate/issues/38), [Issue #65](https://github.com/kiyohara/bizdate/issues/65), [Issue #86](https://github.com/kiyohara/bizdate/issues/86)
 
 ## 背景
 
@@ -182,3 +182,75 @@ PR の run では、直接の CI と Release workflow の `custom-ci` が、同�
 
 - cargo-about の version を上げる場合、または build runner を変える場合。runner に合う prebuilt があるかを確かめ、無ければ導入方法を見直す。
 - dist の version を上げる場合（上の条件）。custom job へ `plan` を渡す形が変わっていないかも確かめる。`platform` を省く条件がこれを前提にしている。
+
+## 2026-09-25 追記: checksum file の末尾の空行を取り除いてから公開する
+
+Issue #86。`v0.1.0` の公開後確認（#84）で、macOS の `shasum -a 256 -c` が `sha256.sum` と各 `.sha256` に対して `WARNING: 1 line is improperly formatted` を出した。照合はすべて `OK` で、exit 0 である。README は、この警告が出ることと、`--strict` を付けると失敗することを注記している。
+
+dist 0.32.0 の `write_checksum_file`（crates.io の `cargo-dist-0.32.0` の `src/lib.rs:714-738`）は、各行を `writeln!` で書いた後に `contents.push('\n')` で改行をもう 1 つ足す。archive ごとの `.sha256` と、全 archive をまとめた `sha256.sum` の両方がこの関数を通るため、どちらも末尾に空行を 1 行含む。
+
+### 候補
+
+上の候補（A〜U）と区別するため、V から続ける。
+
+- V: dist の version を上げ、直った版を使う
+- W: `release-verify` の中で `build-global-artifacts` の artifact を待ち、空行を取り除いた checksum file で build の workflow artifact を置き換えてから `host` へ渡す
+- X: `host` の後の publish job で、Release の checksum file の asset を差し替える
+- Y: `github-release = "announce"` にして Release の作成を publish job の後へ移し、その前に置き換える
+- Z: 直さずに上流の修正を待ち、README の注記を残す
+
+### 検討内容
+
+2026-09-25 の時点で、crates.io の cargo-dist の最新は 0.32.0 である。上流の main の `write_checksum_file` も改行を足したままであり、V は採れない。
+
+dist 0.32.0 の release workflow テンプレートには、`sha256.sum` ができた後、`host` の前に、`host` と競合せずに走る custom job の差し込み口が無い。
+
+- `global-artifacts-jobs`（`release-verify`）は `build-global-artifacts` と同じ `needs` を持ち、並行して走る。`sha256.sum` はまだ無く、`needs` で待てない。
+- `host-jobs` は `build-global-artifacts` の後に走るが、`host` と並行する。`host` が Release に上げる artifact を取得している間に置き換えると競合する。
+- `extra-artifacts` の build は、global の build の中で unified checksum の生成より前に走る。
+- `github-build-setup` は build の前にだけ差し込める。
+
+W では、`release-verify` の job が、この run の artifact の一覧を API で読んで `artifacts-build-global` を待つ。`host` は `release-verify` の完了を待つため、置き換えは `host` より前に終わる。置き換えには `actions/upload-artifact` の `overwrite` を使い、同じ名前の artifact を消してから上げ直す。上げ直しに失敗すれば `release-verify` が失敗し、`host` は走らない。一覧を読むために、`release-verify` に `actions: read` が要る。
+
+置き換えている間に同じ artifact を取得する job があると競合する。`release-verify` の中で build の artifact を取得する job（`archive`、`homebrew-formula`、`homebrew`）の後に置けばよい。`build-global-artifacts` の取得は、それが artifact を上げた時点で終わっている。PR の run（`pr-run-mode = "upload"`）も `host` の直前まで同じ経路を通るため、置き換えと検査を PR ごとに確かめられる。
+
+re-run では、前の attempt の artifact が一覧に残る。`actions/download-artifact` は、同じ名前の artifact が複数あれば最新を取る。`build-global-artifacts` が走り直す場合に、前の attempt の `artifacts-build-global` を拾って置き換えると、後から上がる空行つきの file が `host` に渡る。そこで、最新の `artifacts-plan-dist-manifest`（`plan` job が上げる）より後に作られた `artifacts-build-global` を待つ。`plan` が走り直さない re-run（失敗した job だけの再実行）では、前の attempt の artifact をそのまま使う。
+
+X では、差し替えるまでの間、空行つきの file が公開される。`host` は PR では走らないため、この経路は公開の日まで一度も動かない（上の H で避けた状態）。publish job に `contents: write` が要り、GitHub の immutable release を有効にすると差し替えられなくなる。
+
+Y では、Release を作るのが `announce` の job になり、tap の Formula を書く publish job（[0025](0025-homebrew-formula-publishing.md)）が Release より先に走る。Formula が指す archive が存在しない間ができる。
+
+Z では、警告と README の注記が残る。上流の修正の時期は分からない。
+
+### 決定
+
+- W を採る。`release-verify` に次の job を足す。
+  - `wait for build artifacts`（`checksum-artifacts`）: `archive`、`homebrew-formula`、`homebrew` の後に走り、`.github/scripts/wait-for-build-artifacts.sh` で `artifacts-build-global` を待つ。checksum file を含む build の artifact（`artifacts-build-*`）の名前を出す。prerelease で `homebrew-formula` と `homebrew` が skipped でも走る。
+  - `normalize checksums (<artifact>)`（`checksum-normalize`）: artifact ごとに、`.github/scripts/normalize-checksum-files.sh` で改行 2 つで終わる checksum file から最後の改行を 1 つだけ取り除き、同じ名前の artifact を置き換える。空行で終わらない file は変えない。
+  - `checksum files`（`checksum`）: `host` と同じ形（`artifacts-*` を 1 つの dir にまとめる）で取得し、`.github/scripts/check-checksum-files.sh` で検査する。plan が挙げる checksum file がそろい、空行と CR が無く、各行が `<sha256> *<archive 名>` で plan の archive と一致し、`sha256sum -c --strict` と `shasum -a 256 -c --strict` が警告なしで通ることを確かめる。
+- `dist-workspace.toml` の `github-custom-job-permissions` で、`release-verify` に `actions: read` を足す。`release-verify` の中で `actions: read` を持つのは `checksum-artifacts` の job だけにする。
+- checksum の形式（`*` の binary mode 表記）と algorithm は変えない。公開済みの `v0.1.0` の asset は差し替えない。
+- README の注記（`shasum` の警告と `--strict`）は、空行の無い checksum file を初めて公開する version の公開後の PR で外す。外すのは、その version の公開後確認で、公開した checksum file が `check-checksum-files.sh` を通ったことを確かめた後とする。担当はその version の公開担当者であり、公開後確認 Issue の雛形の「公開後の PR」に項目を置く。`releases/latest` が指す asset が空行の無いものに変わるまで、注記を残すためである。
+
+### 理由
+
+- 公開の時点で、Release の checksum file に空行が無い。公開後の差し替えが要らない。
+- 置き換えと検査は PR の run でも動く。公開の日に初めて動く経路を増やさない。
+- 検査は、置き換えた後の file を `host` と同じ取り方で確かめる。置き換えが漏れても、空行が戻っても、`host` の前で止まる。
+- 空行の判定は tool に頼らず直接行う。`shasum` と coreutils 8.x の `sha256sum`（`ubuntu-22.04` の runner）は空行を警告するが、coreutils 9.x の `sha256sum` は空行を黙って読み飛ばす。
+- 取り除くのは dist が足した最後の改行 1 つに限り、それ以外の崩れは検査で止める。dist が直った後は、何も変えずに通る。
+
+### 影響
+
+- `release-verify` は、検証に加えて、`host` が Release に上げる build の workflow artifact を変える。変えるのは checksum file の末尾の改行 1 つだけで、archive、Formula、manifest は同じ内容のまま上げ直す。
+- `release-verify` の token に `actions: read` が加わった。使うのは、`checksum-artifacts` の job が、この run の artifact の一覧を読むときだけである。
+- release workflow の job が 3 つ増える（matrix を展開すると 6 job）。`homebrew` の job の後に直列で走るため、Release workflow の所要時間が延びる。
+- `build-global-artifacts` が失敗した場合、`checksum-artifacts` の job は待つ上限（900 秒）まで待ってから失敗する。`host` はどちらでも走らない。
+- `doc/design/distribution.md` の「checksum」、`doc/guidelines/development-command-guidelines.md` の「release workflow」、`doc/guidelines/release-guidelines.md`（job の一覧、公開後確認、公開後の PR）、`run-release` の公開後確認 Issue の雛形、`.github/copilot-instructions.md` を改めた。
+- Release の checksum file に空行が無いことは、tag push の run でだけ確かめられる。PR の run では、置き換えた workflow artifact を `checksum files` の job が検査する。公開した asset は、次の version の公開後確認で `check-checksum-files.sh` に通す。
+
+### 後から見直す条件
+
+- dist の version を上げる場合。checksum file に空行を足さなくなっていれば、`checksum-artifacts` と `checksum-normalize` の job と `actions: read` を外し、`checksum` の検査は残す。`build-global-artifacts` の後、`host` の前に走る差し込み口ができていれば、待ち合わせをやめてそこへ移す。
+- `actions/upload-artifact` の `overwrite`、または `actions/download-artifact` が同じ名前の artifact から選ぶ規則が変わった場合。
+- re-run で前の attempt の artifact の扱いが変わった場合。`wait-for-build-artifacts.sh` の待つ条件を読み直す。

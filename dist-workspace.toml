@@ -42,7 +42,8 @@ github-build-setup = "../build-setup.yml"
 # 公開を止める検査は、host が結果を確かめる段階に置く。plan 段階 (plan-jobs) に置くと、失敗したときに
 # 後続の build が skipped になり、skipped を許す host の条件が成立してしまうため使わない。
 # - local-artifacts-jobs: build と並行して、公開する commit で CI (.github/workflows/ci.yml) を回す
-# - global-artifacts-jobs: build の後に tag の形を確かめ、3 target の native runner で archive を検証する
+# - global-artifacts-jobs: build の後に tag の形を確かめ、3 target の native runner で archive を検証する。
+#   dist が作る checksum file の末尾の空行を取り除いて、Release に上げる形で検査する
 local-artifacts-jobs = ["./ci"]
 global-artifacts-jobs = ["./release-verify"]
 
@@ -50,7 +51,9 @@ global-artifacts-jobs = ["./release-verify"]
 # 追加した job は読み取りだけに絞る。
 [dist.github-custom-job-permissions]
 ci = { contents = "read" }
-release-verify = { contents = "read" }
+# release-verify は、この run の artifact の一覧を読んで build-global-artifacts を待つため actions: read も持つ
+# (checksum file の末尾の空行を取り除く job。doc/design/decision-log/0022-release-workflow.md の 2026-09-25 追記)。
+release-verify = { actions = "read", contents = "read" }
 # tap へは HOMEBREW_TAP_GITHUB_TOKEN で push する。GITHUB_TOKEN の書き込み権限は要らない。
 publish-homebrew = { contents = "read" }
 
