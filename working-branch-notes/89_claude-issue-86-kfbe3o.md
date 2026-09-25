@@ -60,7 +60,7 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 | YAML の parse | `release-verify.yml`、`release.yml` で OK |
 | `git diff --check` | OK |
 | PR の run | head `fa31805` の Release workflow と CI が success（`host` は PR のため skipped）。`wait for build artifacts` は plan の後に作られた `artifacts-build-global` を待たずに見つけ、build の artifact 4 件の名前を出した。`normalize checksums (<artifact>)` の 4 job は、それぞれ checksum file を `normalized` とし、元の artifact を消して上げ直した。`checksum files`（`ubuntu-22.04`）は、`host` と同じ形で取得した 5 件の artifact（置き換えた 4 件は上げ直したときと同じ digest）で 4 つの checksum file を検査し、`sha256sum -c --strict` と `shasum -a 256 -c --strict` が警告なしで通った |
-| prerelease の経路 | `homebrew-formula` の条件を一時的に反転した commit（head `b113fc4`）の PR の run で、`homebrew formula` と `homebrew` が skipped、`wait for build artifacts` が success のとき、`normalize checksums (<artifact>)` と `checksum files` が skipped になり、run は success で終わった（修正前の再現） |
+| prerelease の経路 | `homebrew-formula` の条件を一時的に反転した commit（head `b113fc4`）の PR の run で、`homebrew formula` と `homebrew` が skipped、`wait for build artifacts` が success のとき、`normalize checksums (<artifact>)` と `checksum files` が skipped になり、run は success で終わった（修正前の再現）。修正後（head `19f1482`）は同じ条件で、`normalize checksums (<artifact>)` の 4 job が checksum file を `normalized` として元の artifact を置き換え、`checksum files` が 4 つの checksum file で `sha256sum -c --strict` と `shasum -a 256 -c --strict` を警告なしで通した。条件の反転は次の commit で戻した |
 | coreutils 8.x の `sha256sum` | Docker の `ubuntu:22.04`（coreutils 8.32）で、末尾に空行がある checksum file に対し、`sha256sum -c` が `WARNING: 1 line is improperly formatted` を出して exit 0、`--strict` を付けると exit 1 になった。整えた file は、PR の run の `checksum files`（`ubuntu-22.04`）で `--strict` でも警告なしで通った |
 | 公開した asset | この PR では確かめられない。次の version の公開後確認で `check-checksum-files.sh` に通す |
 | Rust の検証（`cargo fmt` / `clippy` / `test`） | 省略。Rust のコードと Cargo の設定を変えていないため。PR CI では回る |
@@ -81,3 +81,4 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 - 2026-09-25: PR の run（head `fa31805`）が success。追加した job の記録を読み、置き換えと検査が動いたことを確かめた。coreutils 8.32 の空行の扱いを Docker の `ubuntu:22.04` で確かめた。
 - 2026-09-25（P2）: review cycle `claude-code-763668e-20260925053303`（head `763668e`）で指摘 2 件（must 1、ask 1）。must は prerelease で置き換えと検査が skipped になる件、ask は re-run で前の attempt の artifact を選びうる件。
 - 2026-09-25（P3/P4）: 2 件とも採用した。must は `homebrew-formula` の条件を一時的に反転した commit（`b113fc4`）で再現し、後の 2 job に状態関数を含む条件を置いた。ask は、取得と置き換えが選ぶ artifact の前提を改め、防げない場合の扱いを release-guidelines の「復旧」に置いた。
+- 2026-09-25（P4）: 修正後の run（head `19f1482`）で、prerelease 相当でも 3 job が走って通ることを確かめ、条件の反転を戻した。
