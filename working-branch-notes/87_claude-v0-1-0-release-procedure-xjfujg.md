@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/v0-1-0-release-procedure-xjfujg`
-- PR: 未採番
+- PR: #87
 - 最終更新: 2026-09-25
 
 ## 目的
@@ -24,7 +24,7 @@ Issue #84 の「公開後の PR」。`v0.1.0` の公開後確認を終えたの�
 ## 次にやること
 
 - [x] 検証を行い、結果を記録する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] review cycle を回す
 
 ## 検証
@@ -50,3 +50,4 @@ cloud session で実行した。
 ## セッションログ
 
 - 2026-09-25: #84 が確認済みになった後に着手した。#84 の「公開後の PR」に項目を 2 つ足し（「配布準備」の表の注記、Copilot 用の指示）、README、`progress.md`、`.github/copilot-instructions.md` を直した。
+- 2026-09-25（P1）: PR #87 を draft で作成し、`number-working-branch-note` で note を採番した。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。
