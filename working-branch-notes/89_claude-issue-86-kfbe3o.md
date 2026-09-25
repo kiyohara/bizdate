@@ -37,7 +37,7 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
 - [x] decision log 0022 に追記し、index と関連文書を揃える
 - [x] README の注記を外す時期と担当を記録する
 - [x] PR を作成し、note を採番する
-- [ ] PR の run で、追加した job が通ることを確かめる（`checksum files` の記録を読む）
+- [x] PR の run で、追加した job が通ることを確かめる（`checksum files` の記録を読む）
 - [ ] review cycle を回す
 
 ## 検証
@@ -57,8 +57,8 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 | `sh -n` と実行権限 | 追加した 3 script で OK |
 | YAML の parse | `release-verify.yml`、`release.yml` で OK |
 | `git diff --check` | OK |
-| PR の run | PR 作成後に確かめる。`checksum files` の job の記録で、置き換えた workflow artifact が検査を通ることを確かめる |
-| coreutils 8.x の `sha256sum` | 手元に無い。PR の run の `checksum files` の job（`ubuntu-22.04`）で確かめる |
+| PR の run | head `fa31805` の Release workflow と CI が success（`host` は PR のため skipped）。`wait for build artifacts` は plan の後に作られた `artifacts-build-global` を待たずに見つけ、build の artifact 4 件の名前を出した。`normalize checksums (<artifact>)` の 4 job は、それぞれ checksum file を `normalized` とし、元の artifact を消して上げ直した。`checksum files`（`ubuntu-22.04`）は、`host` と同じ形で取得した 5 件の artifact（置き換えた 4 件は上げ直したときと同じ digest）で 4 つの checksum file を検査し、`sha256sum -c --strict` と `shasum -a 256 -c --strict` が警告なしで通った |
+| coreutils 8.x の `sha256sum` | Docker の `ubuntu:22.04`（coreutils 8.32）で、末尾に空行がある checksum file に対し、`sha256sum -c` が `WARNING: 1 line is improperly formatted` を出して exit 0、`--strict` を付けると exit 1 になった。整えた file は、PR の run の `checksum files`（`ubuntu-22.04`）で `--strict` でも警告なしで通った |
 | 公開した asset | この PR では確かめられない。次の version の公開後確認で `check-checksum-files.sh` に通す |
 | Rust の検証（`cargo fmt` / `clippy` / `test`） | 省略。Rust のコードと Cargo の設定を変えていないため。PR CI では回る |
 | 情報統制 | note、script、文書に、認証情報、個人情報、ローカルの絶対 path を書いていない |
@@ -66,7 +66,7 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 ## リスク・ブロッカー
 
 - ユーザーが「上流を待つ」を選んだ場合は、実装を外して方針を変える。
-- 別の job が上げた artifact の `overwrite` での置き換えと、`actions: read` での artifact の一覧の取得は、PR の run で初めて動く。
+- 別の job が上げた artifact の `overwrite` での置き換えと、`actions: read` での artifact の一覧の取得は、PR の run（head `fa31805`）で動くことを確かめた。置き換えた artifact を `host` が Release に上げる経路は、次の version の公開で初めて通る。
 - `build-global-artifacts` が失敗した場合、`wait for build artifacts` は上限（900 秒）まで待ってから失敗する。`host` はどちらでも走らない。
 
 ## セッションログ
@@ -74,3 +74,4 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 - 2026-09-25: Issue と依存を確認。dist の最新版と workflow の差し込み位置を調べ、方法の選択をユーザーに示した。
 - 2026-09-25: 推奨の方法で実装し、Compose で検証した。decision log 0022 に追記し、仕様、手順書、公開後確認 Issue の雛形、Copilot 用の指示を揃えた。
 - 2026-09-25（P1）: PR #89 を draft で作成し、`number-working-branch-note` で note を採番した。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。
+- 2026-09-25: PR の run（head `fa31805`）が success。追加した job の記録を読み、置き換えと検査が動いたことを確かめた。coreutils 8.32 の空行の扱いを Docker の `ubuntu:22.04` で確かめた。
