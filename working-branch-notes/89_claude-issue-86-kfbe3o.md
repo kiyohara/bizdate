@@ -1,7 +1,7 @@
 # 作業ブランチメモ
 
 - ブランチ: `claude/issue-86-kfbe3o`
-- PR: 未作成
+- PR: #89
 - 最終更新: 2026-09-25
 
 ## 目的
@@ -36,7 +36,7 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
 - [x] 検査が空行を含む checksum file で失敗し、整えた file で通ることを Compose で確かめる
 - [x] decision log 0022 に追記し、index と関連文書を揃える
 - [x] README の注記を外す時期と担当を記録する
-- [ ] PR を作成し、note を採番する
+- [x] PR を作成し、note を採番する
 - [ ] PR の run で、追加した job が通ることを確かめる（`checksum files` の記録を読む）
 - [ ] review cycle を回す
 
@@ -73,3 +73,4 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 
 - 2026-09-25: Issue と依存を確認。dist の最新版と workflow の差し込み位置を調べ、方法の選択をユーザーに示した。
 - 2026-09-25: 推奨の方法で実装し、Compose で検証した。decision log 0022 に追記し、仕様、手順書、公開後確認 Issue の雛形、Copilot 用の指示を揃えた。
+- 2026-09-25（P1）: PR #89 を draft で作成し、`number-working-branch-note` で note を採番した。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。
