@@ -184,7 +184,10 @@ jobs:
   # sha256.sum を作る build-global-artifacts は、この workflow と並行して走り needs で待てないため、
   # この run の artifact の一覧を読んで待つ (actions: read が要る)。置き換えは、この workflow で build の
   # artifact を取得する job (archive、homebrew-formula、homebrew) がすべて終わってから行う。
-  # prerelease で homebrew-formula と homebrew が skipped でも走らせる。
+  # prerelease で homebrew-formula と homebrew が skipped でも、この job と後の 2 job を走らせる。後の 2 job
+  # にも状態関数を含む if を置く。if が無い job は暗黙の success() で評価され、依存の連鎖の上流に skipped が
+  # あると skipped になる。reusable workflow の中の skipped は host の条件で成功扱いになるため、置き換えも
+  # 検査もせずに host が公開してしまう。
   checksum-artifacts:
     name: wait for build artifacts
     needs: [archive, homebrew-formula, homebrew]
@@ -214,6 +217,7 @@ jobs:
   checksum-normalize:
     name: normalize checksums (${{ matrix.name }})
     needs: checksum-artifacts
+    if: ${{ !cancelled() && needs.checksum-artifacts.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -248,6 +252,7 @@ jobs:
   checksum:
     name: checksum files
     needs: checksum-normalize
+    if: ${{ !cancelled() && needs.checksum-normalize.result == 'success' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:

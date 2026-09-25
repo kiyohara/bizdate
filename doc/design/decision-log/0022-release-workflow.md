@@ -214,7 +214,13 @@ W では、`release-verify` の job が、この run の artifact の一覧を A
 
 置き換えている間に同じ artifact を取得する job があると競合する。`release-verify` の中で build の artifact を取得する job（`archive`、`homebrew-formula`、`homebrew`）の後に置けばよい。`build-global-artifacts` の取得は、それが artifact を上げた時点で終わっている。PR の run（`pr-run-mode = "upload"`）も `host` の直前まで同じ経路を通るため、置き換えと検査を PR ごとに確かめられる。
 
-re-run では、前の attempt の artifact が一覧に残る。`actions/download-artifact` は、同じ名前の artifact が複数あれば最新を取る。`build-global-artifacts` が走り直す場合に、前の attempt の `artifacts-build-global` を拾って置き換えると、後から上がる空行つきの file が `host` に渡る。そこで、最新の `artifacts-plan-dist-manifest`（`plan` job が上げる）より後に作られた `artifacts-build-global` を待つ。`plan` が走り直さない re-run（失敗した job だけの再実行）では、前の attempt の artifact をそのまま使う。
+prerelease では `homebrew-formula` と `homebrew` が skipped になる。`if` の無い job は暗黙の `success()` で評価され、依存の連鎖の上流に skipped があると、間の job が success でも skipped になる（GitHub Actions の `needs` の仕様）。reusable workflow の中の skipped は `host` の条件で成功扱いになるため、置き換えと検査が skipped のまま `host` が公開する。待ち合わせの job だけでなく、置き換えと検査の job にも状態関数を含む条件を置く必要がある。PR の run は prerelease ではないため、この経路は `homebrew-formula` の条件を一時的に反転した PR の run で確かめた（PR #89）。
+
+re-run では、前の attempt の artifact が一覧に残る。同じ名前の artifact が複数あると、`actions/download-artifact` の取得と、`actions/upload-artifact` の `overwrite` の削除は、ID が最大のものを選ぶ（`@actions/artifact` の実装）。ID は作成順とは限らない。PR #89 の run でも、後から作った artifact の ID が、先に作った artifact の ID より小さいことがあった。このため、置き換えがこの attempt の artifact を選ぶとは限らない。
+
+待ち合わせは、この attempt の `artifacts-build-global` が上がったことを確かめるためにある。上がった後は、`host` の取得までに `artifacts-*` を上げる job が無い。`checksum files` の job は `host` と同じ取り方で同じ集合を検査するため、置き換えが別の attempt の artifact を選んで整え損ねれば、`host` の前で失敗する。この attempt の artifact かどうかは、最新の `artifacts-plan-dist-manifest`（`plan` job が上げる）より後に作られたかどうかで、作成時刻で判断する。`plan` が走り直さない re-run（失敗した job だけの再実行）では、前の attempt の `plan` の artifact が基準になる。
+
+例外は、`build-global-artifacts` が artifact を上げた後に失敗し、その job を再実行する場合である。待ち合わせは前の attempt の `artifacts-build-global` で抜けうる（`custom-release-verify` が成功していれば、走り直しもしない）ため、走り直した `build-global-artifacts` が後から上げる file は、置き換えと検査を通らずに `host` に渡りうる。この場合は再実行せず、version を上げる（`doc/guidelines/release-guidelines.md` の「復旧」）。
 
 X では、差し替えるまでの間、空行つきの file が公開される。`host` は PR では走らないため、この経路は公開の日まで一度も動かない（上の H で避けた状態）。publish job に `contents: write` が要り、GitHub の immutable release を有効にすると差し替えられなくなる。
 
@@ -225,9 +231,10 @@ Z では、警告と README の注記が残る。上流の修正の時期は分�
 ### 決定
 
 - W を採る。`release-verify` に次の job を足す。
-  - `wait for build artifacts`（`checksum-artifacts`）: `archive`、`homebrew-formula`、`homebrew` の後に走り、`.github/scripts/wait-for-build-artifacts.sh` で `artifacts-build-global` を待つ。checksum file を含む build の artifact（`artifacts-build-*`）の名前を出す。prerelease で `homebrew-formula` と `homebrew` が skipped でも走る。
+  - `wait for build artifacts`（`checksum-artifacts`）: `archive`、`homebrew-formula`、`homebrew` の後に走り、`.github/scripts/wait-for-build-artifacts.sh` で `artifacts-build-global` を待つ。checksum file を含む build の artifact（`artifacts-build-*`）の名前を出す。
   - `normalize checksums (<artifact>)`（`checksum-normalize`）: artifact ごとに、`.github/scripts/normalize-checksum-files.sh` で改行 2 つで終わる checksum file から最後の改行を 1 つだけ取り除き、同じ名前の artifact を置き換える。空行で終わらない file は変えない。
   - `checksum files`（`checksum`）: `host` と同じ形（`artifacts-*` を 1 つの dir にまとめる）で取得し、`.github/scripts/check-checksum-files.sh` で検査する。plan が挙げる checksum file がそろい、空行と CR が無く、各行が `<sha256> *<archive 名>` で plan の archive と一致し、`sha256sum -c --strict` と `shasum -a 256 -c --strict` が警告なしで通ることを確かめる。
+  - 3 job はどれも状態関数を含む条件を持ち、prerelease で `homebrew-formula` と `homebrew` が skipped でも走る。`checksum-artifacts` は needs に失敗と cancel が無いとき、後の 2 job は前の job が success のときに走る。
 - `dist-workspace.toml` の `github-custom-job-permissions` で、`release-verify` に `actions: read` を足す。`release-verify` の中で `actions: read` を持つのは `checksum-artifacts` の job だけにする。
 - checksum の形式（`*` の binary mode 表記）と algorithm は変えない。公開済みの `v0.1.0` の asset は差し替えない。
 - README の注記（`shasum` の警告と `--strict`）は、空行の無い checksum file を初めて公開する version の公開後の PR で外す。外すのは、その version の公開後確認で、公開した checksum file が `check-checksum-files.sh` を通ったことを確かめた後とする。担当はその version の公開担当者であり、公開後確認 Issue の雛形の「公開後の PR」に項目を置く。`releases/latest` が指す asset が空行の無いものに変わるまで、注記を残すためである。
@@ -236,7 +243,7 @@ Z では、警告と README の注記が残る。上流の修正の時期は分�
 
 - 公開の時点で、Release の checksum file に空行が無い。公開後の差し替えが要らない。
 - 置き換えと検査は PR の run でも動く。公開の日に初めて動く経路を増やさない。
-- 検査は、置き換えた後の file を `host` と同じ取り方で確かめる。置き換えが漏れても、空行が戻っても、`host` の前で止まる。
+- 検査は、置き換えた後の file を `host` と同じ取り方で確かめる。prerelease を含め、置き換えが漏れても、空行が戻っても、`host` の前で止まる。
 - 空行の判定は tool に頼らず直接行う。`shasum` と coreutils 8.x の `sha256sum`（`ubuntu-22.04` の runner）は空行を警告するが、coreutils 9.x の `sha256sum` は空行を黙って読み飛ばす。
 - 取り除くのは dist が足した最後の改行 1 つに限り、それ以外の崩れは検査で止める。dist が直った後は、何も変えずに通る。
 

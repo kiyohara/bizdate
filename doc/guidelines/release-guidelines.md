@@ -178,6 +178,7 @@ job の名前は release workflow に従う。workflow を変えたときに揃�
 | `announce` | 公開済み | 更新済み | Release と tap には影響しない。原因を示し、再実行の要否をユーザーと決める |
 
 - 再実行は、失敗の内容、再実行する job、期待する結果を示し、承認を得てから行う。同じ失敗が繰り返したら再実行を重ねず、原因を調べる。
+- `build-global-artifacts` が失敗した run の artifact に `artifacts-build-global` がある（artifact を上げた後に失敗した）場合は、原因が内容と無関係でも、その run では再実行しない。失敗した job だけを再実行すると、走り直した `build-global-artifacts` が上げ直す `sha256.sum` が、`custom-release-verify` の置き換えと検査を通らずに `host` に渡りうる（decision log 0022 の 2026-09-25 追記）。version を上げてやり直す。
 - tag を付け替えない。version を上げてやり直す場合、Release が作られていなければ公開後確認 Issue を中止として閉じる。作られていれば公開済みのまま公開後確認を行い、結果を記録する。新しい version は「流れ」の 1 からやり直す。
 
 ### 承認を得て行う操作

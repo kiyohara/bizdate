@@ -1,9 +1,12 @@
 #!/bin/sh
 # release workflow の release-verify が、build の workflow artifact の checksum file を整える前に呼ぶ。
 # release-verify は build-global-artifacts (sha256.sum を作る job) と並行して走り、needs で待てない。
-# この run の artifact の一覧を GitHub の API で読み、artifacts-build-global が上がるまで待つ。
-# 待つのは、最新の artifacts-plan-dist-manifest (plan job が上げる) より後に作られたものである。
-# re-run で build-global-artifacts が走り直すとき、前の attempt の artifact を拾わないため。
+# この run の artifact の一覧を GitHub の API で読み、この attempt の artifacts-build-global が上がるまで待つ。
+# 上がった後は、host の取得までに artifacts-* を上げる job が無い。このため、後の checksum files の job が
+# host と同じ取り方で同じ集合を検査できる。
+# re-run では前の attempt の artifact も一覧に残るため、最新の artifacts-plan-dist-manifest (plan job が
+# 上げる) より後に作られたものを待つ。比べるのは作成時刻である。取得と置き換えは同じ名前の artifact から
+# ID が最大のものを選ぶが、ID は作成順とは限らない。
 # 経緯は doc/design/decision-log/0022-release-workflow.md の 2026-09-25 追記。
 #
 #   .github/scripts/wait-for-build-artifacts.sh [待つ上限の秒数 (既定 900)] >> "$GITHUB_OUTPUT"
