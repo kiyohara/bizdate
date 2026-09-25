@@ -10,10 +10,11 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
 
 ## 現在の状況
 
-- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` の P1 として進めている。#82 と並行して進める（ユーザーが一度限りの試行として承認。直列の確認は今回に限り外す。#82 のブランチと PR には触れない。decision log を新規に作る場合は 0027 を使う）。
+- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めた。#82 と並行して進めた（ユーザーが一度限りの試行として承認。直列の確認は今回に限り外す。#82 のブランチと PR には触れない。decision log を新規に作る場合は 0027 を使う）。
 - 依存: #84 は PR #87 の merge（2026-09-25）で閉じている。
 - 実装と手元の検証を終えた。方法はユーザーが「公開前に整える」に決めた（2026-09-25）。
-- review cycle `claude-code-763668e-20260925053303` の指摘に対応している（P4）。
+- review cycle `claude-code-763668e-20260925053303` は 2 周目で収束した。残るのは、人間による 2 thread の resolve、ready for review への切り替え、merge である。
+- main は #82 の PR #88 の merge で進んだ。この branch との衝突は無く、main は merge していない。
 
 ## 決定事項
 
@@ -40,7 +41,7 @@ Issue #86。dist 0.32.0 が作る checksum file（各 archive の `.sha256` と 
 - [x] README の注記を外す時期と担当を記録する
 - [x] PR を作成し、note を採番する
 - [x] PR の run で、追加した job が通ることを確かめる（`checksum files` の記録を読む）
-- [ ] review cycle を回す
+- [x] review cycle を回す（2 周で収束）
 
 ## 検証
 
@@ -84,3 +85,4 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 - 2026-09-25: ユーザーが方法の選択で「公開前に整える」を選んだ。
 - 2026-09-25（P5）: 同じ cycle の verify-comments（head `02515d5`）で、2 件とも確認済み（resolve 可）。新規指摘は [nits] 1 件（decision log 0022 の「影響」の文書の列挙と、900 秒の待ちの条件）。
 - 2026-09-25（P6/P4 の 2 周目）: [nits] を採用し、0022 の「影響」、note、PR description の同じ記述を直した。
+- 2026-09-25（P5/P6 の 2 周目）: verify-comments（head `b04bc6e`）で [nits] の処置を確認済みとし、新規指摘は 0 件。cycle は 2 周目で収束した。
