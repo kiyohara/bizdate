@@ -69,7 +69,7 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 ## リスク・ブロッカー
 
 - 別の job が上げた artifact の `overwrite` での置き換えと、`actions: read` での artifact の一覧の取得は、PR の run（head `fa31805`）で動くことを確かめた。置き換えた artifact を `host` が Release に上げる経路は、次の version の公開で初めて通る。
-- `build-global-artifacts` が失敗した場合、`wait for build artifacts` は上限（900 秒）まで待ってから失敗する。`host` はどちらでも走らない。
+- `build-global-artifacts` が失敗した場合、`host` は走らない。artifact を上げる前の失敗では `wait for build artifacts` が上限（900 秒）まで待ってから失敗し、上げた後の失敗では待ち合わせを抜ける（その run は再実行しない。次の行）。
 - `build-global-artifacts` が artifact を上げた後に失敗した run で、失敗した job だけを再実行すると、上げ直した `sha256.sum` が置き換えと検査を通らずに `host` に渡りうる。workflow では防げないため、release-guidelines の「復旧」で、その run では再実行せず version を上げるとした。
 
 ## セッションログ
@@ -82,3 +82,5 @@ cloud session で実行した。script は Compose の dev service（Debian 13�
 - 2026-09-25（P3/P4）: 2 件とも採用した。must は `homebrew-formula` の条件を一時的に反転した commit（`b113fc4`）で再現し、後の 2 job に状態関数を含む条件を置いた。ask は、取得と置き換えが選ぶ artifact の前提を改め、防げない場合の扱いを release-guidelines の「復旧」に置いた。
 - 2026-09-25（P4）: 修正後の run（head `19f1482`）で、prerelease 相当でも 3 job が走って通ることを確かめ、条件の反転を戻した。
 - 2026-09-25: ユーザーが方法の選択で「公開前に整える」を選んだ。
+- 2026-09-25（P5）: 同じ cycle の verify-comments（head `02515d5`）で、2 件とも確認済み（resolve 可）。新規指摘は [nits] 1 件（decision log 0022 の「影響」の文書の列挙と、900 秒の待ちの条件）。
+- 2026-09-25（P6/P4 の 2 周目）: [nits] を採用し、0022 の「影響」、note、PR description の同じ記述を直した。

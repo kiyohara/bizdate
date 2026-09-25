@@ -252,8 +252,8 @@ Z では、警告と README の注記が残る。上流の修正の時期は分�
 - `release-verify` は、検証に加えて、`host` が Release に上げる build の workflow artifact を変える。変えるのは checksum file の末尾の改行 1 つだけで、archive、Formula、manifest は同じ内容のまま上げ直す。
 - `release-verify` の token に `actions: read` が加わった。使うのは、`checksum-artifacts` の job が、この run の artifact の一覧を読むときだけである。
 - release workflow の job が 3 つ増える（matrix を展開すると 6 job）。`homebrew` の job の後に直列で走るため、Release workflow の所要時間が延びる。
-- `build-global-artifacts` が失敗した場合、`checksum-artifacts` の job は待つ上限（900 秒）まで待ってから失敗する。`host` はどちらでも走らない。
-- `doc/design/distribution.md` の「checksum」、`doc/guidelines/development-command-guidelines.md` の「release workflow」、`doc/guidelines/release-guidelines.md`（job の一覧、公開後確認、公開後の PR）、`run-release` の公開後確認 Issue の雛形、`.github/copilot-instructions.md` を改めた。
+- `build-global-artifacts` が失敗した場合、`host` は走らない。artifact を上げる前に失敗していれば、`checksum-artifacts` の job は待つ上限（900 秒）まで待ってから失敗する。上げた後に失敗していれば待ち合わせを抜けるが、その run は再実行しない（上の例外）。
+- `doc/design/distribution.md` の「checksum」、`doc/guidelines/development-command-guidelines.md` の「release workflow」、`doc/guidelines/release-guidelines.md`（job の一覧、復旧、公開後確認、公開後の PR）、`run-release` の公開後確認 Issue の雛形、`.github/copilot-instructions.md` を改めた。
 - Release の checksum file に空行が無いことは、tag push の run でだけ確かめられる。PR の run では、置き換えた workflow artifact を `checksum files` の job が検査する。公開した asset は、次の version の公開後確認で `check-checksum-files.sh` に通す。
 
 ### 後から見直す条件
