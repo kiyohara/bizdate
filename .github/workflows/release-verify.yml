@@ -91,7 +91,8 @@ jobs:
   # 条件で成功扱いになる。
   homebrew-formula:
     name: homebrew formula
-    if: ${{ !fromJson(inputs.plan).announcement_is_prerelease }}
+    # 一時的な確認用 (PR #89 の review): prerelease の経路を PR の run で通すため条件を反転している。後の commit で戻す。
+    if: ${{ fromJson(inputs.plan).announcement_is_prerelease }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
