@@ -10,7 +10,7 @@ Issue #84 の「公開後の PR」。`v0.1.0` の公開後確認を終えたの�
 
 ## 現在の状況
 
-- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めている。このブランチは `run-release` で `v0.1.0` を公開した session のものであり、公開と公開後確認の記録は #84（証拠はコメント）と追跡 Issue #85 にある。このブランチの commit はこの PR が最初である。
+- cloud session（Claude Code on the web）で、`drive-issue-to-reviewed-pr` で進めた。review cycle `claude-code-95cb0f7-20260925032438` は 1 周で収束した（P2 の指摘 1 件（nits）は P5 で resolve 可、新規の指摘は 0 件）。残りは、ユーザーによる thread の resolve、draft の解除、merge の判断である。このブランチは `run-release` で `v0.1.0` を公開した session のものであり、公開と公開後確認の記録は #84（証拠はコメント）と追跡 Issue #85 にある。このブランチの commit はこの PR が最初である。
 - #84 は 2026-09-25 に確認済みになった。依存は無く、レビュー待ちの自分の PR は無い。
 
 ## 決定事項
@@ -25,7 +25,7 @@ Issue #84 の「公開後の PR」。`v0.1.0` の公開後確認を終えたの�
 
 - [x] 検証を行い、結果を記録する
 - [x] PR を作成し、note を採番する
-- [ ] review cycle を回す
+- [x] review cycle を回す（1 周で収束）
 
 ## 検証
 
@@ -45,7 +45,7 @@ cloud session で実行した。
 
 ## リスク・ブロッカー
 
-- なし
+- なし。thread の resolve、draft の解除、merge はユーザーが行う。
 
 ## セッションログ
 
@@ -53,3 +53,4 @@ cloud session で実行した。
 - 2026-09-25（P1）: PR #87 を draft で作成し、`number-working-branch-note` で note を採番した。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。
 - 2026-09-25（P2）: head `95cb0f7` の CI と Release workflow の success を確かめてから、subagent に review を委譲した。review cycle `claude-code-95cb0f7-20260925032438`、指摘 1 件（nits 1）。merge を妨げる問題は無し。
 - 2026-09-25（P3 / P4）: nits（台帳の行の検証の要約に、公開 tap で Homebrew を確かめた環境が無い）を採用した。guideline の「公開後確認」の表で Homebrew の環境は「macOS。Linux の Homebrew があれば Linux も」であり、#84 の Mac のコメントのとおり公開 tap からの install と `brew test` は macOS だけで行ったことを確かめた。suggestion のとおり「macOS での」を足した（行は suggestion と一致、5 列のまま）。README の案内は、tag の run の `custom-release-verify / homebrew` が Linux の 2 target でも install と `brew test` を通しているため変えない。
+- 2026-09-25（P5 / P6）: head `1c16d12` の CI と Release workflow の success を確かめてから、P2 の subagent に再確認を委譲した。指摘の thread は resolve 可、未対応は 0 件で、完了要約の「新規の指摘: 無し」も確かめた。追加の対応は要らないと判断し、フローを終えた。
