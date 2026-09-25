@@ -96,7 +96,9 @@ tzdb をバイナリへ bundle する選択は取らない。システム側の�
 
 - `dist` の既定に従い `sha256` とする。archive ごとに `.sha256` ファイルを Release に添付する。
 - `sha256sum -c` で検証できる形式とする。
-- `dist` が作る checksum file は末尾に空行を含む。coreutils 8.x や macOS の `sha256sum -c` / `shasum -a 256 -c` は `WARNING: 1 line is improperly formatted` を出したうえで `OK` を返し、`--strict` を付けると失敗する。利用者向けの案内ではこの警告を扱う。
+- `dist`（0.32.0）が作る checksum file は末尾に空行を含む。coreutils 8.x や macOS の `sha256sum -c` / `shasum -a 256 -c` は `WARNING: 1 line is improperly formatted` を出したうえで `OK` を返し、`--strict` を付けると失敗する。
+- Release に上げる checksum file は空行を含まない形にする。release workflow の `release-verify` が、`host` の前に末尾の空行を取り除き、空行が無く `--strict` の照合が警告なしで通ることを確かめる。`v0.1.0` の checksum file は空行を含んだまま公開しており、差し替えない。
+- 利用者向けの案内では、空行の無い checksum file を初めて公開した version の公開後確認を終えるまで、この警告を扱う（`doc/guidelines/release-guidelines.md` の「公開後の PR」）。
 - `dist` は加えて、全 archive の checksum をまとめた `sha256.sum` と、成果物の一覧である `dist-manifest.json` を Release に添付する。`sha256.sum` は checksum を有効にしている限り外せない。
 - ソースの tarball は `dist` では作らない。GitHub が Release に付ける source code archive で足りる。
 - 署名付き checksum、GPG 署名、sigstore は v1 では導入しない。

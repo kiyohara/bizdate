@@ -4,7 +4,7 @@
 
 - title: `v<version> の公開後確認`
 - 本文: 下の雛形の `<...>` を埋める。公開後の PR を `run-issue-task` で出せるよう、Issue 駆動タスクと同じ節（背景、作業内容・完了条件、検証、スコープ外、依存、実行）を持たせる。
-- README に予定表記が残っていなければ、README の切り替えの行を消す。初回公開でなければ、`progress.md` の未公開の記述の行を消す。
+- README に予定表記が残っていなければ、README の切り替えの行を消す。README に `shasum` の警告の注記が残っていなければ、注記を外す行を消す。初回公開でなければ、`progress.md` の未公開の記述の行を消す。
 
 ````markdown
 ## 状態
@@ -32,7 +32,7 @@
 - [ ] Release が draft でも prerelease でもなく、asset が 9 件そろう
 - [ ] tag の run の job がすべて success（`custom-ci / test / build (<target>)` の 3 job を含む）
 - [ ] 確定 SHA が候補 SHA と一致する
-- [ ] 9 件を取得でき、各 `.sha256` と `sha256.sum` に一致する
+- [ ] 9 件を取得でき、各 `.sha256` と `sha256.sum` に一致する。checksum file が `check-checksum-files.sh` を通る
 - [ ] `aarch64-apple-darwin`: 展開、同梱物、起動、隔離データでの判定
 - [ ] `aarch64-unknown-linux-gnu`: 展開、同梱物、起動、隔離データでの判定
 - [ ] `x86_64-unknown-linux-gnu`: 展開、同梱物、起動、隔離データでの判定
@@ -48,6 +48,7 @@
 
 - [ ] `progress.md` の「リリース履歴」に行を足す
 - [ ] README の予定表記のうち、公開後確認で確かめた経路（archive、Homebrew）の節を有効な案内へ切り替える
+- [ ] README の `shasum` の警告の注記を外す（checksum file が `check-checksum-files.sh` を通った場合。`doc/guidelines/release-guidelines.md` の「公開後の PR」）
 - [ ] `progress.md` の「リリース履歴」の前文、「現況」、「次にやること」にある初回公開が未実施という記述を直す（初回公開のみ）
 
 ## Release 本文へ加える要約（草稿）

@@ -138,12 +138,12 @@ Compose で確かめられるのは、Linux コンテナと同じ target の arc
 | `build-local-artifacts` | 3 target の native runner で `.github/build-setup.yml`（toolchain を CI に揃える、`cargo fetch --locked`、third-party 表記の生成と照合）を実行し、`dist build` で archive と checksum を作る | 走る | 走る |
 | `custom-ci` | `.github/workflows/ci.yml` を呼び、同じ commit で CI を通す。PR では直接の CI と重複する `platform` を省く | `lint` だけ走る | 全 job が走る |
 | `build-global-artifacts` | 全 archive の checksum をまとめた `sha256.sum` を作る | 走る | 走る |
-| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する。dist が生成した Homebrew Formula を検査して test を足し、公開前の archive で install と `brew test` を行う | 走る | 走る |
+| `custom-release-verify` | `.github/workflows/release-verify.yml`。tag が `v<Cargo.toml の version>` であることと、3 target の archive を検証する。dist が生成した Homebrew Formula を検査して test を足し、公開前の archive で install と `brew test` を行う。`build-global-artifacts` の artifact を待ち、dist が checksum file の末尾に足す空行を取り除いた file で build の artifact を置き換え、`host` と同じ形で checksum file を検査する | 走る | 走る |
 | `host` | GitHub Release を作り、成果物を添付する | 走らない | 上の job がすべて成功したときだけ走る |
 | `custom-publish-homebrew` | `.github/workflows/publish-homebrew.yml`。検査した Formula を tap の `Formula/bizdate.rb` へ書く（`doc/design/distribution.md` の「tap の更新」） | 走らない | `host` の成功後に走る。prerelease では skipped |
 | `announce` | dist の後処理 | 走らない | `host` と `custom-publish-homebrew` の後に走る |
 
-検証の結果（archive 名、sha256、構成、`platform-check.sh` の記録、Homebrew での install の記録）は `custom-release-verify` の各 job の step summary に残る。PR で確かめた archive はその run の workflow artifact であり、公開された Release asset ではない。
+検証の結果（archive 名、sha256、構成、`platform-check.sh` の記録、Homebrew での install の記録、checksum file の検査の記録）は `custom-release-verify` の各 job の step summary に残る。PR で確かめた archive はその run の workflow artifact であり、公開された Release asset ではない。
 
 ### tool と action の version を上げるとき
 

@@ -2,6 +2,8 @@
 # reusable workflow。dist-workspace.toml の global-artifacts-jobs から参照する。host (GitHub Release の
 # 作成) は、この workflow の job がすべて成功したときだけ走る。PR でも同じ検証を行うが、公開はしない。
 # 構成と採否理由は doc/design/decision-log/0022-release-workflow.md を参照する。
+# 検証のほかに 1 つだけ、host が Release に上げる build の workflow artifact を変える。dist が作る
+# checksum file の末尾の空行を取り除く (checksum-normalize。0022 の 2026-09-25 追記)。
 name: Release verify
 
 on:
@@ -174,3 +176,100 @@ jobs:
           for target in $TARGETS; do
             .github/scripts/verify-homebrew-formula.sh "$target" "$RUNNER_TEMP/formula/bizdate.rb" "$RUNNER_TEMP/distrib"
           done
+
+  # dist 0.32.0 の checksum file (archive ごとの .sha256 と sha256.sum) は末尾に空行を含み、macOS の
+  # shasum -a 256 -c が警告を出す。host が Release に上げる前に、build の workflow artifact を、空行を
+  # 取り除いた checksum file の入ったものに置き換え、host と同じ形で検査する (0022 の 2026-09-25 追記)。
+  # sha256.sum を作る build-global-artifacts は、この workflow と並行して走り needs で待てないため、
+  # この run の artifact の一覧を読んで待つ (actions: read が要る)。置き換えは、この workflow で build の
+  # artifact を取得する job (archive、homebrew-formula、homebrew) がすべて終わってから行う。
+  # prerelease で homebrew-formula と homebrew が skipped でも、この job と後の 2 job を走らせる。後の 2 job
+  # にも状態関数を含む if を置く。if が無い job は暗黙の success() で評価され、依存の連鎖の上流に skipped が
+  # あると skipped になる。reusable workflow の中の skipped は host の条件で成功扱いになるため、置き換えも
+  # 検査もせずに host が公開してしまう。
+  checksum-artifacts:
+    name: wait for build artifacts
+    needs: [archive, homebrew-formula, homebrew]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      names: ${{ steps.wait.outputs.names }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # build-global-artifacts の artifact が上がるのを待ち、checksum file を含む build の artifact の名前を出す。
+      - name: Wait for the build artifacts
+        id: wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/wait-for-build-artifacts.sh 900 >> "$GITHUB_OUTPUT"
+
+  # build の artifact ごとに、checksum file の末尾の空行を取り除き、同じ名前で置き換える (overwrite)。
+  # host は置き換えた artifact を Release に上げる。空行の無い file (dist が直った場合) は変えない。
+  checksum-normalize:
+    name: normalize checksums (${{ matrix.name }})
+    needs: checksum-artifacts
+    if: ${{ !cancelled() && needs.checksum-artifacts.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.checksum-artifacts.outputs.names) }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ runner.temp }}/artifact
+
+      - name: Remove the trailing empty line from the checksum files
+        run: .github/scripts/normalize-checksum-files.sh "$RUNNER_TEMP/artifact"
+
+      - name: Replace the build artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ runner.temp }}/artifact/
+          if-no-files-found: error
+          overwrite: true
+
+  # host と同じ形 (artifacts-* を 1 つの dir にまとめる) で取得し、Release に上がる checksum file を検査する。
+  # 空行が残っていれば、ここで失敗して host を止める。
+  checksum:
+    name: checksum files
+    needs: checksum-normalize
+    if: ${{ !cancelled() && needs.checksum-normalize.result == 'success' }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the artifacts as host does
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: artifacts-*
+          path: ${{ runner.temp }}/distrib
+          merge-multiple: true
+
+      - name: Check the checksum files
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          .github/scripts/check-checksum-files.sh "$RUNNER_TEMP/distrib" "$RUNNER_TEMP/plan.json"
