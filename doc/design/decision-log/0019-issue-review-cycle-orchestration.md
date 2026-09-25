@@ -4,8 +4,8 @@
 
 - 状態: decided
 - 作成日: 2026-09-12
-- 最終更新日: 2026-09-12
-- 関連: `doc/guidelines/development-loop.md`, `doc/guidelines/issue-driven-task-execution.md`, `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md`, `.agents/skills/run-issue-task/SKILL.md`, `.agents/skills/review-pull-request/SKILL.md`, `doc/design/decision-log/0012-development-loop.md`, `doc/design/decision-log/0018-cloud-session-environment.md`
+- 最終更新日: 2026-09-25
+- 関連: `doc/guidelines/development-loop.md`, `doc/guidelines/issue-driven-task-execution.md`, `doc/guidelines/working-branch-notes-handling.md`, `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md`, `.agents/skills/run-issue-task/SKILL.md`, `.agents/skills/review-pull-request/SKILL.md`, `.agents/skills/number-working-branch-note/SKILL.md`, `doc/design/decision-log/0012-development-loop.md`, `doc/design/decision-log/0018-cloud-session-environment.md`, `doc/design/decision-log/0020-note-numbering-consent-gate.md`
 
 ## 背景
 
@@ -86,3 +86,57 @@ prompt を毎回書き起こす運用では、次が毎回曖昧になってい�
 - 反復上限 2 周で収束しない事例が続き、上限そのものを見直す必要が出たとき。
 - subagent 起動のコストが、得られる指摘の質に対して見合わないと判断されたとき。
 - Codex / Cursor 側で同等の分離が実装され、fallback の記述が不要になったとき。
+
+## 2026-09-25 追記: `--from-pr` で P2 から始める前に P1 の完了条件を確かめる
+
+Issue #82。`--from-pr` の入口は、PR の state と head SHA、既存の review cycle の有無を確かめて P2（未収束の review cycle があれば P4）から始め、P1 の完了条件は確かめていなかった。P1 の途中（PR の作成後、採番の前など）で session が途切れ、`--from-pr` で再開すると、次のことが起こり得た。
+
+- note の採番が飛ばされる。
+- 索引にある Issue で、`progress.md` の更新が漏れる。
+- `run-issue-task` の報告から引き上げた項目が note に残らず、終了時の報告から落ちる。
+
+P2 以降のフェーズはこれらを行わず、P2 / P5 の委譲中は push もしないため、review の途中でも補えない。slapex の同じ skill でも同じ隙間が見つかり、kiyohara/slapex#234 で扱う。
+
+### 候補
+
+上の候補と区別するため、E、F、G、H の記号を使う。
+
+- 確かめる時点: E1 確かめない（従来どおり） / E2 P2 から始める前に P1 の完了条件を確かめ、満たしていなければ P1 の残りの手順から進める / E3 P4 など push できるフェーズで補う
+- 確かめる手段と残りの手順の書き方: F1 本 skill に書き下す / F2 既存の正本（`run-issue-task`、`number-working-branch-note`、`doc/guidelines/working-branch-notes-handling.md` の「note の探し方」）への参照で書く
+- 採番を別の session で行い、`number-working-branch-note` の報告が手元に無く、note にも残っていない場合: G1 ユーザーに確認して止める / G2 報告が無いことと採番の commit を note に残し、未解決事項として報告して進める / G3 note には残さず、報告が無いことと採番の commit を終了時の報告に書いて進める
+- 残りの手順を行う branch: H1 定めない / H2 PR の head branch で行い、local branch が対応することと、push 後の GitHub 上の PR の head で条件を満たすことを確かめる
+
+### 検討内容
+
+E1 では、飛ばされた手順を P2 の reviewer が指摘するとは限らず、指摘が 0 件なら P4 に進まずにフローが終わる。E3 も同じ理由で補えない場合があり、P2 の reviewer は採番前の note を前提に review することになる。E2 は、P1 の完了条件をそのまま入口の確認に使え、P2 の委譲前の push できる区間で補える。
+
+F1 は P1 の手順を二重に定義することになり、`run-issue-task` や `number-working-branch-note` を変えたときに食い違う。F2 は手順の正本を 1 つに保てる（上の「反復上限の置き場」の L1 と同じ考え方）。
+
+G1 はユーザーの手番を増やすが、失われた報告はユーザーに確認しても戻らず、進め方も変わらない。G2 は、`run-issue-task` を単独で使って作った PR に合わない。その PR では、報告は同 skill の手順 10 で行われているが、note に残す規定は無い。別の session から `--from-pr` で再開すると必ずこの場合に当たり、G2 では P2 の前に commit が 1 つ増え、行われた報告を未解決事項として扱うことになる（PR #88 の review で指摘された）。本 skill の P1 を経た PR かどうかを見分ける印も無いため、本 skill の P1 を経た PR に限って G2 を当てることもできない。G3 は G2 と同じく報告を推測で埋めず、報告が手元に無いことを終了時の報告で区別できる。`run-issue-task` の「被委譲 skill の報告の引き上げ」が 0 件と「呼ばなかった」を分けるのと同じ理由である（[0020](0020-note-numbering-consent-gate.md)）。そのうえで commit を増やさず、行われた報告を未解決事項にしない。本 skill の P1 が採番と note への記録の間で途切れ、報告が失われた場合も、note 本文の書き換えは採番の commit の差分から辿れる。
+
+H1 では、PR を作った session と別の cloud session から再開した場合に、残りの手順の commit が session の branch に push され、PR の head が変わらないまま P2 に進み得る（PR #88 の review で指摘された）。H2 は、`.agents/skills/review-pull-request/references/address-comments.md` の手順 6 と 7 が対応の push に求める確認と同じであり、新しい確認の手段を作らない。
+
+次は対象外とした。
+
+- 未収束の review cycle から P4 で再開する場合。Issue の範囲（P2 から始める場合）に合わせた。本 skill の流れでは、review cycle は P1 を終えた後の P2 で作られる。
+- 起点 Issue を持たない PR（索引登録、進捗整理、リリース準備、Dependabot の更新 PR など）。`run-issue-task` で作らないため、P1 の完了条件を当てはめない。
+- CI の確認。「head SHA と CI」が P2 と P5 への委譲の直前に行うため、入口によらず確かめられる。
+- kiyohara/slapex#233 で slapex の同じ skill に足した入口の規定（Issue を入力された場合でも、その Issue を `Closes` する open PR があれば PR の入口として扱う。PR の head branch へ push できない場合は、push を伴う手順の前で止まる）。bizdate の版には無く、必要なら別 Issue にする。この追記では、P1 の残りの手順に限って、PR の head branch で行えない場合に止まる（H2）。
+
+### 決定
+
+- `--from-pr` で P2 から始める場合は、先に P1 の完了条件を PR の head の内容で確かめる。満たしていない条件があれば P1 の残りの手順から進め、P1 の完了条件を満たしてから P2 に進む（E2）。
+- 確かめる手段と残りの手順は、既存の正本への参照で書き、本 skill に複製しない（F2）。
+- P1 の進み具合を一意に読めない場合（番号付き note と `draft_` の note が両方ある、どちらも無いなど）や、起点 Issue を持つかどうか、または対象 Issue を決められない場合は、始めずにユーザーに確認する（後者は「渡すもの」の「追加の review 観点」と同じ扱い）。
+- 残りの手順は PR の head branch で行い、push 後に GitHub 上の PR の head で条件を確かめ直す。local branch を対応させられない、または条件を満たせない場合は、P2 に進まずユーザーへ報告する（H2）。
+- 採番の報告が手元に無く、note にも残っていない場合は、note には残さず、報告が無いことと採番の commit を終了時の報告に書く（G3）。
+
+### 影響
+
+- `.agents/skills/drive-issue-to-reviewed-pr/SKILL.md` の「入力と入口」に「`--from-pr` で P2 から始めるとき」を足した。「停止とエスカレーション」に P1 の進み具合を読めない場合などの行を、「終了時の報告」に採番の報告が手元に無かった場合の扱いを足した。
+- `run-issue-task` と `number-working-branch-note` の手順は変えていない。
+
+### 後から見直す条件
+
+- P1 の完了条件、または `run-issue-task` の手順の番号が変わったとき。確認の表と参照先を揃える。
+- cloud session で、PR を作った session と別の session から `--from-pr` で再開する事例が出たとき。上の kiyohara/slapex#233 の規定の要否を決める。
