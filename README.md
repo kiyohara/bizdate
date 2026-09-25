@@ -4,11 +4,11 @@
 
 主用途は、cron やシェルから月次処理のゲートとして使うことです。業務日は、月曜日から金曜日のうち、日本の祝日・振替休日・国民の休日と、利用者が指定した休日を除いた日です。会社固有の休日や、元日以外の年末年始休暇は自動では除外しません。
 
-配布用バイナリは、最初のリリースの公開後に GitHub Releases と Homebrew で提供します。手順は「インストール（公開予定）」にまとめています。
+配布用バイナリは GitHub Releases と Homebrew で提供しています。手順は「インストール」にまとめています。
 
-## インストール（公開予定）
+## インストール
 
-**この節は、最初のリリースを公開する前に用意した予定の手順です。** 公開を確認するまで、以下の URL と `brew install` は使えません。公開の状況は [GitHub Releases](https://github.com/kiyohara/bizdate/releases) で確認してください。
+公開した version と変更点は [GitHub Releases](https://github.com/kiyohara/bizdate/releases) で確認できます。
 
 ### 対応環境
 

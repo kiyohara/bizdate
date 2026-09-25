@@ -19,7 +19,7 @@
 
 v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22〜#28）を完了し、続けて Dependabot による GitHub Actions の更新運用を導入した（Issue #21、#31 / PR #29、#32）。各フェーズの到達点と参照は「完了」の表にまとめる。
 
-2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。最初の #36 で配布仕様を確定し、正本を `doc/design/distribution.md`、経緯を decision log 0016 に置いた。続く #37 で配布対象 4 target の native CI と最低 glibc の実測を `.github/workflows/ci.yml` に置き、#38 で `dist` の設定と release workflow（PR での archive の作成と検証、`v` tag の push での公開）を置いた（decision log 0022）。2026-09-23 に、PR ごとの CI の待ち時間を縮めるため、配布対象から Intel Mac を外す #64 と、cargo-about を prebuilt で導入する #65 を #39 の前に加え、#64 で配布対象を 3 target にした。続く #39 で Homebrew Formula の生成・検証と tap への書き込みを置き（decision log 0025）、#40 でリリース手順（`doc/guidelines/release-guidelines.md` と `run-release` skill）、README の公開予定のインストール案内、リリース台帳を整えた（decision log 0026）。初回公開は未実施である。
+2026-09-09 の全体点検を踏まえ、次の横断プランとして配布準備（Issue #36〜#40）を登録した。最初の #36 で配布仕様を確定し、正本を `doc/design/distribution.md`、経緯を decision log 0016 に置いた。続く #37 で配布対象 4 target の native CI と最低 glibc の実測を `.github/workflows/ci.yml` に置き、#38 で `dist` の設定と release workflow（PR での archive の作成と検証、`v` tag の push での公開）を置いた（decision log 0022）。2026-09-23 に、PR ごとの CI の待ち時間を縮めるため、配布対象から Intel Mac を外す #64 と、cargo-about を prebuilt で導入する #65 を #39 の前に加え、#64 で配布対象を 3 target にした。続く #39 で Homebrew Formula の生成・検証と tap への書き込みを置き（decision log 0025）、#40 でリリース手順（`doc/guidelines/release-guidelines.md` と `run-release` skill）、README の公開予定のインストール案内、リリース台帳を整えた（decision log 0026）。2026-09-25 に初回公開として `v0.1.0` を公開し、公開後確認を終えた（[#84](https://github.com/kiyohara/bizdate/issues/84)。記録は「リリース履歴」）。
 
 2026-09-12 に、Claude Code on the web の cloud session でも Compose 経由の開発コマンドと GitHub 操作が成立するよう実行環境と運用ルールを整えた（Issue #47 / PR #48、decision log 0018）。正本は `doc/guidelines/cloud-session-guidelines.md`。配布準備の状況は変わっていない。
 
@@ -37,11 +37,11 @@ v1 の CLI 実装と利用方法の整備（Issue #7〜#15 / PR #19、#20、#22�
 |---|---|---|---|---|---|
 | DIST-01 | [#36](https://github.com/kiyohara/bizdate/issues/36) | done | なし | 完了。配布仕様を `doc/design/distribution.md` に、経緯を 0016 に置いた | [#42](https://github.com/kiyohara/bizdate/pull/42) |
 | DIST-02 | [#37](https://github.com/kiyohara/bizdate/issues/37) | done | #36 | 完了。4 target の native `platform` job と最低 glibc の実測を CI に置いた | [#61](https://github.com/kiyohara/bizdate/pull/61) |
-| DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | done | #37 | 完了。`dist` の設定と release workflow を置いた。初回公開は未実施 | [#62](https://github.com/kiyohara/bizdate/pull/62) |
+| DIST-03 | [#38](https://github.com/kiyohara/bizdate/issues/38) | done | #37 | 完了。`dist` の設定と release workflow を置いた。初回公開は `v0.1.0` で行った（#84） | [#62](https://github.com/kiyohara/bizdate/pull/62) |
 | DIST-03a | [#64](https://github.com/kiyohara/bizdate/issues/64) | done | #38 | 完了。配布対象を 3 target にし、Intel Mac（`x86_64-apple-darwin`）を外した | [#67](https://github.com/kiyohara/bizdate/pull/67) |
 | DIST-03b | [#65](https://github.com/kiyohara/bizdate/issues/65) | done | #64 | 完了。cargo-about を upstream の prebuilt（固定した sha256 と照合）で入れ、PR の run では `custom-ci` から `platform` を省いた | [#76](https://github.com/kiyohara/bizdate/pull/76) |
-| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | done | #65 | 完了。Formula を dist で生成して検査・test 追加し、PR で公開前の archive から install を確かめ、tag push で custom の publish job が tap へ書く構成を置いた（0025）。tap への実公開は未実施 | [#79](https://github.com/kiyohara/bizdate/pull/79) |
-| DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | done | #39 | 完了。リリース手順を guideline と `run-release` skill に、公開予定のインストール案内を README に、リリース台帳を「リリース履歴」に置いた。初回公開は未実施 | [#83](https://github.com/kiyohara/bizdate/pull/83) |
+| DIST-04 | [#39](https://github.com/kiyohara/bizdate/issues/39) | done | #65 | 完了。Formula を dist で生成して検査・test 追加し、PR で公開前の archive から install を確かめ、tag push で custom の publish job が tap へ書く構成を置いた（0025）。tap への実公開は `v0.1.0` で確かめた（#84） | [#79](https://github.com/kiyohara/bizdate/pull/79) |
+| DIST-05 | [#40](https://github.com/kiyohara/bizdate/issues/40) | done | #39 | 完了。リリース手順を guideline と `run-release` skill に、公開予定のインストール案内を README に、リリース台帳を「リリース履歴」に置いた。初回公開は `v0.1.0` で行った（#84） | [#83](https://github.com/kiyohara/bizdate/pull/83) |
 
 ### cloud session での agent 運用
 
@@ -55,15 +55,15 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 ## 次にやること
 
-- 初回公開（v0.1.0）は未実施である。初回の前にそろえるもの、初回で初めて確かめるもの、ユーザーが行う操作の順は `doc/guidelines/release-guidelines.md` の「初回公開（v0.1.0）」にまとめた。公開は `run-release` で準備し、ユーザーの承認と tag の push で行う。
+- 初回公開（`v0.1.0`）は 2026-09-25 に行い、公開後確認を終えた（「リリース履歴」）。前の version からの `brew upgrade` は初回では確かめられないため、次の version の公開後確認で確かめる（[#85](https://github.com/kiyohara/bizdate/issues/85)）。tap の README への bizdate の Formula の案内は、ユーザーが tap 側で足す（`doc/guidelines/release-guidelines.md` の「初回公開（v0.1.0）」）。
 - cloud session での agent 運用（#68〜#70）は #69 で完了した。表は、次の整理で「完了」の表へ移す。
 - #38 で 0015 を再判断し、Cargo の Dependabot version updates と Dependabot alerts / security updates を採用した。設定は [#63](https://github.com/kiyohara/bizdate/issues/63) で入れ、merge 後の実動確認は [#73](https://github.com/kiyohara/bizdate/issues/73) で追う（いずれも索引には載せない単発の Issue）。alerts と security updates の有効化は repository settings の操作であり、ユーザーが行う。
-- #36〜#40 と #64 / #65 は配布準備であり、実際の初回公開を完了扱いにしない。公開後の確認と未確認の項目は、version ごとの公開後確認 Issue で追う。
+- 配布準備（#36〜#40 と #64 / #65）は、`v0.1.0` の公開と公開後確認で到達点を確かめた。表は、次の整理で「完了」の表へ移す。以後も、公開後の確認と未確認の項目は version ごとの公開後確認 Issue で追う。
 - Dependabot の更新 PR が出たら、そのレビューで #30 の残項目を確認して #30 に記録する。上流の release 待ちであり、いま実施する作業は無い。
 
 ## リリース履歴
 
-公開した version の台帳である。公開の手順は `doc/guidelines/release-guidelines.md` を正本とする。まだ公開した version は無い。
+公開した version の台帳である。公開の手順は `doc/guidelines/release-guidelines.md` を正本とする。
 
 - 行は、公開後確認を終えた version について、公開担当者がその version の公開後確認 Issue を入力とする PR で足す。公開していない version、中止した version、確認を終えていない version の行は置かない。
 - 列には次を書く。version は公開した version（例: `0.1.0`）、公開日は Release が公開された日（UTC、`YYYY-MM-DD`）、Release は Release の URL、検証は公開後確認 Issue へのリンクと結果の要約、未確認は残った項目の追跡 Issue へのリンク（無ければ「なし」）。
@@ -72,6 +72,7 @@ PR #67 の review cycle を cloud session で回して見つかった課題を�
 
 | version | 公開日 | Release | 検証 | 未確認 |
 |---|---|---|---|---|
+| `0.1.0` | 2026-09-25 | [v0.1.0](https://github.com/kiyohara/bizdate/releases/tag/v0.1.0) | [#84](https://github.com/kiyohara/bizdate/issues/84)。3 target の archive、third-party 表記、Homebrew の install と `brew test`、対応環境の値は ok。既定 CSV の取得は arm64 の 2 target で ok（`x86_64-unknown-linux-gnu` はユーザーの判断で確かめない） | [#85](https://github.com/kiyohara/bizdate/issues/85)（前の version からの `brew upgrade`） |
 
 ## 完了
 
