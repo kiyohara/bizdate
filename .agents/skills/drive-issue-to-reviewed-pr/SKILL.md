@@ -25,7 +25,7 @@ bizdate の Issue 1 件を、実装から「レビュー済み PR」まで 1 つ
 | 入力 | 開始フェーズ |
 | --- | --- |
 | Issue 番号 / Issue URL | P1（実装と PR 作成） |
-| `--from-pr <PR 番号>` | P2（review）。未収束の review cycle が残る場合は P4（対応）から再開する |
+| `--from-pr <PR 番号>` | P2（review）。未収束の review cycle が残る場合は P4（対応）から再開する。P2 から始める場合は、先に P1 の完了条件を確かめる（「`--from-pr` で P2 から始めるとき」） |
 
 `--from-pr` から始める場合は、PR の state と head SHA、既存 review cycle の有無を確認する。未収束の review cycle が残っている場合は、新しい cycle を作らず、その cycle の P4 から再開する。どちらの cycle を追うべきか判断がつかない場合はユーザーに確認する。
 
@@ -37,6 +37,24 @@ bizdate の Issue 1 件を、実装から「レビュー済み PR」まで 1 つ
 - `--from-pr` の対象 PR が closed または merged である。
 
 1 Issue = 1 ブランチ = 1 PR とする。複数 Issue を同時に回さない。
+
+### `--from-pr` で P2 から始めるとき
+
+P1 の途中（PR の作成後、採番の前など）で session が途切れた PR を `--from-pr` で再開すると、P1 の残りの手順が飛ばされる。P2 以降のフェーズはそれらを行わず、P2 / P5 の委譲中は push もしないためである（「head SHA と CI」）。そこで P2 から始める場合は、先に P1 の完了条件（「フェーズ」の表）を確かめる。
+
+- PR が open であることは上で確かめている。残りの条件は push までを含むため、PR の head の内容で確かめる。
+- 対象 Issue は PR description の `Closes #<番号>` から決める。起点 Issue を持たない PR（索引登録、進捗整理、リリース準備）は `run-issue-task` で作らないため、確かめずに P2 から始める。
+
+| 完了条件 | 確かめる手段 | 満たしていない場合の手順 |
+| --- | --- | --- |
+| note 採番 | `doc/guidelines/working-branch-notes-handling.md` の「note の探し方」で PR の head branch の note を探し、番号付きか | `run-issue-task` の手順 9（`number-working-branch-note`） |
+| 検証記録 | note の `検証` が `run-issue-task` の手順 6 のとおり記録されているか | `run-issue-task` の手順 6 |
+| `progress.md` 更新（該当時） | 対象 Issue が `progress.md` の索引にある場合、その行が `run-issue-task` の手順 7 のとおり更新されているか。索引に無ければ対象外 | `run-issue-task` の手順 7 |
+| 引き上げた項目の記録 | note の `セッションログ` に、「working branch note」が P1 で残すとした項目があるか | 「working branch note」に従って残す。採番の報告が手元に無い場合（前の session で採番した場合など）は、報告が無いことと採番の commit を残し、未解決事項として扱う |
+
+手順の番号は `run-issue-task` の「Issue 番号がある場合」のものである。
+
+番号付き note と `draft_` の note が両方ある、どちらも無い、記録どうしが食い違うなど、P1 の進み具合を一意に読めない場合は、始めずにユーザーに確認する。一意に読めて満たしていない条件があれば、その手順を行って push し、P1 の完了条件を満たしてから P2 に進む。手順が途中で止まった場合は P2 に進まず、止まった理由と未反映の変更をユーザーへ報告する。
 
 ## 起動前提
 
@@ -198,7 +216,7 @@ subagent 機構を持たない agent では、同一 agent が P2 と P5 を実�
 - resolve 可マーカーを付けた thread の一覧。
 - 未収束の指摘と、その見解の相違点。
 - 未検証事項（skill を追加・変更した場合は discoverability を含む）。
-- P1 で `run-issue-task` が引き上げた報告項目。範囲は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」に従い、現時点では `number-working-branch-note` が完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧（後者は未解決事項として扱う）である。採番 skill が途中で停止した場合は、停止理由とその時点で未反映の変更も未解決事項として含める。0 件または採番 skill を呼ばなかった場合はその旨を書く。P1 で note の `セッションログ` に残した内容から報告する。
+- P1 で `run-issue-task` が引き上げた報告項目。範囲は `.agents/skills/run-issue-task/SKILL.md` の「被委譲 skill の報告の引き上げ」に従い、現時点では `number-working-branch-note` が完了として書き換えたタスク行の一覧と、触らなかった stale 表現・タスク行の一覧（後者は未解決事項として扱う）である。採番 skill が途中で停止した場合は、停止理由とその時点で未反映の変更も未解決事項として含める。0 件または採番 skill を呼ばなかった場合はその旨を書く。`--from-pr` で再開し、採番の報告が手元に無かった場合は、その旨を未解決事項として含める。P1 で note の `セッションログ` に残した内容から報告する。
 - 人間に残る作業: inline thread の resolve と PR の merge。
 
 被委譲 skill の報告項目は、`run-issue-task` の「被委譲 skill の報告の引き上げ」と同じ 3 種の扱いで上記へ含める。`review-pull-request` については、`verify-comments` の完了要約が人間の手動 resolve の起点であるため、resolve 可マーカーを付けた thread の一覧と人間に残る作業として既に含めている。被委譲 skill の報告項目が変わった場合は、この節と「返させるもの」を揃える。
