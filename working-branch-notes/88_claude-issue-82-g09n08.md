@@ -10,7 +10,7 @@ Issue #82。`drive-issue-to-reviewed-pr` を `--from-pr` で P2 から始める�
 
 ## 現在の状況
 
-- cloud session（Claude Code on the web）で `drive-issue-to-reviewed-pr` を進めている。P2 の review（cycle `claude-code-42a9dd1-20260925050328`）の指摘 4 件に P4 で対応した。#82 は依存なし、`progress.md` の索引外の単発 Issue である。
+- cloud session（Claude Code on the web）で `drive-issue-to-reviewed-pr` を進めている。P2 の review（cycle `claude-code-42a9dd1-20260925050328`）の指摘 4 件に P4 で対応し、P5 の再確認で 4 件とも resolve 可、新規の指摘は 0 件だった。review cycle は 1 周で完了した。#82 は依存なし、`progress.md` の索引外の単発 Issue である。
 - #86 と並列に進めるトライアルの 1 つ（ユーザーの承認による一回限りの例外）。直列消化の確認は今回に限り省く。#86 の branch と PR には触らない。decision log は 0019 への追記とし、新規が要る場合は 0028 を使う（0027 は #86 に予約）。衝突は main の merge で解き、rebase と force push をしない。
 - SKILL.md の「入力と入口」に「`--from-pr` で P2 から始めるとき」を足し、「停止とエスカレーション」に 1 行、「終了時の報告」に 1 文足した。0019 に追記し、index の 0019 行に 1 文足した。
 
@@ -33,7 +33,7 @@ Issue #82。`drive-issue-to-reviewed-pr` を `--from-pr` で P2 から始める�
 - [x] 0019 に追記し、index の要約を揃える
 - [x] Issue の「検証」を行い、結果を残す
 - [x] PR を作成し、note を採番する
-- [ ] review cycle を回す
+- [x] review cycle を回す
 
 ## 検証
 
@@ -41,7 +41,7 @@ cloud session で実行した。
 
 ### 状態ごとの開始フェーズ（SKILL.md を読んで確かめた）
 
-変更後の SKILL.md の「入力と入口」を、各状態を想定して読んだ。状態の欄に書かない限り、PR は open で `Closes #<番号>` を 1 つ持つ Issue 駆動の PR とし、local branch は PR の head branch に対応するものとする。「P1 の残り → P2」の行では、push したら GitHub 上の PR の head で条件を確かめ直してから P2 に進む。上の 5 行が Issue の指定した状態（3 つ目の状態は採番の報告の有無で 2 行に分けた）、それ以降は境界の確認のために足した状態である。実装した本人が読んだ結果であり、P2 の review の指摘 4 件を受けて直した後に読み直した。
+変更後の SKILL.md の「入力と入口」を、各状態を想定して読んだ。状態の欄に書かない限り、PR は open で `Closes #<番号>` を 1 つ持つ Issue 駆動の PR とし、local branch は PR の head branch に対応するものとする。「P1 の残り → P2」の行では、push したら GitHub 上の PR の head で条件を確かめ直してから P2 に進む。上の 5 行が Issue の指定した状態（3 つ目の状態は採番の報告の有無で 2 行に分けた）、それ以降は境界の確認のために足した状態である。実装した本人が読んだ結果であり、P2 の review の指摘 4 件を受けて直した後に読み直した。P5 では reviewer が変更後の SKILL.md だけを読み直し、13 行すべてで同じ結論になることを確かめた。
 
 | 状態 | 開始フェーズ | P2 の前に行う手順 |
 |---|---|---|
@@ -75,10 +75,12 @@ cloud session で実行した。
 
 - 未検証: P1 の途中で途切れた PR を実際に `--from-pr` で再開する動作（別の cloud session からの再開を含む）は試していない。上の表は SKILL.md を読んだ確認である。
 - 未検証: skill の発火。frontmatter の description は変えていないため、発火の条件は変わらない。変えた本文が読まれることは、新しい session（cloud session）またはローカルの Claude Code の再起動の後に、skill を起動して確かめる。この session の本フローは変更前に読み込んだ skill で進めているが、変更は `--from-pr` の入口だけで、本フローは Issue の入口から始めたため影響しない。
+- 既知の限界（P5 の評価）: 本 skill の P1 が採番と note への記録の間で途切れた場合、`number-working-branch-note` が触らなかった行（残された事項）は採番の commit の差分に現れない。終了時の報告では、報告が手元に無い旨でしか示せない。単独の `run-issue-task` で作った PR と見分ける印が無いため、0019 の G3 の trade-off として受け入れた。
 
 ## セッションログ
 
 - 2026-09-25: 着手。`drive-issue-to-reviewed-pr` の P1 として開始した。SKILL.md、0019、index を更新し、上の検証を行った。
 - 2026-09-25（P1）: PR #88 を draft で作成し、`number-working-branch-note` で note を採番した（commit `01de740`）。完了として書き換えたタスク行は、note の「PR を作成し、note を採番する」の 1 件（PR description には該当なし）。触らなかった stale 表現・タスク行は 0 件。#82 は索引外のため `progress.md` は変えていない。reviewer の指定は、PR の作成者と同じ account のため GitHub が受け付けなかった（assignee は設定済み）。
 - 2026-09-25（P2・P3）: review cycle `claude-code-42a9dd1-20260925050328`、head `42a9dd1`。指摘 4 件（must 0 / ask 2 / imo 2）。4 件とも採用とした。
-- 2026-09-25（P4）: 4 件に対応した。残りの手順を PR の head branch で行い push 後に確かめ直す規定、`run-issue-task` を単独で使った PR の引き上げた項目の扱い（G2 から G3 へ）、起点 Issue を判別できない PR の扱い、「停止とエスカレーション」の行を足した。0019 とこの note を揃えた。
+- 2026-09-25（P4）: 4 件に対応した（commit `0eed0b0`）。残りの手順を PR の head branch で行い push 後に確かめ直す規定、`run-issue-task` を単独で使った PR の引き上げた項目の扱い（G2 から G3 へ）、起点 Issue を判別できない PR の扱い、「停止とエスカレーション」の行を足した。0019 とこの note を揃えた。
+- 2026-09-25（P5・P6）: head `0eed0b0` を同じ subagent が再確認し、4 件とも resolve 可、新規の指摘は 0 件（完了要約 1 本）。1 周で収束したため、フローを終えた。
