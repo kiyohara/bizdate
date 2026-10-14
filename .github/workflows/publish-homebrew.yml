@@ -33,7 +33,7 @@ jobs:
       # release-verify が同じ run で作り、3 つの native runner で install と brew test を通した Formula を
       # そのまま書く。作り直さないため、検証した内容と書く内容が一致し、この job を再実行しても内容は変わらない。
       - name: Fetch the verified Formula
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-verify-homebrew-formula
           path: ${{ runner.temp }}/formula
